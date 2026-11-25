@@ -1,5 +1,6 @@
 <p align="center"><img src="resources/QuickClip321Logo.png" width="96" alt="QuickClip321 logo"></p>
 <h1 align="center">QuickClip321</h1>
+<p align="center"><strong>From link to timeline.</strong></p>
 <p align="center">Free, open-source media downloader for Windows — from a link to an editor-ready file.</p>
 <p align="center"><a href="https://github.com/Tuna321/QuickClip321/releases/download/v2.1.0-rc.2/QuickClip321-2.1.0-rc.2-win-x64.exe">Download for Windows (preview)</a> · <a href="https://github.com/Tuna321/QuickClip321/releases">All releases</a> · <a href="#development">Development</a> · <a href="LICENSE">MIT License</a></p>
 
@@ -8,6 +9,14 @@
 ## Built for a faster creative workflow
 
 QuickClip321 lives in your Windows system tray. Choose **Premiere Ready** for editor-friendly MP4 files, **Fast Download** to retain the original format, or **Audio** for MP3. Keep a small quick view for everyday downloads and switch to the advanced workspace when you need more control.
+
+## Choose your workflow
+
+| Preset | Use it for |
+| --- | --- |
+| Premiere Ready | Editor-friendly MP4 |
+| Fast Download | Original formats without the additional compatibility conversion |
+| Audio | MP3 for audio-only workflows |
 
 ## What it does
 
@@ -34,6 +43,8 @@ also work.
 - The EXE is about 67.5 MiB. First-use FFmpeg setup may download an additional 114 MiB if compatible tools are not already available.
 - Supported sites and formats depend on [yt-dlp](https://github.com/yt-dlp/yt-dlp); a specific site or resolution may be unavailable or change over time.
 
+**Verify the download:** In PowerShell, run `Get-FileHash .\\QuickClip321-2.1.0-rc.2-win-x64.exe -Algorithm SHA256` and compare the value with `SHA256SUMS.txt` on the release page.
+
 ### Troubleshooting and feedback
 
 If a download fails, check the queue's error details and the Diagnostics page. For a reproducible issue, [open an issue](https://github.com/Tuna321/QuickClip321/issues/new) with the app version, Windows version, steps, and a reviewed diagnostic log. Never attach cookies, API keys, private links, or unreviewed personal data.
@@ -53,6 +64,9 @@ py -3.12 -m venv .venv
 Use the system tray icon to reopen the window after hiding it. Pass `--start-hidden` to start with only the tray icon. Use media you have permission to download.
 
 ## Development
+
+The `main` branch is the published source baseline. Development candidates may not yet have verified builds. See [changelog](CHANGELOG.md), [roadmap](docs/ROADMAP.md), and [architecture decision](docs/ARCHITECTURE.md). The [static product page source](docs/index.html) is ready for GitHub Pages but is not yet hosted.
+
 
 ```powershell
 .\.venv\Scripts\python.exe -m pytest -q
