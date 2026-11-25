@@ -448,13 +448,16 @@ def _verify_media(path: Path, ffprobe: str | None, expect_video: bool, sink: Eve
 
 def execute_job(payload: dict[str, Any], event_queue: Queue, cancel_event: Any) -> None:
     last_progress = [0.0]
+    last_phase = [None]
 
     def sink(event):
         if event.get("type") == "progress":
             now = time.monotonic()
-            if now - last_progress[0] < 0.25:
+            phase = (event.get("status"), event.get("stage"))
+            if phase == last_phase[0] and now - last_progress[0] < 0.25:
                 return
             last_progress[0] = now
+            last_phase[0] = phase
         for key in ("message", "detail"):
             if key in event:
                 event[key] = redact_sensitive(event[key], (payload.get("auth_cookie_file", ""),))
@@ -652,8 +655,9 @@ def execute_job(payload: dict[str, Any], event_queue: Queue, cancel_event: Any) 
             _verify_media(
                 target, ffprobe, output_format not in {"mp3", "m4a", "wav"} and info.get("vcodec") != "none", sink
             )
+            # _clip_media verifies its own output before exposing it. When
+            # trimming is disabled it returns the already-verified input.
             target = _clip_media(target, ffmpeg, ffprobe, clip_start, clip_end, cancel_event, sink)
-            _verify_media(target, ffprobe, output_format not in {"mp3", "m4a", "wav"} and info.get("vcodec") != "none", sink)
             classification = resolve_destination(info, payload, db)
             destination_event(classification)
             sink(
