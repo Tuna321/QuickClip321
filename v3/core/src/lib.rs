@@ -23,6 +23,7 @@ pub type Result<T> = std::result::Result<T, String>;
 #[serde(rename_all = "snake_case")]
 pub enum Status {
     Queued,
+    Paused,
     Running,
     Completed,
     Failed,
@@ -126,6 +127,7 @@ pub fn preview(raw: &str, tool: &Path) -> Result<Preview> {
     c.args([
         "--ignore-config",
         "--no-plugin-dirs",
+        "--no-cache-dir",
         "--no-warnings",
         "--skip-download",
         "--dump-single-json",
@@ -151,6 +153,10 @@ pub fn preview(raw: &str, tool: &Path) -> Result<Preview> {
         c.arg("--yes-playlist");
     } else {
         c.arg("--no-playlist");
+    }
+    #[cfg(test)]
+    if url.starts_with("http://127.0.0.1:") {
+        c.args(["--proxy", ""]);
     }
     c.arg("--")
         .arg(&url)
@@ -304,7 +310,7 @@ fn persist(path: &Path, state: &Snapshot) -> Result<()> {
 }
 struct Inner {
     state: Snapshot,
-    active: Option<(String, Arc<AtomicBool>)>,
+    active: std::collections::HashMap<String, Arc<AtomicBool>>,
 }
 #[derive(Clone)]
 pub struct Engine {
@@ -339,7 +345,7 @@ impl Engine {
         Ok(Self {
             inner: Arc::new(Mutex::new(Inner {
                 state,
-                active: None,
+                active: Default::default(),
             })),
             file,
         })
@@ -371,6 +377,8 @@ impl Engine {
         next.settings = settings;
         persist(&self.file, &next)?;
         x.state = next;
+        drop(x);
+        self.kick();
         Ok(())
     }
     pub fn enqueue(&self, r: Request) -> Result<String> {
@@ -382,7 +390,7 @@ impl Engine {
         }
         let mut x = self.inner.lock().unwrap();
         if x.state.jobs.iter().any(|j| {
-            matches!(j.status, Status::Queued | Status::Running)
+            matches!(j.status, Status::Queued | Status::Running | Status::Paused)
                 && j.url == url
                 && j.preset == r.preset
                 && j.quality == r.quality
@@ -437,7 +445,7 @@ impl Engine {
         match action {
             "cancel_all" | "clear_pending" => {
                 for j in &mut next.jobs {
-                    if j.status == Status::Queued {
+                    if matches!(j.status, Status::Queued | Status::Paused) {
                         j.status = Status::Cancelled;
                         j.message = "Cancelled".into();
                     }
@@ -451,7 +459,7 @@ impl Engine {
         persist(&self.file, &next)?;
         x.state = next;
         if action == "cancel_all" {
-            if let Some((_, flag)) = &x.active {
+            for flag in x.active.values() {
                 flag.store(true, Ordering::SeqCst);
             }
         }
@@ -459,11 +467,9 @@ impl Engine {
     }
     pub fn cancel(&self, id: &str) -> Result<()> {
         let mut x = self.inner.lock().unwrap();
-        if let Some((active, flag)) = &x.active {
-            if active == id {
-                flag.store(true, Ordering::SeqCst);
-                return Ok(());
-            }
+        if let Some(flag) = x.active.get(id) {
+            flag.store(true, Ordering::SeqCst);
+            return Ok(());
         }
         let mut next = x.state.clone();
         let j = next
@@ -471,13 +477,40 @@ impl Engine {
             .iter_mut()
             .find(|j| j.id == id)
             .ok_or("Unknown job")?;
-        if j.status != Status::Queued {
+        if !matches!(j.status, Status::Queued | Status::Paused) {
             return Err("Job is not queued.".into());
         }
         j.status = Status::Cancelled;
         j.message = "Cancelled".into();
         persist(&self.file, &next)?;
         x.state = next;
+        Ok(())
+    }
+    pub fn hold(&self, id: &str, paused: bool) -> Result<()> {
+        let mut x = self.inner.lock().unwrap();
+        let mut next = x.state.clone();
+        let j = next
+            .jobs
+            .iter_mut()
+            .find(|j| j.id == id)
+            .ok_or("Unknown job")?;
+        match (&j.status, paused) {
+            (Status::Queued, true) => {
+                j.status = Status::Paused;
+                j.message = "Waiting (paused)".into();
+            }
+            (Status::Paused, false) => {
+                j.status = Status::Queued;
+                j.message = "Queued".into();
+            }
+            _ => return Err("Only waiting jobs can be paused or resumed.".into()),
+        }
+        persist(&self.file, &next)?;
+        x.state = next;
+        drop(x);
+        if !paused {
+            self.kick();
+        }
         Ok(())
     }
     pub fn retry(&self, id: &str) -> Result<String> {
@@ -503,15 +536,16 @@ impl Engine {
     pub fn remove(&self, id: &str) -> Result<()> {
         let mut x = self.inner.lock().unwrap();
         let mut next = x.state.clone();
-        next.jobs
-            .retain(|j| j.id != id || matches!(j.status, Status::Running | Status::Queued));
+        next.jobs.retain(|j| {
+            j.id != id || matches!(j.status, Status::Running | Status::Queued | Status::Paused)
+        });
         persist(&self.file, &next)?;
         x.state = next;
         Ok(())
     }
     fn kick(&self) {
         let mut x = self.inner.lock().unwrap();
-        if x.active.is_some() {
+        if x.active.len() >= usize::from(x.state.settings.prefs.concurrent_downloads) {
             return;
         }
         let Some(i) = x.state.jobs.iter().position(|j| j.status == Status::Queued) else {
@@ -522,11 +556,11 @@ impl Engine {
         let j = x.state.jobs[i].clone();
         let settings = x.state.settings.clone();
         let cancel = Arc::new(AtomicBool::new(false));
-        x.active = Some((j.id.clone(), cancel.clone()));
+        x.active.insert(j.id.clone(), cancel.clone());
         if let Err(e) = persist(&self.file, &x.state) {
             x.state.jobs[i].status = Status::Failed;
             x.state.jobs[i].message = format!("Cannot save state: {e}");
-            x.active = None;
+            x.active.remove(&j.id);
             return;
         }
         drop(x);
@@ -563,14 +597,16 @@ impl Engine {
                     job.message = format!("Result not saved: {e}");
                 }
             }
-            x.active = None;
+            x.active.remove(&j.id);
             drop(x);
             engine.kick();
         });
+        self.kick();
     }
 }
 fn command(tool: &Path) -> Command {
     let mut c = Command::new(tool);
+    c.env("PYTHONUTF8", "1").env("PYTHONIOENCODING", "utf-8");
     #[cfg(windows)]
     {
         use std::os::windows::process::CommandExt;
@@ -701,7 +737,69 @@ fn ensure_editor(path: &Path, ffmpeg: &Path, cancel: &AtomicBool) -> Result<Path
     }
     Ok(out)
 }
+fn classify_error(lower: &str) -> &'static str {
+    if lower.contains("403")
+        || lower.contains("401")
+        || lower.contains("sign in")
+        || lower.contains("login")
+    {
+        "The source refused access. Check whether the media is accessible."
+    } else if lower.contains("timed out")
+        || lower.contains("resolve")
+        || lower.contains("connection")
+    {
+        "Network error. Check connectivity and retry."
+    } else if lower.contains("requested format") || lower.contains("format is not available") {
+        "Selected format is unavailable. Try Best or Original."
+    } else if lower.contains("ffmpeg") || lower.contains("ffprobe") {
+        "Media processing tool failed. Check FFmpeg and FFprobe."
+    } else if lower.contains("unsupported url") || lower.contains("unsupported site") {
+        "This source may not be supported by the current downloader."
+    } else if lower.contains("permission denied")
+        || lower.contains("access is denied")
+        || lower.contains("no space")
+    {
+        "Check folder permissions and available storage."
+    } else {
+        "Media engine reported an error. Check the link and installed tool versions."
+    }
+}
 fn download(
+    j: &Job,
+    s: &Settings,
+    cancel: &AtomicBool,
+    mut progress: impl FnMut(f64, String),
+) -> Result<Vec<PathBuf>> {
+    for attempt in 0..=2 {
+        match download_once(j, s, cancel, &mut progress) {
+            Err(e)
+                if e.starts_with("Retryable network error: ")
+                    && attempt < 2
+                    && !cancel.load(Ordering::SeqCst) =>
+            {
+                progress(
+                    0.,
+                    format!("Connection interrupted. Retrying ({}/2)", attempt + 1),
+                );
+                for _ in 0..10 {
+                    if cancel.load(Ordering::SeqCst) {
+                        return Err("Cancelled".into());
+                    }
+                    thread::sleep(Duration::from_millis(100));
+                }
+            }
+            result => {
+                return result.map_err(|e| {
+                    e.strip_prefix("Retryable network error: ")
+                        .unwrap_or(&e)
+                        .to_owned()
+                })
+            }
+        }
+    }
+    unreachable!()
+}
+fn download_once(
     j: &Job,
     s: &Settings,
     cancel: &AtomicBool,
@@ -723,6 +821,7 @@ fn download(
     c.args([
         "--ignore-config",
         "--no-plugin-dirs",
+        "--no-cache-dir",
         "--newline",
         "--no-warnings",
         "--progress",
@@ -789,6 +888,10 @@ fn download(
         }
         _ => {}
     }
+    #[cfg(test)]
+    if j.url.starts_with("http://127.0.0.1:") {
+        c.args(["--proxy", ""]);
+    }
     c.arg("--")
         .arg(&j.url)
         .stdout(Stdio::piped())
@@ -798,20 +901,30 @@ fn download(
     let stderr = child.stderr.take().ok_or("Missing stderr")?;
     let (tx, rx) = std::sync::mpsc::channel();
     let reader = thread::spawn(move || {
-        for line in BufReader::new(stdout)
-            .lines()
+        for bytes in BufReader::new(stdout)
+            .split(b'\n')
             .map_while(std::result::Result::ok)
         {
+            let line = String::from_utf8_lossy(&bytes).into_owned();
             if tx.send(line).is_err() {
                 break;
             }
         }
     });
     let errors = thread::spawn(move || {
-        for _ in BufReader::new(stderr)
-            .lines()
+        let mut hint = None;
+        for bytes in BufReader::new(stderr)
+            .split(b'\n')
             .map_while(std::result::Result::ok)
-        {}
+        {
+            let v = String::from_utf8_lossy(&bytes).to_ascii_lowercase();
+            #[cfg(test)]
+            eprintln!("fixture stderr: {v}");
+            if v.contains("error") {
+                hint = Some(classify_error(&v));
+            }
+        }
+        hint
     });
     let started = Instant::now();
     let exit = loop {
@@ -866,8 +979,25 @@ fn download(
         thread::sleep(Duration::from_millis(120));
     };
     let _ = reader.join();
-    let _ = errors.join();
-    if let Err(e) = exit {
+    let hint = errors.join().ok().flatten();
+    if let Err(mut e) = exit {
+        // Retry only before ANY staged file exists. Never redownload or duplicate published outputs.
+        if !cancel.load(Ordering::SeqCst)
+            && hint == Some("Network error. Check connectivity and retry.")
+            && fs::read_dir(staging.path())
+                .ok()
+                .is_some_and(|mut entries| entries.next().is_none())
+        {
+            return Err(format!(
+                "Retryable network error: {e} Network error. Check connectivity and retry."
+            ));
+        }
+        if !cancel.load(Ordering::SeqCst) {
+            if let Some(h) = hint {
+                e.push_str(" ");
+                e.push_str(h);
+            }
+        }
         let retained = staging.keep();
         return Err(format!(
             "{e} Partial files retained at {}",
@@ -925,8 +1055,7 @@ fn download(
                 ready
             };
             let destination = if j.organize {
-                let (category, _) = organizer::category(&metadata, &j.preset);
-                j.destination.join(organizer::folder(category))
+                organizer::configured_destination(&metadata, &j.preset, &j.destination, &s.prefs)
             } else {
                 j.destination.clone()
             };
@@ -1087,9 +1216,15 @@ mod tests {
         let stop = Arc::new(AtomicBool::new(false));
         let flag = stop.clone();
         let server = thread::spawn(move || {
+            let bytes = Arc::new(bytes);
+            let thumb = Arc::new(thumb);
+            let mut clients = vec![];
             while !flag.load(Ordering::SeqCst) {
                 match listener.accept() {
                     Ok((mut socket, _)) => {
+                        let bytes = bytes.clone();
+                        let thumb = thumb.clone();
+                        clients.push(thread::spawn(move||{
                         let _ = socket.set_read_timeout(Some(Duration::from_secs(2)));
                         let mut request = vec![];
                         let mut one = [0u8; 1];
@@ -1110,15 +1245,22 @@ mod tests {
                         };
                         let header=format!("HTTP/1.1 200 OK\r\nContent-Type: {mime}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",body.len());
                         let _ = socket.write_all(header.as_bytes());
-                        if !head {
-                            let _ = socket.write_all(body);
-                        }
+                        if !head {let _ = socket.write_all(body);}
+                        let _=socket.flush();
+                        let _=socket.shutdown(std::net::Shutdown::Write);
+                        let _=socket.set_read_timeout(Some(Duration::from_millis(500)));
+                        let mut tail=[0u8;256];
+                        while matches!(socket.read(&mut tail),Ok(n) if n>0){}
+                        }));
                     }
                     Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {
                         thread::sleep(Duration::from_millis(20))
                     }
                     Err(_) => break,
                 }
+            }
+            for client in clients {
+                let _ = client.join();
             }
         });
         let out = d.path().join("out");
@@ -1149,8 +1291,50 @@ mod tests {
         let metadata = preview(&job.url, &settings.yt_dlp);
         let thumb_preview = preview(&format!("http://{address}/page"), &settings.yt_dlp);
         let result = download(&job, &settings, &AtomicBool::new(false), |_, _| {});
+        let queue_root = d.path().join("queue");
+        let mut parallel_settings = settings.clone();
+        parallel_settings.destination = queue_root.clone();
+        parallel_settings.prefs.concurrent_downloads = 2;
+        let engine = Engine::open(d.path().join("parallel.json"), parallel_settings).unwrap();
+        for n in 0..2 {
+            engine
+                .enqueue(Request {
+                    url: format!("http://{address}/fixture.mp4?job={n}"),
+                    preset: "original".into(),
+                    quality: "best".into(),
+                    playlist: false,
+                    organize: false,
+                    options: MediaOptions::default(),
+                    destination: queue_root.clone(),
+                })
+                .unwrap();
+        }
+        let simultaneous = engine
+            .snapshot()
+            .jobs
+            .iter()
+            .filter(|j| j.status == Status::Running)
+            .count();
+        let start = Instant::now();
+        while engine
+            .snapshot()
+            .jobs
+            .iter()
+            .any(|j| matches!(j.status, Status::Queued | Status::Running))
+            && start.elapsed() < Duration::from_secs(30)
+        {
+            thread::sleep(Duration::from_millis(50));
+        }
+        let parallel = engine.snapshot();
         stop.store(true, Ordering::SeqCst);
         server.join().unwrap();
+        assert_eq!(simultaneous, 2);
+        assert!(
+            parallel.jobs.iter().all(|j| j.status == Status::Completed),
+            "{:?}",
+            parallel.jobs
+        );
+        assert_ne!(parallel.jobs[0].files[0], parallel.jobs[1].files[0]);
         assert!(!metadata.unwrap().title.is_empty());
         let thumb_preview = thumb_preview.unwrap();
         assert!(
@@ -1183,7 +1367,7 @@ mod tests {
         let active = Arc::new(AtomicBool::new(false));
         {
             let mut x = engine.inner.lock().unwrap();
-            x.active = Some(("active".into(), active.clone()));
+            x.active.insert("active".into(), active.clone());
             for (id, status) in [
                 ("active", Status::Running),
                 ("pending", Status::Queued),
@@ -1226,6 +1410,77 @@ mod tests {
         assert!(read_thumbnail(d.path())
             .unwrap()
             .starts_with("data:image/png;base64,"));
+    }
+    #[test]
+    fn held_jobs_and_concurrency_slots() {
+        let d = tempfile::tempdir().unwrap();
+        let engine = Engine::open(
+            d.path().join("state.json"),
+            Settings {
+                destination: d.path().into(),
+                yt_dlp: PathBuf::new(),
+                ffmpeg: PathBuf::new(),
+                prefs: Preferences::default(),
+            },
+        )
+        .unwrap();
+        let flag = Arc::new(AtomicBool::new(false));
+        {
+            let mut x = engine.inner.lock().unwrap();
+            x.active.insert("occupied".into(), flag.clone());
+        }
+        let request = Request {
+            url: "https://example.com/media".into(),
+            preset: "original".into(),
+            quality: "best".into(),
+            playlist: false,
+            organize: false,
+            options: MediaOptions::default(),
+            destination: d.path().into(),
+        };
+        let id = engine.enqueue(request).unwrap();
+        assert_eq!(engine.snapshot().jobs[0].status, Status::Queued);
+        engine.hold(&id, true).unwrap();
+        assert_eq!(engine.snapshot().jobs[0].status, Status::Paused);
+        let reopened =
+            Engine::open(d.path().join("state.json"), engine.snapshot().settings).unwrap();
+        assert_eq!(reopened.snapshot().jobs[0].status, Status::Paused);
+        engine.hold(&id, false).unwrap();
+        assert_eq!(engine.snapshot().jobs[0].status, Status::Queued);
+        assert!(engine.hold("missing", true).is_err());
+        engine.cancel(&id).unwrap();
+        assert_eq!(engine.snapshot().jobs[0].status, Status::Cancelled);
+    }
+    #[test]
+    #[ignore = "Requires external network and a licensed test source"]
+    fn public_metadata_preview() {
+        let tool = PathBuf::from(std::env::var("QC_TEST_YTDLP").unwrap());
+        let mut available = 0;
+        let mut thumbnails = 0;
+        for url in [
+            "https://commons.wikimedia.org/wiki/File:Big_Buck_Bunny_Trailer_400p.ogv",
+            "https://vimeo.com/1084537",
+            "https://www.youtube.com/watch?v=YE7VzlLtp-4",
+        ] {
+            match preview(url, &tool) {
+                Ok(p) => {
+                    println!(
+                        "Public preview {url}: title={}, thumbnail={}",
+                        p.title,
+                        p.thumbnail.is_some()
+                    );
+                    if !p.title.is_empty() {
+                        available += 1;
+                    }
+                    if p.thumbnail.is_some() {
+                        thumbnails += 1;
+                    }
+                }
+                Err(e) => println!("Public preview {url}: {e}"),
+            }
+        }
+        assert!(available > 0, "No external metadata was obtained");
+        assert!(thumbnails > 0, "No external thumbnail was obtained");
     }
     #[test]
     fn state_roundtrip() {

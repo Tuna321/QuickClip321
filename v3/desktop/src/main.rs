@@ -196,6 +196,62 @@ fn cancel(engine: State<'_, Engine>, id: String) -> Result<(), String> {
     engine.cancel(&id)
 }
 #[tauri::command]
+fn pause_waiting(engine: State<'_, Engine>, id: String) -> Result<(), String> {
+    engine.hold(&id, true)
+}
+#[tauri::command]
+fn resume_waiting(engine: State<'_, Engine>, id: String) -> Result<(), String> {
+    engine.hold(&id, false)
+}
+#[tauri::command]
+fn detect_tools() -> [String; 2] {
+    [
+        find_tool("yt-dlp.exe").to_string_lossy().into_owned(),
+        find_tool("ffmpeg.exe").to_string_lossy().into_owned(),
+    ]
+}
+#[tauri::command]
+fn diagnostics(engine: State<'_, Engine>) -> String {
+    let s = engine.snapshot();
+    let mut out = format!("QuickClip321 {}\n", env!("CARGO_PKG_VERSION"));
+    for (label, path) in [
+        ("yt-dlp", &s.settings.yt_dlp),
+        ("FFmpeg", &s.settings.ffmpeg),
+    ] {
+        out.push_str(&format!(
+            "{label}: {}\n",
+            if path.is_file() {
+                "Detected"
+            } else {
+                "Missing"
+            }
+        ));
+    }
+    let probe = s.settings.ffmpeg.with_file_name("ffprobe.exe");
+    out.push_str(&format!(
+        "FFprobe: {}\n",
+        if probe.is_file() {
+            "Detected"
+        } else {
+            "Missing"
+        }
+    ));
+    for (name, status) in [
+        ("Waiting", quickclip_core::Status::Queued),
+        ("Paused", quickclip_core::Status::Paused),
+        ("Running", quickclip_core::Status::Running),
+        ("Completed", quickclip_core::Status::Completed),
+        ("Failed", quickclip_core::Status::Failed),
+    ] {
+        out.push_str(&format!(
+            "{name}: {}\n",
+            s.jobs.iter().filter(|j| j.status == status).count()
+        ));
+    }
+    out.push_str("Privacy: report excludes URLs, file paths, clipboard and error logs.");
+    out
+}
+#[tauri::command]
 fn retry(engine: State<'_, Engine>, id: String) -> Result<String, String> {
     engine.retry(&id)
 }
@@ -577,6 +633,10 @@ fn main() {
             enqueue,
             cancel,
             retry,
+            pause_waiting,
+            resume_waiting,
+            detect_tools,
+            diagnostics,
             remove,
             save_settings,
             preview_position,

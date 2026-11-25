@@ -1,4 +1,19 @@
 use serde::{Deserialize, Serialize};
+use std::{collections::BTreeMap, path::PathBuf};
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct Profile {
+    pub name: String,
+    pub format: String,
+    pub quality: String,
+    pub archive: bool,
+}
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct Rule {
+    pub contains: String,
+    pub category: String,
+}
+pub const CATEGORIES: [&str; 5] = ["audio", "beats", "film", "rap", "video"];
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(default)]
 pub struct Preferences {
@@ -14,6 +29,10 @@ pub struct Preferences {
     pub default_format: String,
     pub default_quality: String,
     pub fragment_concurrency: u8,
+    pub concurrent_downloads: u8,
+    pub profiles: Vec<Profile>,
+    pub rules: Vec<Rule>,
+    pub category_paths: BTreeMap<String, PathBuf>,
 }
 impl Default for Preferences {
     fn default() -> Self {
@@ -30,6 +49,10 @@ impl Default for Preferences {
             default_format: "editor".into(),
             default_quality: "1080".into(),
             fragment_concurrency: 4,
+            concurrent_downloads: 1,
+            profiles: vec![],
+            rules: vec![],
+            category_paths: BTreeMap::new(),
         }
     }
 }
@@ -84,6 +107,24 @@ impl Preferences {
             self.default_quality = d.default_quality;
         }
         self.fragment_concurrency = self.fragment_concurrency.clamp(1, 8);
+        self.concurrent_downloads = self.concurrent_downloads.clamp(1, 3);
+        let mut names = std::collections::HashSet::new();
+        self.profiles.retain(|p| {
+            !p.name.trim().is_empty()
+                && p.name.chars().count() <= 60
+                && !p.name.chars().any(char::is_control)
+                && crate::selector(&p.format, &p.quality).is_ok()
+                && names.insert(p.name.to_lowercase())
+        });
+        self.profiles.truncate(50);
+        self.rules.retain(|r| {
+            !r.contains.trim().is_empty()
+                && r.contains.chars().count() <= 120
+                && CATEGORIES.contains(&r.category.as_str())
+        });
+        self.rules.truncate(100);
+        self.category_paths
+            .retain(|k, v| CATEGORIES.contains(&k.as_str()) && v.is_absolute());
     }
 }
 #[derive(Clone, Copy, Debug)]
@@ -150,6 +191,37 @@ mod tests {
                 assert_eq!(serde_json::from_str::<Preferences>(&serialized).unwrap(), p);
             }
         }
+    }
+    #[test]
+    fn custom_config_roundtrip() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut p = Preferences::default();
+        p.concurrent_downloads = 9;
+        p.profiles.push(Profile {
+            name: "Edit".into(),
+            format: "editor".into(),
+            quality: "720".into(),
+            archive: false,
+        });
+        p.profiles.push(Profile {
+            name: "edit".into(),
+            format: "editor".into(),
+            quality: "720".into(),
+            archive: false,
+        });
+        p.rules.push(Rule {
+            contains: "sample".into(),
+            category: "rap".into(),
+        });
+        p.category_paths.insert("rap".into(), dir.path().into());
+        p.normalize();
+        assert_eq!(p.concurrent_downloads, 3);
+        assert_eq!(p.profiles.len(), 1);
+        assert_eq!(p.rules.len(), 1);
+        assert_eq!(
+            serde_json::from_str::<Preferences>(&serde_json::to_string(&p).unwrap()).unwrap(),
+            p
+        );
     }
     #[test]
     fn popup_placement() {

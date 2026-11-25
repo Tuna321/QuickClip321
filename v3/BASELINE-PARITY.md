@@ -21,3 +21,13 @@ Reference commit ec9e9a1e3ba81b2a14eece66d551bcc15d703de7, Python RC2. See gener
 | Distribution | portable isolated state, bundled Node, checksum-pinned on-demand FFmpeg, license notices, frozen network/UI/destination smoke | missing |
 | Reliability | single instance, process tree ownership, shutdown, SQLite recovery, safe storage, error taxonomy, no persisted auth | partial |
 No public stable V3 until each row is implemented and verified, including real tray interaction. Keep the original usable.
+
+## Alpha 5 delta (implementation status, not release certification)
+- Tray, appearance and clipboard: carried forward from Alpha 4; native smoke/visual tests required after every build. Physical tray clicks, DPI/multiple monitors remain open.
+- Profiles: named format/resolution/archive list stored in Preferences; named default across restart not implemented.
+- Organizer: ordered normalized title phrases, category folder mapping and manual override implemented. Original classification confidence, per-job override and full database UI remain open.
+- Queue: 1–3 simultaneous jobs (default 1), waiting-job Hold/Resume, cancel and recovery of held state. Active transfer byte-resume, partial recovery workflow, stalled-job policy and durable staging remain open. Parallel media test intermittently failed on local Windows connection abort; bounded pre-output retries added, see iteration log for latest evidence.
+- Diagnostics: redacted counts/tool presence and generic failure hints implemented. Native notifications, auth, raw-log inspection/export, FFprobe file inspection and optional AI not migrated.
+- Dependency detection: installed PATH tools only; verified automatic installation, bundled Node, clean-machine installer testing remain open.
+- Preview: local HTTP/PNG fixture tested; external sources vary, record exact test outcomes. No universal thumbnail promise.
+- English: manual quick/settings/profile/organizer form validation replaces browser-localized validation; OS dialogs remain system language.

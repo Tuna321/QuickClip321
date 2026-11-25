@@ -145,6 +145,27 @@ pub fn category(info: &Value, preset: &str) -> (&'static str, &'static str) {
     }
     ("video", "Video media")
 }
+pub fn configured_destination(
+    info: &Value,
+    preset: &str,
+    root: &std::path::Path,
+    p: &crate::preferences::Preferences,
+) -> std::path::PathBuf {
+    let title = normalized(text(info, &["title"]));
+    let category = p
+        .rules
+        .iter()
+        .find(|r| {
+            let term = normalized(&r.contains);
+            !term.is_empty() && contains(&title, &term)
+        })
+        .map(|r| r.category.as_str())
+        .unwrap_or_else(|| category(info, preset).0);
+    p.category_paths
+        .get(category)
+        .cloned()
+        .unwrap_or_else(|| root.join(folder(category)))
+}
 pub fn folder(category: &str) -> &'static str {
     match category {
         "beats" | "audio" => "Audio",
@@ -156,6 +177,30 @@ pub fn folder(category: &str) -> &'static str {
 mod tests {
     use super::*;
     use serde_json::json;
+    #[test]
+    fn configured_rules_first() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut p = crate::preferences::Preferences::default();
+        p.rules.push(crate::preferences::Rule {
+            contains: "Rick and Morty".into(),
+            category: "rap".into(),
+        });
+        p.category_paths
+            .insert("rap".into(), dir.path().join("custom"));
+        assert_eq!(
+            configured_destination(
+                &json!({"title":"Rick and Morty episode"}),
+                "editor",
+                dir.path(),
+                &p
+            ),
+            dir.path().join("custom")
+        );
+        assert_eq!(
+            configured_destination(&json!({"title":"other"}), "editor", dir.path(), &p),
+            dir.path().join("Video")
+        );
+    }
     #[test]
     fn categories() {
         assert_eq!(

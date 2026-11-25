@@ -12,3 +12,9 @@
 - Reuse yt-dlp to obtain thumbnail in an isolated temp folder; no remote WebView image request. Metadata can survive thumbnail failure. Offline base64 crate was unavailable; small encoding function with test vectors instead. Local HTML/PNG and actual synthetic media test passes. Real external sites remain unverified.
 - Actual yt-dlp percent, speed and ETA text plus postprocessing stage; idle bar no longer reflects old completed jobs. Contextual help is accessible by button or tooltip.
 - Ten targeted topics documented in research-alpha4; not ten full independent rebuilds. Pause/resume/concurrency and other larger parity items remain release blockers.
+
+## Alpha 5 decisions
+- Three design lenses and 30 paired research/concept topics, 15 refinements documented in research-alpha5.md; not independent human research. Keep tray quick view unchanged and organize newly restored controls in secondary pages.
+- Scheduler uses bounded active map and per-job staging; cancellation applies to specific worker. Hold/Resume only for waiting jobs. Existing active-pause semantics would require persistent staging and restart-safe manifest, so not presented as implemented.
+- Custom profiles and title rules stored in backwards-compatible Preferences; separate section commits avoid silently applying unrelated drafts. Manual destination wins. Redacted diagnostics excludes arbitrary URLs and file paths; error classification from stderr is generic.
+- Repeated synthetic concurrent fixture caught intermittent failure after initial pass. Isolate yt-dlp cache and make HTTP fixture concurrent, then repeat. This is a correctness gate, not a performance benchmark.
