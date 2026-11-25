@@ -125,11 +125,17 @@ impl Engine {
             Ok(bytes) => serde_json::from_slice::<Snapshot>(&bytes)
                 .map_err(|_| "State file is damaged; preserved for recovery.")?,
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => Snapshot {
-                settings: defaults,
+                settings: defaults.clone(),
                 jobs: vec![],
             },
             Err(e) => return Err(err(e)),
         };
+        if state.settings.yt_dlp.as_os_str().is_empty() {
+            state.settings.yt_dlp = defaults.yt_dlp;
+        }
+        if state.settings.ffmpeg.as_os_str().is_empty() {
+            state.settings.ffmpeg = defaults.ffmpeg;
+        }
         for j in &mut state.jobs {
             if matches!(j.status, Status::Running | Status::Queued) {
                 j.status = Status::Failed;

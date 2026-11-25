@@ -64,6 +64,30 @@ fn ui_ready(app: tauri::AppHandle, passed: bool) -> Result<(), String> {
     }
     Ok(())
 }
+fn find_tool(name: &str) -> PathBuf {
+    std::env::var_os("PATH")
+        .into_iter()
+        .flat_map(|p| std::env::split_paths(&p).collect::<Vec<_>>())
+        .filter(|p| p.is_absolute())
+        .map(|p| p.join(name))
+        .find(|p| p.is_file())
+        .unwrap_or_default()
+}
+#[tauri::command]
+fn set_mode(window: tauri::WebviewWindow, expanded: bool) -> Result<(), String> {
+    let (w, h) = if expanded { (930., 720.) } else { (600., 395.) };
+    window
+        .set_size(tauri::LogicalSize::new(w, h))
+        .map_err(|e| e.to_string())?;
+    window
+        .set_always_on_top(!expanded)
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
+#[tauri::command]
+fn hide_window(window: tauri::WebviewWindow) -> Result<(), String> {
+    window.hide().map_err(|e| e.to_string())
+}
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, _, _| {
@@ -91,8 +115,8 @@ fn main() {
                 data.join("state.json"),
                 Settings {
                     destination,
-                    yt_dlp: PathBuf::new(),
-                    ffmpeg: PathBuf::new(),
+                    yt_dlp: find_tool("yt-dlp.exe"),
+                    ffmpeg: find_tool("ffmpeg.exe"),
                 },
             )
             .map_err(std::io::Error::other)?;
@@ -166,6 +190,8 @@ fn main() {
             remove,
             save_settings,
             open_folder,
+            set_mode,
+            hide_window,
             ui_ready
         ])
         .run(tauri::generate_context!())

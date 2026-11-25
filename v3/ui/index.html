@@ -1,23 +1,19 @@
 <!doctype html>
 <html lang="en">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>QuickClip321</title><link rel="stylesheet" href="style.css"><script src="app.js" defer></script></head>
-<body><div class="shell"><aside>
-<div class="brand"><img src="logo.png" alt=""><div>QuickClip<span>321</span><small>MEDIA WORKSPACE</small></div></div>
-<nav aria-label="Workspace"><button class="nav active" data-page="home">＋ <span>New download</span></button><button class="nav" data-page="queue">≡ <span>Queue</span><b id="badge">0</b></button><button class="nav" data-page="history">◷ <span>History</span></button><button class="nav" data-page="settings">⚙ <span>Settings</span></button></nav>
-<div class="aside-bottom"><span class="dot"></span> Local workspace <small>V3 ALPHA · RUST</small></div>
-</aside><main><header><div><p class="kicker">QUICKCLIP321 / WORKSPACE</p><h1 id="title">New download</h1></div><span class="chip">LOCAL ONLY</span></header>
-<section id="home" class="page"><div class="hero"><p class="kicker">FROM LINK TO TIMELINE</p><h2>Make something<br><em>worth sharing.</em></h2><p>Download media you have permission to use. No account required.</p></div>
-<form id="form" class="card"><label for="url">Media link</label><div class="row"><input id="url" placeholder="https://..." autocomplete="off" required><button type="button" id="paste" class="secondary">Paste</button></div>
-<div class="columns"><div><label for="preset">Output preset</label><select id="preset"><option value="editor">Editor MP4</option><option value="original">Original format</option><option value="mp3">MP3 audio</option><option value="m4a">M4A audio</option><option value="wav">WAV audio</option></select></div><div><label for="quality">Resolution</label><select id="quality"><option value="best">Best available</option><option>2160</option><option>1440</option><option>1080</option><option>720</option><option>480</option><option>360</option></select></div></div>
-<label for="destination">Save to</label><div class="row"><input id="destination" required><button type="button" id="browse" class="secondary">Browse</button></div>
-<label class="check"><input type="checkbox" id="playlist"> Download entire playlist (explicit opt-in)</label><button class="primary" type="submit">↓ Add to download queue</button></form>
-<div class="hint" id="setupHint" hidden>First run: configure existing yt-dlp and FFmpeg executables in Settings.</div></section>
-<section id="queue" class="page" hidden><p class="sub">Active downloads run one at a time. Cancel any active or queued item.</p><div id="queueList"></div></section>
-<section id="history" class="page" hidden><p class="sub">Completed, cancelled and failed jobs. Removing an entry never deletes media.</p><div id="historyList"></div></section>
-<section id="settings" class="page" hidden><form id="settingsForm" class="card"><h2>Download engine</h2><p class="sub">Select trusted local tools. Automatic installation is not available in this alpha.</p>
-<label for="ytdlp">yt-dlp executable</label><div class="row"><input id="ytdlp" placeholder="C:\...\yt-dlp.exe"><button type="button" class="secondary pick" data-target="ytdlp">Browse</button></div>
-<label for="ffmpeg">FFmpeg executable</label><div class="row"><input id="ffmpeg" placeholder="C:\...\ffmpeg.exe"><button type="button" class="secondary pick" data-target="ffmpeg">Browse</button></div>
-<label for="defaultDest">Default destination</label><div class="row"><input id="defaultDest" required><button type="button" class="secondary" id="defaultBrowse">Browse</button></div><button class="primary" type="submit">Save settings</button></form>
-<div class="hint">Alpha limitations: preview, clipping, subtitles, organizer rules, browser authorization, resume, automatic engine updates and codec verification are not yet migrated. The existing Python release remains available.</div></section>
-<div id="toast" role="status" aria-live="polite"></div>
+<body class="quick"><div class="shell"><main>
+<header><div class="brand"><img src="logo.png" alt=""><strong>QuickClip321</strong></div><div class="head-actions"><button type="button" id="expand" class="secondary">Advanced</button><button type="button" id="hide" class="secondary">Hide</button></div></header>
+<section class="quick-controls"><form id="form"><label for="url">Media link</label><div class="row link-row"><input id="url" placeholder="Paste a video or audio URL" autocomplete="off" required><button type="button" id="paste" class="secondary">Paste</button><button type="submit" class="primary">Download</button></div>
+<div class="columns"><div><label for="preset">Preset</label><select id="preset"><option value="editor">Premiere Ready</option><option value="original">Fast Download</option><option value="mp3">MP3 audio</option><option value="m4a">M4A audio</option><option value="wav">WAV audio</option></select></div><div><label for="quality">Resolution</label><select id="quality"><option value="best">Best</option><option>2160</option><option>1440</option><option>1080</option><option>720</option><option>480</option><option>360</option></select></div></div>
+<div class="preview"><span class="play-icon" aria-hidden="true">&#9654;</span><span id="previewText">Paste a media link to get started.</span></div>
+<div class="row destination-row"><label for="destination">Destination:</label><input id="destination" required><button type="button" id="browse" class="secondary">Change</button></div>
+<label class="check"><input type="checkbox" id="playlist"> Entire playlist (opt-in)</label>
+</form><div id="quickStatus" role="status" aria-live="polite">Ready</div><progress id="quickProgress" max="100" value="0"></progress>
+<div class="hint" id="setupHint" hidden>Media tools are missing. Open Advanced &gt; Settings.</div></section>
+<div class="workspace" id="workspace" hidden><nav aria-label="Workspace"><span class="nav-label">WORKSPACE</span><button class="nav active" data-page="home">Downloads</button><button class="nav" data-page="queue">Queue <b id="badge">0</b></button><button class="nav" data-page="history">History</button><button class="nav" data-page="settings">Settings</button></nav><div class="workspace-content"><h2 id="title">Downloads</h2>
+<section id="home" class="page"><p class="sub">Use the controls above to add a download. Advanced options from the Python release are not yet fully migrated.</p><div class="hint">V3 alpha: local engine, queue and history. Metadata previews, trimming, subtitle downloads and organizer rules remain in the Python version.</div></section>
+<section id="queue" class="page" hidden><div id="queueList"></div></section>
+<section id="history" class="page" hidden><p class="sub">Removing history never deletes downloaded files.</p><div id="historyList"></div></section>
+<section id="settings" class="page" hidden><form id="settingsForm" class="card"><label for="ytdlp">yt-dlp executable</label><div class="row"><input id="ytdlp"><button type="button" class="secondary pick" data-target="ytdlp">Browse</button></div><label for="ffmpeg">FFmpeg executable</label><div class="row"><input id="ffmpeg"><button type="button" class="secondary pick" data-target="ffmpeg">Browse</button></div><label for="defaultDest">Default destination</label><div class="row"><input id="defaultDest" required><button type="button" id="defaultBrowse" class="secondary">Browse</button></div><button class="primary" type="submit">Save settings</button></form></section>
+</div></div><div id="toast" role="status" aria-live="polite"></div>
 </main></div></body></html>
