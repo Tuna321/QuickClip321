@@ -102,6 +102,7 @@ pub struct Preview {
     pub qualities: Vec<u64>,
     pub playlist: bool,
     pub count: Option<u64>,
+    pub thumbnail: Option<String>,
 }
 pub fn is_playlist(raw: &str) -> bool {
     let Ok(u) = url::Url::parse(raw) else {
@@ -120,6 +121,7 @@ pub fn preview(raw: &str, tool: &Path) -> Result<Preview> {
         return Err("Media engine is not configured.".into());
     }
     let mut output = tempfile::tempfile().map_err(err)?;
+    let thumbs = tempfile::tempdir().map_err(err)?;
     let mut c = command(tool);
     c.args([
         "--ignore-config",
@@ -128,6 +130,8 @@ pub fn preview(raw: &str, tool: &Path) -> Result<Preview> {
         "--skip-download",
         "--dump-single-json",
         "--flat-playlist",
+        "--no-simulate",
+        "--write-thumbnail",
         "--playlist-items",
         "1",
         "--socket-timeout",
@@ -139,6 +143,10 @@ pub fn preview(raw: &str, tool: &Path) -> Result<Preview> {
         "--js-runtimes",
         "node",
     ]);
+    c.arg("-o").arg(format!(
+        "thumbnail:{}",
+        thumbs.path().join("preview.%(ext)s").display()
+    ));
     if is_playlist(&url) {
         c.arg("--yes-playlist");
     } else {
@@ -159,7 +167,7 @@ pub fn preview(raw: &str, tool: &Path) -> Result<Preview> {
         }
         match child.try_wait() {
             Ok(Some(s)) if s.success() => break,
-            Ok(Some(_)) => return Err("Preview unavailable.".into()),
+            Ok(Some(_)) => break,
             Ok(None) => {}
             Err(e) => {
                 terminate(&mut child);
@@ -204,12 +212,64 @@ pub fn preview(raw: &str, tool: &Path) -> Result<Preview> {
             .take(100)
             .collect(),
         qualities,
+        thumbnail: read_thumbnail(thumbs.path()),
         playlist: matches!(info["_type"].as_str(), Some("playlist" | "multi_video"))
             || is_playlist(&url),
         count: info["playlist_count"]
             .as_u64()
             .or_else(|| info["n_entries"].as_u64()),
     })
+}
+fn encode_base64(bytes: &[u8]) -> String {
+    const TABLE: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    let mut s = String::with_capacity(bytes.len().div_ceil(3) * 4);
+    for chunk in bytes.chunks(3) {
+        let a = chunk[0];
+        let b = *chunk.get(1).unwrap_or(&0);
+        let c = *chunk.get(2).unwrap_or(&0);
+        s.push(TABLE[(a >> 2) as usize] as char);
+        s.push(TABLE[(((a & 3) << 4) | (b >> 4)) as usize] as char);
+        s.push(if chunk.len() > 1 {
+            TABLE[(((b & 15) << 2) | (c >> 6)) as usize] as char
+        } else {
+            '='
+        });
+        s.push(if chunk.len() > 2 {
+            TABLE[(c & 63) as usize] as char
+        } else {
+            '='
+        });
+    }
+    s
+}
+fn read_thumbnail(root: &Path) -> Option<String> {
+    use std::io::Read;
+    for entry in fs::read_dir(root).ok()?.flatten() {
+        if !entry.file_type().ok()?.is_file() {
+            continue;
+        }
+        let mut bytes = vec![];
+        if File::open(entry.path())
+            .ok()?
+            .take(2_000_001)
+            .read_to_end(&mut bytes)
+            .is_err()
+            || bytes.len() > 2_000_000
+        {
+            continue;
+        }
+        let mime = if bytes.starts_with(&[0xff, 0xd8, 0xff]) {
+            "image/jpeg"
+        } else if bytes.starts_with(b"\x89PNG\r\n\x1a\n") {
+            "image/png"
+        } else if bytes.starts_with(b"RIFF") && bytes.get(8..12) == Some(b"WEBP") {
+            "image/webp"
+        } else {
+            continue;
+        };
+        return Some(format!("data:{mime};base64,{}", encode_base64(&bytes)));
+    }
+    None
 }
 pub fn selector(preset: &str, quality: &str) -> Result<String> {
     if !matches!(
@@ -667,7 +727,9 @@ fn download(
         "--no-warnings",
         "--progress",
         "--progress-template",
-        "download:QC:%(progress._percent_str)s",
+        "download:QC:%(progress._percent_str)s|%(progress._speed_str)s|%(progress._eta_str)s",
+        "--progress-template",
+        "postprocess:QC_POST:%(progress.status)s",
         "--windows-filenames",
         "--no-overwrites",
         "--socket-timeout",
@@ -763,12 +825,26 @@ fn download(
         }
         while let Ok(line) = rx.try_recv() {
             if let Some(value) = line.strip_prefix("QC:") {
-                if let Ok(p) = value.trim().trim_end_matches('%').parse::<f64>() {
+                let mut parts = value.split('|');
+                if let Ok(p) = parts
+                    .next()
+                    .unwrap_or("")
+                    .trim()
+                    .trim_end_matches('%')
+                    .parse::<f64>()
+                {
                     progress(
                         (p / 100.).clamp(0., 0.98),
-                        "Downloading / processing".into(),
+                        format!(
+                            "Downloading {} | {} | ETA {}",
+                            format!("{p:.1}%"),
+                            parts.next().unwrap_or("unknown").trim(),
+                            parts.next().unwrap_or("unknown").trim()
+                        ),
                     );
                 }
+            } else if line.starts_with("QC_POST:") {
+                progress(0.98, "Processing media".into());
             }
         }
         match child.try_wait() {
@@ -986,6 +1062,25 @@ mod tests {
             .unwrap();
         assert!(status.success());
         let bytes = fs::read(&source).unwrap();
+        let thumb_path = d.path().join("thumbnail.png");
+        assert!(command(&ffmpeg)
+            .args([
+                "-v",
+                "error",
+                "-f",
+                "lavfi",
+                "-i",
+                "color=c=purple:s=160x90",
+                "-frames:v",
+                "1",
+                "-threads",
+                "1"
+            ])
+            .arg(&thumb_path)
+            .status()
+            .unwrap()
+            .success());
+        let thumb = fs::read(thumb_path).unwrap();
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
         let address = listener.local_addr().unwrap();
         listener.set_nonblocking(true).unwrap();
@@ -1005,10 +1100,18 @@ mod tests {
                             }
                         }
                         let head = request.starts_with(b"HEAD ");
-                        let header=format!("HTTP/1.1 200 OK\r\nContent-Type: video/mp4\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",bytes.len());
+                        let line = String::from_utf8_lossy(&request);
+                        let path = line.split_whitespace().nth(1).unwrap_or("");
+                        let page=format!("<html><head><title>QuickClip fixture</title><meta property=\"og:title\" content=\"QuickClip fixture\"><meta property=\"og:image\" content=\"http://{address}/thumbnail.png\"><meta property=\"og:video\" content=\"http://{address}/fixture.mp4\"><meta property=\"og:video:type\" content=\"video/mp4\"></head><body><video poster=\"http://{address}/thumbnail.png\" src=\"http://{address}/fixture.mp4\"></video></body></html>");
+                        let (mime, body) = match path {
+                            "/page" => ("text/html", page.as_bytes()),
+                            "/thumbnail.png" => ("image/png", thumb.as_slice()),
+                            _ => ("video/mp4", bytes.as_slice()),
+                        };
+                        let header=format!("HTTP/1.1 200 OK\r\nContent-Type: {mime}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",body.len());
                         let _ = socket.write_all(header.as_bytes());
                         if !head {
-                            let _ = socket.write_all(&bytes);
+                            let _ = socket.write_all(body);
                         }
                     }
                     Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {
@@ -1044,10 +1147,20 @@ mod tests {
             files: vec![],
         };
         let metadata = preview(&job.url, &settings.yt_dlp);
+        let thumb_preview = preview(&format!("http://{address}/page"), &settings.yt_dlp);
         let result = download(&job, &settings, &AtomicBool::new(false), |_, _| {});
         stop.store(true, Ordering::SeqCst);
         server.join().unwrap();
         assert!(!metadata.unwrap().title.is_empty());
+        let thumb_preview = thumb_preview.unwrap();
+        assert!(
+            thumb_preview
+                .thumbnail
+                .as_deref()
+                .is_some_and(|s| s.starts_with("data:image/png;base64,")),
+            "Fixture thumbnail was not obtained: {:?}",
+            thumb_preview
+        );
         let files = result.unwrap();
         assert_eq!(files[0].parent().unwrap().file_name().unwrap(), "Video");
         assert_eq!(files.len(), 1);
@@ -1100,6 +1213,19 @@ mod tests {
         assert!(active.load(Ordering::SeqCst));
         engine.bulk_action("clear_completed").unwrap();
         assert_eq!(engine.snapshot().jobs.len(), 2);
+    }
+    #[test]
+    fn thumbnail_encoding_and_rejection() {
+        assert_eq!(encode_base64(b"f"), "Zg==");
+        assert_eq!(encode_base64(b"fo"), "Zm8=");
+        assert_eq!(encode_base64(b"foo"), "Zm9v");
+        let d = tempfile::tempdir().unwrap();
+        fs::write(d.path().join("bad.svg"), b"<svg/>").unwrap();
+        assert!(read_thumbnail(d.path()).is_none());
+        fs::write(d.path().join("preview.png"), b"\x89PNG\r\n\x1a\nfixture").unwrap();
+        assert!(read_thumbnail(d.path())
+            .unwrap()
+            .starts_with("data:image/png;base64,"));
     }
     #[test]
     fn state_roundtrip() {

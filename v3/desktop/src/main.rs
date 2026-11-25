@@ -6,6 +6,10 @@ use tauri_plugin_clipboard_manager::ClipboardExt;
 #[derive(Default)]
 struct ClipboardInbox(Mutex<Option<String>>);
 #[tauri::command]
+fn visual_page() -> String {
+    std::env::var("QC_V3_VISUAL").unwrap_or_default()
+}
+#[tauri::command]
 fn smoke_active() -> bool {
     std::env::var_os("QC_V3_SMOKE_DIR").is_some()
 }
@@ -72,7 +76,7 @@ fn round_window(window: &tauri::WebviewWindow) -> bool {
     let (Ok(hwnd), Ok(size)) = (window.hwnd(), window.outer_size()) else {
         return false;
     };
-    let diameter = (24.0 * window.scale_factor().unwrap_or(1.)).round() as i32;
+    let diameter = (32.0 * window.scale_factor().unwrap_or(1.)).round() as i32;
     // SetWindowRgn can emit window-position events. Avoid reapplying an unchanged region.
     static LAST: Mutex<Option<(isize, u32, u32, i32)>> = Mutex::new(None);
     let key = (hwnd.0 as isize, size.width, size.height, diameter);
@@ -200,8 +204,14 @@ fn remove(engine: State<'_, Engine>, id: String) -> Result<(), String> {
     engine.remove(&id)
 }
 #[tauri::command]
-fn save_settings(engine: State<'_, Engine>, settings: Settings) -> Result<(), String> {
-    engine.settings(settings)
+fn save_settings(
+    window: tauri::WebviewWindow,
+    engine: State<'_, Engine>,
+    settings: Settings,
+) -> Result<(), String> {
+    engine.settings(settings)?;
+    position_popup(&window, None);
+    Ok(())
 }
 #[tauri::command]
 fn open_folder(engine: State<'_, Engine>, id: String) -> Result<(), String> {
@@ -273,6 +283,20 @@ fn ui_ready(
         show_popup(&w, None);
         let show_works = w.is_visible().unwrap_or(false);
         let rounded = has_round_region(&w);
+        let mut prefs = app.state::<Engine>().snapshot().settings.prefs;
+        prefs.popup_mode = "Custom".into();
+        prefs.popup_x = 0.;
+        prefs.popup_y = 0.;
+        let moved = place_with(&w, None, &prefs).is_ok();
+        let custom_works = moved
+            && w.current_monitor()
+                .ok()
+                .flatten()
+                .zip(w.outer_position().ok())
+                .is_some_and(|(m, p)| {
+                    p.x == m.work_area().position.x && p.y == m.work_area().position.y
+                });
+        position_popup(&w, None);
         let ok = passed
             && theme_passed
             && clipboard_passed
@@ -284,10 +308,13 @@ fn ui_ready(
             && within_workarea
             && hide_works
             && show_works
-            && rounded;
-        let report=format!("{{\"ui_ready\":{passed},\"snapshot\":{passed},\"started_hidden\":{started_hidden},\"frameless\":{frameless},\"topmost\":{topmost},\"tray\":{tray},\"no_taskbar\":{no_taskbar},\"within_workarea\":{within_workarea},\"hide_works\":{hide_works},\"show_works\":{show_works},\"rounded\":{rounded},\"theme_matrix\":{theme_passed},\"clipboard_flow\":{clipboard_passed}}}");
+            && rounded
+            && custom_works;
+        let report=format!("{{\"ui_ready\":{passed},\"snapshot\":{passed},\"started_hidden\":{started_hidden},\"frameless\":{frameless},\"topmost\":{topmost},\"tray\":{tray},\"no_taskbar\":{no_taskbar},\"within_workarea\":{within_workarea},\"hide_works\":{hide_works},\"show_works\":{show_works},\"rounded\":{rounded},\"custom_position\":{custom_works},\"theme_matrix\":{theme_passed},\"clipboard_flow\":{clipboard_passed}}}");
         std::fs::write(root.join("ui-smoke.json"), report).map_err(|e| e.to_string())?;
-        app.exit(if ok { 0 } else { 1 });
+        if !ok || std::env::var_os("QC_V3_VISUAL").is_none() {
+            app.exit(if ok { 0 } else { 1 });
+        }
     }
     Ok(())
 }
@@ -300,19 +327,45 @@ fn find_tool(name: &str) -> PathBuf {
         .find(|p| p.is_file())
         .unwrap_or_default()
 }
+#[tauri::command]
+fn preview_position(
+    window: tauri::WebviewWindow,
+    mode: String,
+    x: f64,
+    y: f64,
+) -> Result<(), String> {
+    let mut p = window
+        .app_handle()
+        .state::<Engine>()
+        .snapshot()
+        .settings
+        .prefs;
+    p.popup_mode = mode;
+    p.popup_x = x;
+    p.popup_y = y;
+    p.normalize();
+    place_with(&window, None, &p)
+}
 fn position_popup(window: &tauri::WebviewWindow, point: Option<(f64, f64)>) {
+    let p = window
+        .app_handle()
+        .state::<Engine>()
+        .snapshot()
+        .settings
+        .prefs;
+    let _ = place_with(window, point, &p);
+}
+fn place_with(
+    window: &tauri::WebviewWindow,
+    point: Option<(f64, f64)>,
+    prefs: &quickclip_core::preferences::Preferences,
+) -> Result<(), String> {
     let monitor = point
         .and_then(|(x, y)| window.monitor_from_point(x, y).ok().flatten())
         .or_else(|| window.current_monitor().ok().flatten())
         .or_else(|| window.primary_monitor().ok().flatten());
     if let (Some(m), Ok(size)) = (monitor, window.outer_size()) {
         let area = m.work_area();
-        let prefs = window
-            .app_handle()
-            .state::<Engine>()
-            .snapshot()
-            .settings
-            .prefs;
         let (x, y) = quickclip_core::preferences::popup_position(
             quickclip_core::preferences::WorkArea {
                 left: area.position.x,
@@ -322,11 +375,15 @@ fn position_popup(window: &tauri::WebviewWindow, point: Option<(f64, f64)>) {
             },
             (size.width as i32, size.height as i32),
             point,
-            &prefs,
+            prefs,
             (8.0 * m.scale_factor()).round() as i32,
         );
-        let _ = window.set_position(tauri::PhysicalPosition::new(x, y));
+        window
+            .set_position(tauri::PhysicalPosition::new(x, y))
+            .map_err(|e| e.to_string())?;
+        return Ok(());
     }
+    Err("Monitor geometry unavailable.".into())
 }
 #[cfg(windows)]
 fn enforce_tray_style(window: &tauri::WebviewWindow) {
@@ -367,6 +424,7 @@ fn enforce_tray_style(window: &tauri::WebviewWindow) {
 #[cfg(not(windows))]
 fn enforce_tray_style(_: &tauri::WebviewWindow) {}
 fn show_popup(window: &tauri::WebviewWindow, point: Option<(f64, f64)>) {
+    let _ = window.set_shadow(false);
     enforce_tray_style(window);
     position_popup(window, point);
     let _ = window.show();
@@ -509,6 +567,7 @@ fn main() {
             }
         })
         .invoke_handler(tauri::generate_handler![
+            visual_page,
             smoke_active,
             take_clipboard_link,
             media_preview,
@@ -520,6 +579,7 @@ fn main() {
             retry,
             remove,
             save_settings,
+            preview_position,
             open_folder,
             set_mode,
             hide_window,
