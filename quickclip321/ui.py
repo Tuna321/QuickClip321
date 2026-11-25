@@ -45,6 +45,7 @@ CONTROL_BG = ("#edf0f5", "#282a38")
 CONTROL_BUTTON = ("#dce2eb", "#3e354f")
 CONTROL_TEXT = ("#1b2636", "#f6f3ff")
 ERROR_TEXT = ("#b42345", "#ff8e9c")
+QUALITY_OPTIONS = ["best", "2160", "1440", "1080", "720", "480"]
 
 THEMES = {
     "Purple": ("#8b5cf6", "#a47afa"),
@@ -202,9 +203,9 @@ class QuickClipApp(ctk.CTk):
         self._help(self.url_entry, "Paste one URL here. Use Advanced for a batch of URLs.")
         controls = ctk.CTkFrame(self.root_panel, fg_color="transparent")
         controls.pack(fill="x", padx=20)
-        self.profile_var = ctk.StringVar(value=self.settings.default_profile)
+        self.profile_var = ctk.StringVar(value=self.settings.default_profile if self.settings.default_profile in self.profiles else "Premiere Ready")
         self.format_var = ctk.StringVar(value=self.settings.default_format)
-        self.quality_var = ctk.StringVar(value="best")
+        self.quality_var = ctk.StringVar(value=self.settings.default_quality)
         def option_group(label):
             group = ctk.CTkFrame(controls, fg_color="transparent")
             group.pack(side="left", padx=(0, 26))
@@ -225,10 +226,10 @@ class QuickClipApp(ctk.CTk):
         self.profile_menu.pack(side="left", padx=(0, 22))
         self._help(self.profile_menu, "Choose a saved combination of format and quality.")
         self.quality_menu = None
-        self.available_qualities = ["best"]
+        self.available_qualities = list(QUALITY_OPTIONS)
         for values, var, width in [
             (["mp4", "mp3", "wav", "m4a", "original"], self.format_var, 90),
-            (["best"], self.quality_var, 90),
+            (QUALITY_OPTIONS, self.quality_var, 90),
         ]:
             menu = ctk.CTkOptionMenu(
                 option_group("Format" if var is self.format_var else "Resolution"),
@@ -457,9 +458,8 @@ class QuickClipApp(ctk.CTk):
         self._preview_info = {}
         self._preview_result = {}
         self._preview_playlist_count = None
-        self.available_qualities = ["best"]
+        self.available_qualities = list(QUALITY_OPTIONS)
         self.quality_menu.configure(values=self.available_qualities)
-        self.quality_var.set("best")
         self._update_destination()
         self.playlist_var.set("single")
         self.preview_title.configure(
@@ -482,13 +482,15 @@ class QuickClipApp(ctk.CTk):
     def _start_preview(self):
         self._preview_after = None
         url = self.url_var.get().strip()
-        if not self.visible or not validate_media_url(url)[0]:
+        valid, normalized, _ = validate_media_url(url)
+        if not self.visible or not valid:
+            self._stop_preview()
             return
         self._stop_preview()
         context = mp.get_context("spawn")
         self._preview_queue = context.Queue()
         self._preview_url = url
-        self._preview_process = context.Process(target=fetch_preview, args=(url, self._preview_queue))
+        self._preview_process = context.Process(target=fetch_preview, args=(normalized, self._preview_queue))
         self._preview_process.start()
         self._preview_started = time.monotonic()
 
@@ -522,10 +524,12 @@ class QuickClipApp(ctk.CTk):
             return
         title = result.get("title") or "Untitled media"
         qualities = [str(q) for q in result.get("qualities", []) if str(q) in {"2160", "1440", "1080", "720", "480"}]
-        self.available_qualities = ["best", *dict.fromkeys(qualities)]
+        # A preview is advisory, not a prerequisite for choosing a target.
+        # Preserve the selected resolution; the engine reports actual fallback.
+        self.available_qualities = list(QUALITY_OPTIONS)
         self.quality_menu.configure(values=self.available_qualities)
-        if self.quality_var.get() not in {"best", *qualities}:
-            self.quality_var.set("best")
+        if qualities:
+            title += "  •  Available: " + ", ".join(q + "p" for q in qualities)
         if result.get("playlist") or is_playlist_url(url):
             self._show_playlist(True)
             self._preview_playlist_count = result.get("count")
@@ -546,7 +550,7 @@ class QuickClipApp(ctk.CTk):
     def _select_profile(self, name):
         profile = self.profiles[name]
         self.format_var.set(profile["format"])
-        self.quality_var.set(profile["quality"] if profile["quality"] in self.available_qualities else "best")
+        self.quality_var.set(profile["quality"] if profile["quality"] in QUALITY_OPTIONS else "best")
 
     def _paste_media_url(self):
         try:
@@ -1317,7 +1321,7 @@ class QuickClipApp(ctk.CTk):
                 return
             self._last_clipboard = raw
             valid, url, _ = validate_media_url(raw)
-            if valid:
+            if valid and not self.url_var.get().strip():
                 self.url_var.set(url)
                 self.status.configure(text="Clipboard URL detected. Ready to download.")
         except Exception:
