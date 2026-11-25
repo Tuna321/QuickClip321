@@ -14,8 +14,12 @@ available as a separate download on the release page.
 | Node.js 24.20.0 | MIT and third-party terms listed in `NODE-LICENSE.txt`. [Upstream source](https://nodejs.org/dist/v24.20.0/). |
 | Other Python dependencies | Individual project notices are under `THIRD_PARTY_LICENSES/python`. |
 
-The public EXE does not redistribute FFmpeg, ffprobe, or Mutagen. QuickClip321
-invokes the user's FFmpeg and ffprobe executables as separate processes.
+The public EXE does not redistribute FFmpeg, ffprobe, or Mutagen. When the media
+tools are missing, the Windows x64 app fetches [Gyan's FFmpeg 9.1 Essentials
+archive](https://github.com/GyanD/codexffmpeg/releases/tag/9.1) directly from its publisher,
+checks a pinned SHA-256, and stores its license beside the extracted tools. That
+build's [FFmpeg source revision](https://github.com/FFmpeg/FFmpeg/commit/74e4393595)
+is recorded by its publisher. QuickClip321 runs the tools as separate processes.
 
 ## Rebuild with a modified pystray
 

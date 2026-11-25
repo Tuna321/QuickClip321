@@ -1,7 +1,7 @@
 <p align="center"><img src="resources/QuickClip321Logo.png" width="96" alt="QuickClip321 logo"></p>
 <h1 align="center">QuickClip321</h1>
 <p align="center">A Windows tray app for downloading and organizing video and audio.</p>
-<p align="center"><a href="https://github.com/Tuna321/QuickClip321/releases">Download for Windows</a> · <a href="#development">Development</a> · <a href="LICENSE">MIT License</a></p>
+<p align="center"><a href="https://github.com/Tuna321/QuickClip321/releases/download/v2.1.0-rc.2/QuickClip321-2.1.0-rc.2-win-x64.exe">Download for Windows</a> · <a href="#development">Development</a> · <a href="LICENSE">MIT License</a></p>
 
 ![QuickClip321 quick view with a link field, download button, format and resolution controls](docs/quick-view.png)
 
@@ -15,9 +15,14 @@
 
 ## Run on Windows
 
-1. Download `QuickClip321-2.1.0-rc.1-win-x64.exe` from [GitHub Releases](https://github.com/Tuna321/QuickClip321/releases).
-2. Get a Windows build through [FFmpeg's download page](https://ffmpeg.org/download.html). Put `ffmpeg.exe` and `ffprobe.exe` on PATH, or place both in a `bin` folder next to QuickClip321.
-3. Open QuickClip321. The EXE includes Python and Node.js.
+1. [Download QuickClip321 for Windows x64](https://github.com/Tuna321/QuickClip321/releases/download/v2.1.0-rc.2/QuickClip321-2.1.0-rc.2-win-x64.exe).
+2. Open the EXE, paste a link, and click **Download**.
+
+Python and Node.js are included. If FFmpeg and ffprobe are missing, QuickClip321
+downloads a verified FFmpeg archive (about 114 MiB) on the first download and
+stores both tools in its app data folder. Later downloads reuse them. Existing
+FFmpeg and ffprobe installed together on PATH or in a `bin` folder next to the EXE
+also work.
 
 ### Run from source
 

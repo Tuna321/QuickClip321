@@ -20,6 +20,6 @@ try {
 } finally {
     $env:QUICKCLIP321_PUBLIC_BUILD = $previousPublicBuild
 }
-$name = if ($PublicRelease) { "QuickClip321-2.1.0-rc.1-win-x64.exe" } else { "QuickClip321-2.1.0-rc.1.exe" }
+$name = if ($PublicRelease) { "QuickClip321-2.1.0-rc.2-win-x64.exe" } else { "QuickClip321-2.1.0-rc.2.exe" }
 Write-Host "EXE: $PSScriptRoot\dist\$name"
 Write-Host "No installation or deployment performed."

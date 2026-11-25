@@ -1,3 +1,3 @@
 """QuickClip321 desktop downloader."""
 
-__version__ = "2.1.0rc1"
+__version__ = "2.1.0rc2"

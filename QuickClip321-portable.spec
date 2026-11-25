@@ -52,6 +52,6 @@ a=Analysis([str(root/'test_launcher.py')],pathex=[str(root),str(stdlib)],binarie
            excludes=['mutagen'] if public_release else [],noarchive=False)
 pyz=PYZ(a.pure)
 exe=EXE(pyz,a.scripts,a.binaries,a.datas,[],
-        name='QuickClip321-2.1.0-rc.1-win-x64' if public_release else 'QuickClip321-2.1.0-rc.1',debug=False,
+        name='QuickClip321-2.1.0-rc.2-win-x64' if public_release else 'QuickClip321-2.1.0-rc.2',debug=False,
         bootloader_ignore_signals=False,strip=False,upx=False,console=False,
         icon=str(root/'resources'/'quickclip321.ico'),disable_windowed_traceback=False)

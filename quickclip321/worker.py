@@ -13,6 +13,7 @@ from queue import Queue
 from typing import Any, Callable
 
 from .errors import classify_error, redact_sensitive
+from .media_tools import install_media_tools, managed_tools
 from .organizer import load_database, publish, resolve_destination
 from .playlist import safety_options, single_video_url
 from .validation import validate_clip_range
@@ -479,6 +480,16 @@ def execute_job(payload: dict[str, Any], event_queue: Queue, cancel_event: Any) 
         except (OSError, ValueError):
             manifest = {}
         ffmpeg, ffprobe = _find_binary("ffmpeg"), _find_binary("ffprobe")
+        if not (ffmpeg and ffprobe) or Path(ffmpeg).parent != Path(ffprobe).parent:
+            try:
+                ffmpeg, ffprobe = managed_tools() or install_media_tools(
+                    lambda stage: sink({"type": "progress", "status": "analyzing", "stage": stage}),
+                    cancel_event.is_set,
+                )
+            except InterruptedError:
+                raise CancelledError() from None
+            except Exception as exc:
+                raise RuntimeError(f"FFmpeg setup failed: {exc}") from exc
         output_format = payload["output_format"]
         clip_start, clip_end = validate_clip_range(payload.get("clip_start_seconds"), payload.get("clip_end_seconds"))
         subtitle_options = _subtitle_options(payload)
@@ -495,10 +506,6 @@ def execute_job(payload: dict[str, Any], event_queue: Queue, cancel_event: Any) 
                 }
             )
 
-        if not ffmpeg:
-            raise RuntimeError("FFmpeg missing: install FFmpeg or put ffmpeg.exe and ffprobe.exe in the bin folder beside QuickClip321.")
-        if not ffprobe:
-            raise RuntimeError("ffprobe missing: install FFmpeg or put ffmpeg.exe and ffprobe.exe in the bin folder beside QuickClip321.")
         sink({"type": "log", "message": f"yt-dlp={__version__}; ffmpeg={ffmpeg}; profile={payload.get('profile')}"})
         collected = []
 

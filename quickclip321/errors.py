@@ -38,6 +38,12 @@ def classify_error(raw: str) -> tuple[str, str, bool]:
     text = (raw or "").strip()
     low = text.lower()
     rules = [
+        (
+            ("ffmpeg setup failed:",),
+            "FFMPEG_SETUP_FAILED",
+            "FFmpeg setup failed. Check your connection and retry from History.",
+            False,
+        ),
         (("drm",), "DRM_RESTRICTED", "DRM protected content is not supported.", False),
         (
             ("requested format is not available",),
