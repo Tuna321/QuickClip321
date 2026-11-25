@@ -45,6 +45,9 @@ def validate_media_url(raw: str) -> tuple[bool, str, str]:
             return False, "", "Only http and https URLs are supported."
         if not host:
             return False, "", "The URL has no valid host."
+        # Accessing port validates malformed and out-of-range ports.
+        if parsed.port == 0:
+            return False, "", "The URL has an invalid port."
         try:
             ipaddress.ip_address(host)
             return False, "", "Direct IP addresses are not accepted for safety."
