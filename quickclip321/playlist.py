@@ -2,10 +2,15 @@ from urllib.parse import parse_qs, urlparse, urlunparse, urlencode
 
 
 def is_playlist_url(url):
-    parsed = urlparse(url)
-    return bool(parse_qs(parsed.query).get("list")) or any(
-        token in parsed.path.lower() for token in ["/playlist", "/sets/", "/albums/", "/album/"]
-    )
+    # Called while the user is still typing; incomplete IPv6/netloc syntax
+    # must not raise through a Tk variable trace.
+    try:
+        parsed = urlparse(url)
+        return bool(parse_qs(parsed.query).get("list")) or any(
+            token in parsed.path.lower() for token in ["/playlist", "/sets/", "/albums/", "/album/"]
+        )
+    except ValueError:
+        return False
 
 
 def single_video_url(url):
@@ -29,7 +34,7 @@ def duplicate_key(job):
     parsed = urlparse(job.url)
     playlist_id = parse_qs(parsed.query).get("list", [])
     url = job.url
-    if job.playlist_mode == "all" and playlist_id and (parsed.hostname or "").endswith("youtube.com"):
+    if job.playlist_mode == "all" and playlist_id and (parsed.hostname or "").lower() in {"youtube.com", "www.youtube.com", "m.youtube.com", "music.youtube.com"}:
         url = "https://youtube.com/playlist?list=" + playlist_id[0]
     elif job.playlist_mode != "all":
         url = single_video_url(url)
