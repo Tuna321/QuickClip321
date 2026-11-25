@@ -1,19 +1,32 @@
-# QuickClip321 V3 — experimental Rust/Tauri migration
+# QuickClip321 V3 — tray-first experimental migration
 
-This is an alpha, not a replacement for the published Python app. It uses Rust for queue and process orchestration, a local web UI, and existing trusted yt-dlp and FFmpeg tools.
+Current candidate: 3.0.0-alpha.2. This is not a replacement for the published Python RC2 until baseline parity and release gates pass.
 
-## Build on Windows
+## What is implemented in the candidate
+- Hidden startup, frameless Windows popup, taskbar exclusion, tray click show/hide, quick/advanced modes, monitor work-area placement (Tray/Corner/Custom), Escape and quick-view blur dismissal.
+- Familiar link/preset/format/resolution/preview/destination layout, default 1080p Premiere Ready, clipboard detection only while popup is focused, theme/accent and persistent preferences.
+- Bounded asynchronous text metadata preview, explicit playlist choice, batch links, sequential queue, cancellation/retry/history and file-safe publishing.
+- Local artist/movie/audio classification with the original built-in database (default Audio/Video folders; manual selection wins).
+- MP4/H.264/AAC verification and conversion, MP3/M4A/WAV/original, optional post-download clipping and subtitle timestamp adjustment, archive metadata option.
+- Tools detected on PATH, or explicitly configured. No unverified auto-downloads.
 
-Install Rust stable (MSVC), Visual Studio C++ Build Tools, and WebView2. From this folder:
-
+## Build and test
 ```powershell
-cargo test --manifest-path core/Cargo.toml
-cargo build --manifest-path desktop/Cargo.toml
-cargo run --manifest-path desktop/Cargo.toml
+cargo test --locked --manifest-path core/Cargo.toml
+$env:QC_TEST_YTDLP = (Get-Command yt-dlp.exe).Source
+$env:QC_TEST_FFMPEG = (Get-Command ffmpeg.exe).Source
+cargo test --locked --manifest-path core/Cargo.toml -- --include-ignored
+cargo build --release --locked --manifest-path desktop/Cargo.toml
 ```
+Run the EXE and use the notification area icon (possibly under the overflow arrow). The app has separate V3 state. Smoke tests use a separate directory.
 
-In Settings, select existing trusted yt-dlp.exe and ffmpeg.exe, then choose an absolute destination. Paste a URL and enqueue. Use the tray icon to show/hide the window. Quit is blocked during active downloads to avoid abandoning child processes.
+## Release blockers / known gaps
+- Feature parity is incomplete: thumbnails, custom profiles and organizer rules/destination mapping, pause/resume, parallel jobs, notifications, authenticated sessions, diagnostics/export, local and remote optional AI, clean-machine dependency setup, full recovery and privacy/lifecycle verification.
+- Actual physical tray click, outside click, keyboard, DPI and multi-monitor interactive checks are not replaced by geometry/native-window tests.
+- Clip and subtitle handling are implemented, but subtitle extraction on real sites and archive output still need fixtures. Original-format video clips are converted to MP4; audio clips retain supported audio format.
+- No measured startup/RAM/CPU comparison or public signed installer. No claim of universal site support or complete parity.
 
-The V3 app has separate app data, and this migration does not alter the Python version. Current gaps include authenticated downloads, automatic updates, clip trimming, metadata preview, subtitles, organizer rules, full codec/container compatibility testing across real sites, pause/resume, full diagnostics, and bundled tools. Retry starts a new single-item job. The alpha intentionally uses an explicit Paste button instead of monitoring the clipboard. Editor MP4 inspects H.264/AAC and converts incompatible video before publishing; it requires ffprobe next to FFmpeg. A local synthetic HTTP fixture exercises the actual downloader and conversion.
+## Design and audit files
+UX-RESEARCH.md, BASELINE-PARITY.md, BASELINE-SYMBOLS.json, MULTI-PERSPECTIVE.md, NEXT-PASS.md. These are the migration contract, not marketing claims.
 
-Only download media you have permission to use. No stability or performance improvement is claimed until measured.
+Use media you have permission to download. Do not publish any personal app state, credentials, or generated executable as source.

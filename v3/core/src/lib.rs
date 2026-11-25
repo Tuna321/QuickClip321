@@ -1,3 +1,8 @@
+pub mod media_options;
+pub mod organizer;
+pub mod preferences;
+use media_options::MediaOptions;
+use preferences::Preferences;
 use serde::{Deserialize, Serialize};
 use std::{
     fs::{self, File},
@@ -30,6 +35,10 @@ pub struct Job {
     pub preset: String,
     pub quality: String,
     pub playlist: bool,
+    #[serde(default)]
+    pub organize: bool,
+    #[serde(default)]
+    pub options: MediaOptions,
     pub destination: PathBuf,
     pub status: Status,
     pub progress: f64,
@@ -42,6 +51,10 @@ pub struct Request {
     pub preset: String,
     pub quality: String,
     pub playlist: bool,
+    #[serde(default)]
+    pub organize: bool,
+    #[serde(default)]
+    pub options: MediaOptions,
     pub destination: PathBuf,
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -49,6 +62,8 @@ pub struct Settings {
     pub destination: PathBuf,
     pub yt_dlp: PathBuf,
     pub ffmpeg: PathBuf,
+    #[serde(default)]
+    pub prefs: Preferences,
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Snapshot {
@@ -78,6 +93,123 @@ pub fn validate_url(raw: &str) -> Result<String> {
         return Err("Only HTTP(S) links without embedded credentials are allowed.".into());
     }
     Ok(parsed.into())
+}
+#[derive(Debug, Serialize)]
+pub struct Preview {
+    pub title: String,
+    pub duration: Option<f64>,
+    pub channel: String,
+    pub qualities: Vec<u64>,
+    pub playlist: bool,
+    pub count: Option<u64>,
+}
+pub fn is_playlist(raw: &str) -> bool {
+    let Ok(u) = url::Url::parse(raw) else {
+        return false;
+    };
+    u.query_pairs()
+        .any(|(key, val)| key == "list" && !val.is_empty())
+        || ["/playlist", "/sets/", "/albums/", "/album/"]
+            .iter()
+            .any(|p| u.path().to_lowercase().contains(p))
+}
+pub fn preview(raw: &str, tool: &Path) -> Result<Preview> {
+    use std::io::{Read, Seek, SeekFrom};
+    let url = validate_url(raw.trim())?;
+    if !tool.is_absolute() || !tool.is_file() {
+        return Err("Media engine is not configured.".into());
+    }
+    let mut output = tempfile::tempfile().map_err(err)?;
+    let mut c = command(tool);
+    c.args([
+        "--ignore-config",
+        "--no-plugin-dirs",
+        "--no-warnings",
+        "--skip-download",
+        "--dump-single-json",
+        "--flat-playlist",
+        "--playlist-items",
+        "1",
+        "--socket-timeout",
+        "8",
+        "--retries",
+        "0",
+        "--extractor-retries",
+        "0",
+        "--js-runtimes",
+        "node",
+    ]);
+    if is_playlist(&url) {
+        c.arg("--yes-playlist");
+    } else {
+        c.arg("--no-playlist");
+    }
+    c.arg("--")
+        .arg(&url)
+        .stdout(Stdio::from(output.try_clone().map_err(err)?))
+        .stderr(Stdio::null());
+    let mut child = c.spawn().map_err(err)?;
+    let started = Instant::now();
+    loop {
+        if started.elapsed() > Duration::from_secs(22)
+            || output.metadata().map_err(err)?.len() > 8_000_000
+        {
+            terminate(&mut child);
+            return Err("Preview timed out or exceeded its size limit.".into());
+        }
+        match child.try_wait() {
+            Ok(Some(s)) if s.success() => break,
+            Ok(Some(_)) => return Err("Preview unavailable.".into()),
+            Ok(None) => {}
+            Err(e) => {
+                terminate(&mut child);
+                return Err(err(e));
+            }
+        }
+        thread::sleep(Duration::from_millis(100));
+    }
+    output.seek(SeekFrom::Start(0)).map_err(err)?;
+    let mut bytes = Vec::new();
+    output
+        .take(8_000_001)
+        .read_to_end(&mut bytes)
+        .map_err(err)?;
+    if bytes.len() > 8_000_000 {
+        return Err("Preview too large.".into());
+    }
+    let info: serde_json::Value = serde_json::from_slice(&bytes).map_err(err)?;
+    let mut qualities = info["formats"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter_map(|f| f["height"].as_u64())
+        .filter(|h| *h > 0)
+        .collect::<Vec<_>>();
+    qualities.sort_unstable();
+    qualities.dedup();
+    qualities.reverse();
+    Ok(Preview {
+        title: info["title"]
+            .as_str()
+            .unwrap_or("Untitled media")
+            .chars()
+            .take(180)
+            .collect(),
+        duration: info["duration"].as_f64(),
+        channel: info["channel"]
+            .as_str()
+            .or_else(|| info["uploader"].as_str())
+            .unwrap_or("")
+            .chars()
+            .take(100)
+            .collect(),
+        qualities,
+        playlist: matches!(info["_type"].as_str(), Some("playlist" | "multi_video"))
+            || is_playlist(&url),
+        count: info["playlist_count"]
+            .as_u64()
+            .or_else(|| info["n_entries"].as_u64()),
+    })
 }
 pub fn selector(preset: &str, quality: &str) -> Result<String> {
     if !matches!(
@@ -136,6 +268,7 @@ impl Engine {
         if state.settings.ffmpeg.as_os_str().is_empty() {
             state.settings.ffmpeg = defaults.ffmpeg;
         }
+        state.settings.prefs.normalize();
         for j in &mut state.jobs {
             if matches!(j.status, Status::Running | Status::Queued) {
                 j.status = Status::Failed;
@@ -154,7 +287,8 @@ impl Engine {
     pub fn snapshot(&self) -> Snapshot {
         self.inner.lock().unwrap().state.clone()
     }
-    pub fn settings(&self, settings: Settings) -> Result<()> {
+    pub fn settings(&self, mut settings: Settings) -> Result<()> {
+        settings.prefs.normalize();
         if !settings.destination.is_absolute() {
             return Err("Choose an absolute destination folder.".into());
         }
@@ -173,6 +307,7 @@ impl Engine {
     pub fn enqueue(&self, r: Request) -> Result<String> {
         let url = validate_url(r.url.trim())?;
         selector(&r.preset, &r.quality)?;
+        r.options.validate()?;
         if !r.destination.is_absolute() {
             return Err("Choose an absolute destination folder.".into());
         }
@@ -183,18 +318,35 @@ impl Engine {
                 && j.preset == r.preset
                 && j.quality == r.quality
                 && j.playlist == r.playlist
+                && j.organize == r.organize
+                && j.options == r.options
                 && j.destination == r.destination
         }) {
             return Err("Already in the queue.".into());
         }
         let id = Uuid::new_v4().simple().to_string();
         let mut next = x.state.clone();
+        next.settings.prefs.default_format = r.preset.clone();
+        next.settings.prefs.default_quality = r.quality.clone();
+        next.settings.prefs.default_preset = if r.options.archive {
+            "archive".into()
+        } else if r.preset == "editor" && r.quality == "1080" {
+            "editor".into()
+        } else if r.preset == "original" && r.quality == "best" {
+            "original".into()
+        } else if r.preset == "mp3" {
+            "mp3".into()
+        } else {
+            "custom".into()
+        };
         next.jobs.push(Job {
             id: id.clone(),
             url,
             preset: r.preset,
             quality: r.quality,
             playlist: r.playlist,
+            organize: r.organize,
+            options: r.options,
             destination: r.destination,
             status: Status::Queued,
             progress: 0.,
@@ -245,6 +397,8 @@ impl Engine {
             preset: j.preset,
             quality: j.quality,
             playlist: false,
+            organize: j.organize,
+            options: j.options,
             destination: j.destination,
         })
     }
@@ -485,7 +639,7 @@ fn download(
         "--fragment-retries",
         "2",
         "--concurrent-fragments",
-        "4",
+        &s.prefs.fragment_concurrency.to_string(),
     ]);
     if j.playlist {
         c.arg("--yes-playlist");
@@ -502,9 +656,30 @@ fn download(
         .args([
             "--no-simulate",
             "--print-to-file",
-            "after_move:%(filepath)j",
+            "after_move:%(.{filepath,title,artist,album_artist,channel,uploader,series,tv_show,movie,movie_title,vcodec,track,genre})j",
         ])
         .arg(staging.path().join("outputs.jsonl"));
+    if !j.options.subtitle_languages.is_empty() {
+        c.args([
+            "--write-subs",
+            "--sub-langs",
+            &j.options.subtitle_languages.join(","),
+            "--sub-format",
+            "best",
+            "--convert-subs",
+            &j.options.subtitle_format,
+        ]);
+        if j.options.subtitle_auto {
+            c.arg("--write-auto-subs");
+        }
+    }
+    if j.options.archive {
+        c.args([
+            "--write-info-json",
+            "--write-description",
+            "--clean-info-json",
+        ]);
+    }
     match j.preset.as_str() {
         "editor" => {
             c.args(["--merge-output-format", "mp4", "--recode-video", "mp4"]);
@@ -592,7 +767,12 @@ fn download(
         let manifest = fs::read_to_string(staging.path().join("outputs.jsonl")).map_err(err)?;
         let mut ready_files = vec![];
         for line in manifest.lines() {
-            let path: PathBuf = serde_json::from_str(line).map_err(err)?;
+            let metadata: serde_json::Value = serde_json::from_str(line).map_err(err)?;
+            let path = PathBuf::from(
+                metadata["filepath"]
+                    .as_str()
+                    .ok_or("Missing media output path")?,
+            );
             let path = path.canonicalize().map_err(err)?;
             if !path.starts_with(&root)
                 || !path.is_file()
@@ -606,19 +786,88 @@ fn download(
             if cancel.load(Ordering::SeqCst) {
                 return Err("Cancelled".into());
             }
+            let sidecars = media_options::subtitle_files(&path, &j.options)?;
+            let archive_files = if j.options.archive {
+                [
+                    path.with_extension("info.json"),
+                    path.with_extension("description"),
+                ]
+                .into_iter()
+                .filter(|p| p.is_file())
+                .collect::<Vec<_>>()
+            } else {
+                vec![]
+            };
             let ready = if j.preset == "editor" {
                 progress(0.98, "Verifying editor compatibility".into());
                 ensure_editor(&path, &s.ffmpeg, cancel)?
             } else {
-                path
+                path.clone()
             };
-            ready_files.push(ready);
+            let ready = if j.options.clipping() {
+                progress(0.98, "Trimming clip".into());
+                media_options::clip(&ready, &s.ffmpeg, &j.options, cancel)?
+            } else {
+                ready
+            };
+            let destination = if j.organize {
+                let (category, _) = organizer::category(&metadata, &j.preset);
+                j.destination.join(organizer::folder(category))
+            } else {
+                j.destination.clone()
+            };
+            ready_files.push((ready, destination, path, sidecars, archive_files));
         }
-        for ready in ready_files {
+        for (ready, destination, source, sidecars, archive_files) in ready_files {
             if cancel.load(Ordering::SeqCst) {
                 return Err("Cancelled".into());
             }
-            files.push(publish(&ready, &j.destination)?);
+            let target = if fs::create_dir_all(&destination).is_ok() {
+                &destination
+            } else {
+                &j.destination
+            };
+            let published = publish(&ready, target)?;
+            let stem = published
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .ok_or("Invalid published media name")?;
+            let source_stem = source
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .ok_or("Invalid source name")?;
+            files.push(published.clone());
+            for sidecar in sidecars.into_iter().chain(archive_files) {
+                let name = sidecar
+                    .file_name()
+                    .and_then(|s| s.to_str())
+                    .ok_or("Invalid sidecar name")?;
+                let suffix = name
+                    .strip_prefix(source_stem)
+                    .ok_or("Unexpected sidecar name")?;
+                let new_name = format!("{stem}{suffix}");
+                // Write a new sidecar in a job-owned temporary folder; never overwrite originals.
+                let tmp = tempfile::tempdir_in(staging.path()).map_err(err)?;
+                let dest = tmp.path().join(new_name);
+                if matches!(
+                    sidecar.extension().and_then(|s| s.to_str()),
+                    Some("srt" | "vtt")
+                ) {
+                    let text = fs::read_to_string(&sidecar).map_err(err)?;
+                    fs::write(
+                        &dest,
+                        media_options::trim_subtitle(
+                            &text,
+                            &j.options,
+                            sidecar.extension().and_then(|s| s.to_str()) == Some("srt"),
+                        ),
+                    )
+                    .map_err(err)?;
+                } else {
+                    fs::copy(&sidecar, &dest).map_err(err)?;
+                }
+                files.push(publish(&dest, target)?);
+            }
         }
         if files.is_empty() {
             return Err("No media file was produced.".into());
@@ -736,6 +985,7 @@ mod tests {
             destination: out.clone(),
             yt_dlp: ytdlp,
             ffmpeg,
+            prefs: Preferences::default(),
         };
         let job = Job {
             id: Uuid::new_v4().simple().to_string(),
@@ -743,16 +993,25 @@ mod tests {
             preset: "editor".into(),
             quality: "best".into(),
             playlist: false,
+            organize: true,
+            options: MediaOptions {
+                clip_start: Some(0.2),
+                clip_end: Some(0.8),
+                ..Default::default()
+            },
             destination: out,
             status: Status::Running,
             progress: 0.,
             message: String::new(),
             files: vec![],
         };
+        let metadata = preview(&job.url, &settings.yt_dlp);
         let result = download(&job, &settings, &AtomicBool::new(false), |_, _| {});
         stop.store(true, Ordering::SeqCst);
         server.join().unwrap();
+        assert!(!metadata.unwrap().title.is_empty());
         let files = result.unwrap();
+        assert_eq!(files[0].parent().unwrap().file_name().unwrap(), "Video");
         assert_eq!(files.len(), 1);
         assert!(files[0].is_file());
         assert!(source.is_file());
@@ -764,6 +1023,7 @@ mod tests {
             destination: d.path().into(),
             yt_dlp: PathBuf::new(),
             ffmpeg: PathBuf::new(),
+            prefs: Preferences::default(),
         };
         let p = d.path().join("state.json");
         let engine = Engine::open(p.clone(), settings.clone()).unwrap();

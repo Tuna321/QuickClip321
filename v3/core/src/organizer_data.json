@@ -1,0 +1,145 @@
+{
+  "artists": [
+    {
+      "name": "Ceza",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Sagopa Kajmer",
+      "aliases": [
+        "Sagopa"
+      ],
+      "ambiguous": false
+    },
+    {
+      "name": "Eminem",
+      "aliases": [
+        "Marshall Mathers"
+      ],
+      "ambiguous": false
+    },
+    {
+      "name": "Kendrick Lamar",
+      "aliases": [],
+      "ambiguous": false
+    },
+    {
+      "name": "Ezhel",
+      "aliases": [],
+      "ambiguous": false
+    },
+    {
+      "name": "Şehinşah",
+      "aliases": [
+        "Sehinsah"
+      ],
+      "ambiguous": false
+    },
+    {
+      "name": "Şanışer",
+      "aliases": [
+        "Saniser"
+      ],
+      "ambiguous": false
+    },
+    {
+      "name": "Norm Ender",
+      "aliases": [],
+      "ambiguous": false
+    },
+    {
+      "name": "Gazapizm",
+      "aliases": [],
+      "ambiguous": false
+    },
+    {
+      "name": "Ben Fero",
+      "aliases": [],
+      "ambiguous": false
+    },
+    {
+      "name": "Allame",
+      "aliases": [],
+      "ambiguous": false
+    },
+    {
+      "name": "Khontkar",
+      "aliases": [],
+      "ambiguous": false
+    },
+    {
+      "name": "Uzi",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Motive",
+      "aliases": [],
+      "ambiguous": true
+    }
+  ],
+  "movies": [
+    {
+      "name": "The Godfather",
+      "aliases": [
+        "Godfather"
+      ],
+      "ambiguous": false
+    },
+    {
+      "name": "Interstellar",
+      "aliases": [
+        "Yıldızlararası"
+      ],
+      "ambiguous": false
+    },
+    {
+      "name": "Fight Club",
+      "aliases": [
+        "Dövüş Kulübü"
+      ],
+      "ambiguous": false
+    },
+    {
+      "name": "The Dark Knight",
+      "aliases": [
+        "Kara Şövalye"
+      ],
+      "ambiguous": false
+    }
+  ],
+  "tv": [
+    {
+      "name": "Kurtlar Vadisi",
+      "aliases": [
+        "Kurtlar Vadisi Pusu"
+      ],
+      "ambiguous": false
+    },
+    {
+      "name": "Ezel",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Behzat Ç",
+      "aliases": [
+        "Behzat C"
+      ],
+      "ambiguous": false
+    },
+    {
+      "name": "Breaking Bad",
+      "aliases": [],
+      "ambiguous": false
+    },
+    {
+      "name": "The Sopranos",
+      "aliases": [
+        "Sopranos"
+      ],
+      "ambiguous": false
+    }
+  ]
+}

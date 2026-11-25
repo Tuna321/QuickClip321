@@ -1,0 +1,149 @@
+use serde::{Deserialize, Serialize};
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(default)]
+pub struct Preferences {
+    pub popup_mode: String,
+    pub popup_x: f64,
+    pub popup_y: f64,
+    pub startup_view: String,
+    pub theme: String,
+    pub accent: String,
+    pub clipboard_monitor: bool,
+    pub smart_organizer: bool,
+    pub default_preset: String,
+    pub default_format: String,
+    pub default_quality: String,
+    pub fragment_concurrency: u8,
+}
+impl Default for Preferences {
+    fn default() -> Self {
+        Self {
+            popup_mode: "Tray".into(),
+            popup_x: 0.5,
+            popup_y: 0.5,
+            startup_view: "quick".into(),
+            theme: "System".into(),
+            accent: "Purple".into(),
+            clipboard_monitor: true,
+            smart_organizer: true,
+            default_preset: "editor".into(),
+            default_format: "editor".into(),
+            default_quality: "1080".into(),
+            fragment_concurrency: 4,
+        }
+    }
+}
+impl Preferences {
+    pub fn normalize(&mut self) {
+        let d = Self::default();
+        if !matches!(self.popup_mode.as_str(), "Tray" | "Corner" | "Custom") {
+            self.popup_mode = d.popup_mode;
+        }
+        if !self.popup_x.is_finite() {
+            self.popup_x = 0.5;
+        }
+        if !self.popup_y.is_finite() {
+            self.popup_y = 0.5;
+        }
+        self.popup_x = self.popup_x.clamp(0., 1.);
+        self.popup_y = self.popup_y.clamp(0., 1.);
+        if !matches!(
+            self.startup_view.as_str(),
+            "quick" | "advanced" | "remember"
+        ) {
+            self.startup_view = d.startup_view;
+        }
+        if !matches!(self.theme.as_str(), "System" | "Light" | "Dark") {
+            self.theme = d.theme;
+        }
+        if !matches!(self.accent.as_str(), "Purple" | "Graphite" | "Ocean") {
+            self.accent = d.accent;
+        }
+        if !matches!(
+            self.default_preset.as_str(),
+            "editor" | "original" | "mp3" | "archive" | "custom"
+        ) {
+            self.default_preset = d.default_preset;
+        }
+        if !matches!(
+            self.default_format.as_str(),
+            "editor" | "original" | "mp3" | "m4a" | "wav"
+        ) {
+            self.default_format = d.default_format;
+        }
+        if !matches!(
+            self.default_quality.as_str(),
+            "best" | "2160" | "1440" | "1080" | "720" | "480" | "360"
+        ) {
+            self.default_quality = d.default_quality;
+        }
+        self.fragment_concurrency = self.fragment_concurrency.clamp(1, 8);
+    }
+}
+#[derive(Clone, Copy, Debug)]
+pub struct WorkArea {
+    pub left: i32,
+    pub top: i32,
+    pub width: i32,
+    pub height: i32,
+}
+pub fn popup_position(
+    area: WorkArea,
+    size: (i32, i32),
+    point: Option<(f64, f64)>,
+    prefs: &Preferences,
+    margin: i32,
+) -> (i32, i32) {
+    let (w, h) = size;
+    let room_x = (area.width - w).max(0);
+    let room_y = (area.height - h).max(0);
+    let max_x = area.left.saturating_add(room_x);
+    let max_y = area.top.saturating_add(room_y);
+    let right = area.left.saturating_add(area.width);
+    let bottom = area.top.saturating_add(area.height);
+    let (x, y) = match prefs.popup_mode.as_str() {
+        "Custom" => (
+            area.left + (room_x as f64 * prefs.popup_x).round() as i32,
+            area.top + (room_y as f64 * prefs.popup_y).round() as i32,
+        ),
+        "Corner" => (max_x - margin, max_y - margin),
+        _ => {
+            let (ax, ay) = point
+                .map(|(x, y)| (x as i32, y as i32))
+                .unwrap_or((right, bottom));
+            (
+                ax - w / 2,
+                if ay < area.top + area.height / 2 {
+                    ay + margin
+                } else {
+                    ay - h - margin
+                },
+            )
+        }
+    };
+    (x.clamp(area.left, max_x), y.clamp(area.top, max_y))
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn popup_placement() {
+        let a = WorkArea {
+            left: -1920,
+            top: 0,
+            width: 1920,
+            height: 1040,
+        };
+        let mut p = Preferences::default();
+        assert_eq!(
+            popup_position(a, (600, 395), Some((-30., 1060.)), &p, 8),
+            (-600, 645)
+        );
+        p.popup_mode = "Custom".into();
+        p.popup_x = 1.;
+        p.popup_y = 0.;
+        assert_eq!(popup_position(a, (600, 395), None, &p, 8), (-600, 0));
+        p.popup_mode = "Corner".into();
+        assert_eq!(popup_position(a, (600, 395), None, &p, 8), (-608, 637));
+    }
+}
