@@ -51,3 +51,65 @@ jobs:
           name: windows-test-report
           path: results.xml
           if-no-files-found: ignore
+
+  candidate:
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+    needs: test
+    runs-on: windows-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.20.0'
+      - name: Prepare isolated build
+        shell: pwsh
+        run: |
+          "QUICKCLIP321_DATA_DIR=$env:RUNNER_TEMP\quickclip321-build" >> $env:GITHUB_ENV
+          New-Item -ItemType Directory -Force bin | Out-Null
+          Copy-Item (Get-Command node.exe).Source bin\node.exe
+          if (-not (Get-Command ffmpeg -ErrorAction SilentlyContinue)) {
+            choco install ffmpeg --yes --no-progress
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+          ffprobe -version
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Install locked dependencies
+        run: python -m pip install -r requirements-test-lock.txt
+      - name: Build unsigned candidate
+        shell: pwsh
+        run: .\build_portable.ps1 -PythonExe (Get-Command python.exe).Source -PublicRelease
+      - name: Offline packaged smoke and checksum
+        shell: pwsh
+        run: |
+          $files = @(Get-ChildItem dist\QuickClip321-*-win-x64.exe)
+          if ($files.Count -ne 1) { throw "Expected exactly one Windows x64 EXE" }
+          $exe = $files[0]
+          $env:QUICKCLIP321_DATA_DIR = Join-Path $env:RUNNER_TEMP "quickclip321-smoke"
+          $report = Join-Path $env:RUNNER_TEMP "packaged-smoke.json"
+          $process = Start-Process -FilePath $exe.FullName -ArgumentList @("--smoke-test", ('"' + $report + '"')) -PassThru -Wait
+          if ($process.ExitCode -ne 0 -or -not (Test-Path $report)) { throw "Packaged smoke failed" }
+          $result = Get-Content $report -Raw | ConvertFrom-Json
+          if ($result.error) { throw $result.error }
+          Copy-Item $report dist\packaged-smoke.json
+          $hash = (Get-FileHash $exe.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  $($exe.Name)" | Set-Content -Encoding ascii dist\SHA256SUMS.txt
+      - name: Save candidate artifact (not a public release)
+        uses: actions/upload-artifact@v4
+        with:
+          name: QuickClip321-unsigned-test-candidate
+          path: |
+            dist/*.exe
+            dist/SHA256SUMS.txt
+            dist/packaged-smoke.json
+          if-no-files-found: error
+      - name: Save smoke report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: packaged-smoke-failure
+          path: ${{ runner.temp }}/packaged-smoke.json
+          if-no-files-found: ignore
