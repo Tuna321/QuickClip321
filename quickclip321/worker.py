@@ -5,6 +5,7 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 import time
 from collections import deque
 from pathlib import Path
@@ -210,12 +211,14 @@ def _human_eta(seconds: int | float | None) -> str:
 
 
 def _find_binary(name: str) -> str | None:
-    app_dir = Path(getattr(__import__("sys"), "_MEIPASS", Path(__file__).resolve().parent))
+    app_dir = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
     candidates = [
         app_dir / "bin" / f"{name}.exe",
         app_dir / f"{name}.exe",
         Path(__file__).resolve().parents[1] / "bin" / f"{name}.exe",
     ]
+    if getattr(sys, "frozen", False):
+        candidates.append(Path(sys.executable).parent / "bin" / f"{name}.exe")
     for candidate in candidates:
         if candidate.is_file():
             return str(candidate)
@@ -493,9 +496,9 @@ def execute_job(payload: dict[str, Any], event_queue: Queue, cancel_event: Any) 
             )
 
         if not ffmpeg:
-            raise RuntimeError("FFmpeg missing: conversion and adaptive stream merging require FFmpeg")
+            raise RuntimeError("FFmpeg missing: install FFmpeg or put ffmpeg.exe and ffprobe.exe in the bin folder beside QuickClip321.")
         if not ffprobe:
-            raise RuntimeError("ffprobe missing: cannot verify downloaded media")
+            raise RuntimeError("ffprobe missing: install FFmpeg or put ffmpeg.exe and ffprobe.exe in the bin folder beside QuickClip321.")
         sink({"type": "log", "message": f"yt-dlp={__version__}; ffmpeg={ffmpeg}; profile={payload.get('profile')}"})
         collected = []
 
