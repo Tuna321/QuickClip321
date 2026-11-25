@@ -1,0 +1,12 @@
+{
+  "identifier": "local-ui",
+  "description": "Local desktop UI only",
+  "windows": [
+    "main"
+  ],
+  "permissions": [
+    "core:default",
+    "dialog:allow-open",
+    "clipboard-manager:allow-read-text"
+  ]
+}

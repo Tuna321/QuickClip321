@@ -1,0 +1,11 @@
+[package]
+name = "quickclip-core"
+version = "3.0.0-alpha.1"
+edition = "2021"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+url = "2"
+uuid = { version = "1", features = ["v4"] }
+tempfile = "3"
