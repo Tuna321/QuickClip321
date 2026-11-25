@@ -1,0 +1,241 @@
+[
+  {
+    "name": "customtkinter",
+    "version": "5.2.2",
+    "license_expression": null,
+    "license": "Creative Commons Zero v1.0 Universal",
+    "project_urls": null,
+    "files": [
+      "customtkinter\\customtkinter-5.2.2.dist-info\\LICENSE"
+    ]
+  },
+  {
+    "name": "Pillow",
+    "version": "12.3.0",
+    "license_expression": "MIT-CMU",
+    "license": null,
+    "project_urls": [
+      "Release notes, https://pillow.readthedocs.io/en/stable/releasenotes/index.html",
+      "Changelog, https://github.com/python-pillow/Pillow/releases",
+      "Documentation, https://pillow.readthedocs.io",
+      "Funding, https://tidelift.com/subscription/pkg/pypi-pillow?utm_source=pypi-pillow&utm_medium=pypi",
+      "Homepage, https://python-pillow.github.io",
+      "Mastodon, https://fosstodon.org/@pillow",
+      "Source, https://github.com/python-pillow/Pillow"
+    ],
+    "files": [
+      "Pillow\\pillow-12.3.0.dist-info\\licenses\\LICENSE"
+    ]
+  },
+  {
+    "name": "pystray",
+    "version": "0.19.5",
+    "license_expression": null,
+    "license": "LGPLv3",
+    "project_urls": null,
+    "files": [
+      "pystray\\pystray-0.19.5.dist-info\\COPYING",
+      "pystray\\pystray-0.19.5.dist-info\\COPYING.LGPL"
+    ]
+  },
+  {
+    "name": "plyer",
+    "version": "2.1.0",
+    "license_expression": null,
+    "license": "MIT",
+    "project_urls": null,
+    "files": [
+      "plyer\\plyer-2.1.0.dist-info\\LICENSE"
+    ]
+  },
+  {
+    "name": "yt-dlp",
+    "version": "2026.10.26",
+    "license_expression": "Unlicense",
+    "license": null,
+    "project_urls": [
+      "Documentation, https://github.com/yt-dlp/yt-dlp#readme",
+      "Repository, https://github.com/yt-dlp/yt-dlp",
+      "Tracker, https://github.com/yt-dlp/yt-dlp/issues",
+      "Funding, https://github.com/yt-dlp/yt-dlp/blob/master/Maintainers.md#maintainers"
+    ],
+    "files": [
+      "yt-dlp\\yt_dlp-2026.10.26.dist-info\\licenses\\LICENSE"
+    ]
+  },
+  {
+    "name": "yt-dlp-ejs",
+    "version": "0.8.0",
+    "license_expression": "Unlicense AND MIT AND ISC",
+    "license": null,
+    "project_urls": [
+      "Documentation, https://github.com/yt-dlp/ejs#readme",
+      "Issues, https://github.com/yt-dlp/ejs/issues",
+      "Source, https://github.com/yt-dlp/ejs"
+    ],
+    "files": [
+      "yt-dlp-ejs\\yt_dlp_ejs-0.8.0.dist-info\\licenses\\LICENSE"
+    ]
+  },
+  {
+    "name": "darkdetect",
+    "version": "0.8.0",
+    "license_expression": null,
+    "license": "BSD-3-Clause",
+    "project_urls": [
+      "homepage, http://github.com/albertosottile/darkdetect",
+      "download, http://github.com/albertosottile/darkdetect/releases"
+    ],
+    "files": [
+      "darkdetect\\darkdetect-0.8.0.dist-info\\LICENSE"
+    ]
+  },
+  {
+    "name": "packaging",
+    "version": "26.3",
+    "license_expression": "Apache-2.0 OR BSD-2-Clause",
+    "license": null,
+    "project_urls": [
+      "Documentation, https://packaging.pypa.io/",
+      "Source, https://github.com/pypa/packaging"
+    ],
+    "files": [
+      "packaging\\packaging-26.3.dist-info\\licenses\\LICENSE",
+      "packaging\\packaging-26.3.dist-info\\licenses\\LICENSE.APACHE",
+      "packaging\\packaging-26.3.dist-info\\licenses\\LICENSE.BSD"
+    ]
+  },
+  {
+    "name": "six",
+    "version": "1.17.0",
+    "license_expression": null,
+    "license": "MIT",
+    "project_urls": null,
+    "files": [
+      "six\\six-1.17.0.dist-info\\LICENSE"
+    ]
+  },
+  {
+    "name": "brotli",
+    "version": "1.2.1",
+    "license_expression": null,
+    "license": "MIT",
+    "project_urls": null,
+    "files": [
+      "brotli\\brotli-1.2.1.dist-info\\licenses\\LICENSE"
+    ]
+  },
+  {
+    "name": "certifi",
+    "version": "2026.10.23",
+    "license_expression": null,
+    "license": "MPL-2.0",
+    "project_urls": [
+      "Source, https://github.com/certifi/python-certifi"
+    ],
+    "files": [
+      "certifi\\certifi-2026.10.23.dist-info\\licenses\\LICENSE"
+    ]
+  },
+  {
+    "name": "mutagen",
+    "version": "1.48.1",
+    "license_expression": "GPL-2.0-or-later",
+    "license": null,
+    "project_urls": [
+      "Homepage, https://mutagen.readthedocs.io",
+      "Repository, https://github.com/quodlibet/mutagen"
+    ],
+    "files": [
+      "mutagen\\mutagen-1.48.1.dist-info\\licenses\\COPYING"
+    ]
+  },
+  {
+    "name": "pycryptodomex",
+    "version": "3.24.1",
+    "license_expression": null,
+    "license": "BSD, Public Domain",
+    "project_urls": [
+      "Source, https://github.com/Legrandin/pycryptodome/",
+      "Changelog, https://www.pycryptodome.org/src/changelog"
+    ],
+    "files": [
+      "pycryptodomex\\pycryptodomex-3.24.1.dist-info\\LICENSE.rst"
+    ]
+  },
+  {
+    "name": "requests",
+    "version": "2.34.2",
+    "license_expression": null,
+    "license": "Apache-2.0",
+    "project_urls": [
+      "Documentation, https://requests.readthedocs.io",
+      "Source, https://github.com/psf/requests"
+    ],
+    "files": [
+      "requests\\requests-2.34.2.dist-info\\licenses\\LICENSE",
+      "requests\\requests-2.34.2.dist-info\\licenses\\NOTICE"
+    ]
+  },
+  {
+    "name": "urllib3",
+    "version": "2.8.0",
+    "license_expression": "MIT",
+    "license": null,
+    "project_urls": [
+      "Changelog, https://github.com/urllib3/urllib3/blob/main/CHANGES.rst",
+      "Documentation, https://urllib3.readthedocs.io",
+      "Code, https://github.com/urllib3/urllib3",
+      "Issue tracker, https://github.com/urllib3/urllib3/issues",
+      "Security policy, https://urllib3.readthedocs.io/en/latest/security.html"
+    ],
+    "files": [
+      "urllib3\\urllib3-2.8.0.dist-info\\licenses\\LICENSE.txt"
+    ]
+  },
+  {
+    "name": "websockets",
+    "version": "17.4",
+    "license_expression": "BSD-3-Clause",
+    "license": null,
+    "project_urls": [
+      "Homepage, https://github.com/python-websockets/websockets",
+      "Changelog, https://websockets.readthedocs.io/en/stable/project/changelog.html",
+      "Documentation, https://websockets.readthedocs.io/",
+      "Funding, https://tidelift.com/subscription/pkg/pypi-websockets?utm_source=pypi-websockets&utm_medium=referral&utm_campaign=readme",
+      "Tracker, https://github.com/python-websockets/websockets/issues"
+    ],
+    "files": [
+      "websockets\\websockets-17.4.dist-info\\licenses\\LICENSE"
+    ]
+  },
+  {
+    "name": "charset-normalizer",
+    "version": "3.5.2",
+    "license_expression": null,
+    "license": "MIT",
+    "project_urls": [
+      "Changelog, https://github.com/jawah/charset_normalizer/blob/master/CHANGELOG.md",
+      "Documentation, https://charset-normalizer.readthedocs.io/",
+      "Code, https://github.com/jawah/charset_normalizer",
+      "Issue tracker, https://github.com/jawah/charset_normalizer/issues"
+    ],
+    "files": [
+      "charset-normalizer\\charset_normalizer-3.5.2.dist-info\\licenses\\LICENSE"
+    ]
+  },
+  {
+    "name": "idna",
+    "version": "3.20",
+    "license_expression": "BSD-3-Clause",
+    "license": null,
+    "project_urls": [
+      "Changelog, https://github.com/kjd/idna/blob/master/HISTORY.md",
+      "Issue tracker, https://github.com/kjd/idna/issues",
+      "Source, https://github.com/kjd/idna"
+    ],
+    "files": [
+      "idna\\idna-3.20.dist-info\\licenses\\LICENSE.md"
+    ]
+  }
+]

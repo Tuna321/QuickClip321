@@ -1,0 +1,15 @@
+Bundled external tools for QuickClip321 2.1.0 release candidate
+
+FFmpeg and ffprobe: 8.1.1 essentials build by gyan.dev (static GPLv3 configuration).
+Build origin: https://www.gyan.dev/ffmpeg/builds/
+FFmpeg source tag: https://github.com/FFmpeg/FFmpeg/tree/n8.1.1
+Source/build resources: https://www.gyan.dev/ffmpeg/builds/#sources
+Complete FFmpeg license text and applicable licensing notes accompany this file.
+
+Node.js: v24.20.0 Windows x64.
+Source release: https://nodejs.org/dist/v24.20.0/node-v24.20.0.tar.gz
+Source repository: https://github.com/nodejs/node/tree/v24.20.0
+NODE-LICENSE.txt includes Node and its third-party notices.
+
+Tools run as separate subprocesses. No source code was copied from other downloader applications.
+Python dependency notices are in the python subdirectory. Tool versions and hashes are in the delivery report.
