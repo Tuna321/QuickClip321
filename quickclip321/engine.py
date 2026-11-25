@@ -4,6 +4,7 @@ import logging
 import multiprocessing as mp
 import os
 import queue
+import re
 import shutil
 import subprocess
 import threading
@@ -92,9 +93,12 @@ class DownloadEngine:
         with self._lock:
             key = duplicate_key(job)
             for existing in self.store.list():
-                if existing.status in ACTIVE_STATUSES | {JobStatus.QUEUED, JobStatus.PAUSED} and key == duplicate_key(
-                    existing
-                ):
+                if existing.status not in ACTIVE_STATUSES | {JobStatus.QUEUED, JobStatus.PAUSED}:
+                    continue
+                # History deliberately omits session authorization. Compare with
+                # the live authorization instead of treating every private job as new.
+                existing.auth_browser, existing.auth_cookie_file = self._auth_by_id.get(existing.id, ("", ""))
+                if key == duplicate_key(existing):
                     return False
             if self.store.get(job.id):
                 return False
@@ -159,9 +163,13 @@ class DownloadEngine:
 
     def _cleanup_partial(self, job):
         if job.partial_policy == "delete":
-            target = Path(job.output_dir) / ".quickclip321" / job.id / "work"
-            # Only this job's work folder, never sources or published media.
-            if target.parent.name == job.id and len(job.id) == 32 and target.exists():
+            if not re.fullmatch(r"[0-9a-f]{32}", job.id) or not job.output_dir:
+                return
+            base = Path(job.output_dir).expanduser().resolve()
+            target = base / ".quickclip321" / job.id / "work"
+            # Reject redirected staging directories, including symlinks and
+            # junctions, before deleting anything.
+            if target.exists() and target.resolve() == target and target.is_dir():
                 shutil.rmtree(target)
 
     def _run(self):
@@ -191,6 +199,8 @@ class DownloadEngine:
                     current = self.store.get(job_id)
                     if current and current.status == JobStatus.QUEUED:
                         self._pending.put(job_id)
+                    elif current and current.status in {JobStatus.COMPLETED, JobStatus.CANCELLED}:
+                        self._auth_by_id.pop(job_id, None)
                 self._pending.task_done()
 
     def _execute(self, job):
