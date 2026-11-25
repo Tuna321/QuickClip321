@@ -284,6 +284,15 @@ impl Engine {
             file,
         })
     }
+    pub fn clipboard_enabled(&self) -> bool {
+        self.inner
+            .lock()
+            .unwrap()
+            .state
+            .settings
+            .prefs
+            .clipboard_monitor
+    }
     pub fn snapshot(&self) -> Snapshot {
         self.inner.lock().unwrap().state.clone()
     }
@@ -358,6 +367,35 @@ impl Engine {
         drop(x);
         self.kick();
         Ok(id)
+    }
+    pub fn bulk_action(&self, action: &str) -> Result<()> {
+        if !matches!(action, "cancel_all" | "clear_pending" | "clear_completed") {
+            return Err("Unknown queue action.".into());
+        }
+        let mut x = self.inner.lock().unwrap();
+        let mut next = x.state.clone();
+        match action {
+            "cancel_all" | "clear_pending" => {
+                for j in &mut next.jobs {
+                    if j.status == Status::Queued {
+                        j.status = Status::Cancelled;
+                        j.message = "Cancelled".into();
+                    }
+                }
+            }
+            "clear_completed" => {
+                next.jobs.retain(|j| j.status != Status::Completed);
+            }
+            _ => unreachable!(),
+        }
+        persist(&self.file, &next)?;
+        x.state = next;
+        if action == "cancel_all" {
+            if let Some((_, flag)) = &x.active {
+                flag.store(true, Ordering::SeqCst);
+            }
+        }
+        Ok(())
     }
     pub fn cancel(&self, id: &str) -> Result<()> {
         let mut x = self.inner.lock().unwrap();
@@ -1015,6 +1053,53 @@ mod tests {
         assert_eq!(files.len(), 1);
         assert!(files[0].is_file());
         assert!(source.is_file());
+    }
+    #[test]
+    fn bulk_cancel_preserves_completed_jobs() {
+        let d = tempfile::tempdir().unwrap();
+        let engine = Engine::open(
+            d.path().join("state.json"),
+            Settings {
+                destination: d.path().into(),
+                yt_dlp: PathBuf::new(),
+                ffmpeg: PathBuf::new(),
+                prefs: Preferences::default(),
+            },
+        )
+        .unwrap();
+        let active = Arc::new(AtomicBool::new(false));
+        {
+            let mut x = engine.inner.lock().unwrap();
+            x.active = Some(("active".into(), active.clone()));
+            for (id, status) in [
+                ("active", Status::Running),
+                ("pending", Status::Queued),
+                ("done", Status::Completed),
+            ] {
+                x.state.jobs.push(Job {
+                    id: id.into(),
+                    url: "https://example.com/video".into(),
+                    preset: "editor".into(),
+                    quality: "1080".into(),
+                    playlist: false,
+                    organize: false,
+                    options: MediaOptions::default(),
+                    destination: d.path().into(),
+                    status,
+                    progress: 0.,
+                    message: String::new(),
+                    files: vec![],
+                });
+            }
+        }
+        engine.bulk_action("clear_pending").unwrap();
+        assert!(!active.load(Ordering::SeqCst));
+        assert_eq!(engine.snapshot().jobs[1].status, Status::Cancelled);
+        assert_eq!(engine.snapshot().jobs[2].status, Status::Completed);
+        engine.bulk_action("cancel_all").unwrap();
+        assert!(active.load(Ordering::SeqCst));
+        engine.bulk_action("clear_completed").unwrap();
+        assert_eq!(engine.snapshot().jobs.len(), 2);
     }
     #[test]
     fn state_roundtrip() {

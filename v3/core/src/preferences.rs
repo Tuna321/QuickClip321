@@ -53,10 +53,16 @@ impl Preferences {
         ) {
             self.startup_view = d.startup_view;
         }
-        if !matches!(self.theme.as_str(), "System" | "Light" | "Dark") {
+        if !matches!(
+            self.theme.as_str(),
+            "System" | "Light" | "Dark" | "Midnight" | "AMOLED" | "Forest" | "Sand"
+        ) {
             self.theme = d.theme;
         }
-        if !matches!(self.accent.as_str(), "Purple" | "Graphite" | "Ocean") {
+        if !matches!(
+            self.accent.as_str(),
+            "Purple" | "Graphite" | "Ocean" | "Emerald" | "Rose" | "Amber"
+        ) {
             self.accent = d.accent;
         }
         if !matches!(
@@ -126,6 +132,25 @@ pub fn popup_position(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn theme_preferences_survive_normalization_and_serialization() {
+        for theme in [
+            "System", "Dark", "Light", "Midnight", "AMOLED", "Forest", "Sand",
+        ] {
+            for accent in ["Purple", "Graphite", "Ocean", "Emerald", "Rose", "Amber"] {
+                let mut p = Preferences {
+                    theme: theme.into(),
+                    accent: accent.into(),
+                    ..Default::default()
+                };
+                p.normalize();
+                assert_eq!(p.theme, theme);
+                assert_eq!(p.accent, accent);
+                let serialized = serde_json::to_string(&p).unwrap();
+                assert_eq!(serde_json::from_str::<Preferences>(&serialized).unwrap(), p);
+            }
+        }
+    }
     #[test]
     fn popup_placement() {
         let a = WorkArea {

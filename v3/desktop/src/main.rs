@@ -1,6 +1,147 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 use quickclip_core::{Engine, Request, Settings, Snapshot};
 use std::path::PathBuf;
+use std::sync::Mutex;
+use tauri_plugin_clipboard_manager::ClipboardExt;
+#[derive(Default)]
+struct ClipboardInbox(Mutex<Option<String>>);
+#[tauri::command]
+fn smoke_active() -> bool {
+    std::env::var_os("QC_V3_SMOKE_DIR").is_some()
+}
+#[tauri::command]
+fn take_clipboard_link(
+    engine: State<'_, Engine>,
+    inbox: State<'_, ClipboardInbox>,
+) -> Option<String> {
+    if !engine.clipboard_enabled() {
+        inbox.0.lock().ok()?.take();
+        return None;
+    }
+    inbox.0.lock().ok()?.take()
+}
+#[cfg(windows)]
+fn clipboard_sequence() -> u32 {
+    #[link(name = "user32")]
+    extern "system" {
+        fn GetClipboardSequenceNumber() -> u32;
+    }
+    unsafe { GetClipboardSequenceNumber() }
+}
+#[cfg(windows)]
+fn watch_clipboard(app: tauri::AppHandle) {
+    std::thread::spawn(move || {
+        let mut last = None;
+        loop {
+            if !app.state::<Engine>().clipboard_enabled() {
+                if let Ok(mut pending) = app.state::<ClipboardInbox>().0.lock() {
+                    *pending = None;
+                }
+                last = None;
+            } else {
+                let seq = clipboard_sequence();
+                if last != Some(seq) {
+                    if let Ok(text) = app.clipboard().read_text() {
+                        last = Some(seq);
+                        let link = quickclip_core::validate_url(text.trim()).ok();
+                        if let Some(link) = link {
+                            if let Ok(mut pending) = app.state::<ClipboardInbox>().0.lock() {
+                                *pending = Some(link);
+                            }
+                        }
+                    }
+                }
+            }
+            std::thread::sleep(std::time::Duration::from_millis(350));
+        }
+    });
+}
+#[cfg(not(windows))]
+fn watch_clipboard(_: tauri::AppHandle) {}
+#[cfg(windows)]
+fn round_window(window: &tauri::WebviewWindow) -> bool {
+    #[link(name = "gdi32")]
+    extern "system" {
+        fn CreateRoundRectRgn(l: i32, t: i32, r: i32, b: i32, w: i32, h: i32) -> isize;
+        fn DeleteObject(h: isize) -> i32;
+    }
+    #[link(name = "user32")]
+    extern "system" {
+        fn SetWindowRgn(hwnd: isize, rgn: isize, redraw: i32) -> i32;
+    }
+    let (Ok(hwnd), Ok(size)) = (window.hwnd(), window.outer_size()) else {
+        return false;
+    };
+    let diameter = (24.0 * window.scale_factor().unwrap_or(1.)).round() as i32;
+    // SetWindowRgn can emit window-position events. Avoid reapplying an unchanged region.
+    static LAST: Mutex<Option<(isize, u32, u32, i32)>> = Mutex::new(None);
+    let key = (hwnd.0 as isize, size.width, size.height, diameter);
+    if let Ok(mut last) = LAST.lock() {
+        if *last == Some(key) {
+            return true;
+        }
+        *last = Some(key);
+    }
+    unsafe {
+        let region = CreateRoundRectRgn(
+            0,
+            0,
+            size.width as i32 + 1,
+            size.height as i32 + 1,
+            diameter,
+            diameter,
+        );
+        if region == 0 {
+            if let Ok(mut last) = LAST.lock() {
+                *last = None;
+            }
+            return false;
+        }
+        if SetWindowRgn(hwnd.0 as isize, region, 1) == 0 {
+            DeleteObject(region);
+            if let Ok(mut last) = LAST.lock() {
+                *last = None;
+            }
+            return false;
+        }
+    }
+    true
+}
+#[cfg(not(windows))]
+fn round_window(_: &tauri::WebviewWindow) -> bool {
+    true
+}
+#[cfg(windows)]
+fn has_round_region(window: &tauri::WebviewWindow) -> bool {
+    #[link(name = "gdi32")]
+    extern "system" {
+        fn CreateRectRgn(l: i32, t: i32, r: i32, b: i32) -> isize;
+        fn DeleteObject(h: isize) -> i32;
+        fn PtInRegion(h: isize, x: i32, y: i32) -> i32;
+    }
+    #[link(name = "user32")]
+    extern "system" {
+        fn GetWindowRgn(hwnd: isize, rgn: isize) -> i32;
+    }
+    let (Ok(hwnd), Ok(size)) = (window.hwnd(), window.outer_size()) else {
+        return false;
+    };
+    unsafe {
+        let r = CreateRectRgn(0, 0, 0, 0);
+        if r == 0 {
+            return false;
+        }
+        let ok = GetWindowRgn(hwnd.0 as isize, r) > 0
+            && PtInRegion(r, 0, 0) == 0
+            && PtInRegion(r, size.width as i32 / 2, size.height as i32 / 2) != 0;
+        DeleteObject(r);
+        ok
+    }
+}
+#[cfg(not(windows))]
+fn has_round_region(_: &tauri::WebviewWindow) -> bool {
+    true
+}
 use tauri::{
     menu::{Menu, MenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
@@ -36,23 +177,7 @@ fn validate_links(urls: Vec<String>) -> Result<Vec<String>, String> {
 }
 #[tauri::command]
 fn queue_action(engine: State<'_, Engine>, action: String) -> Result<(), String> {
-    use quickclip_core::Status::*;
-    for j in engine.snapshot().jobs {
-        match action.as_str() {
-            "cancel_all" if matches!(j.status, Queued | Running) => {
-                let _ = engine.cancel(&j.id);
-            }
-            "clear_pending" if j.status == Queued => {
-                let _ = engine.cancel(&j.id);
-            }
-            "clear_completed" if j.status == Completed => {
-                engine.remove(&j.id)?;
-            }
-            "cancel_all" | "clear_pending" | "clear_completed" => {}
-            _ => return Err("Unknown queue action.".into()),
-        }
-    }
-    Ok(())
+    engine.bulk_action(&action)
 }
 #[tauri::command]
 fn snapshot(engine: State<'_, Engine>) -> Snapshot {
@@ -104,7 +229,12 @@ fn open_folder(engine: State<'_, Engine>, id: String) -> Result<(), String> {
     Ok(())
 }
 #[tauri::command]
-fn ui_ready(app: tauri::AppHandle, passed: bool) -> Result<(), String> {
+fn ui_ready(
+    app: tauri::AppHandle,
+    passed: bool,
+    theme_passed: bool,
+    clipboard_passed: bool,
+) -> Result<(), String> {
     if let Some(dir) = std::env::var_os("QC_V3_SMOKE_DIR") {
         let root = PathBuf::from(dir);
         let w = app.get_webview_window("main").ok_or("Window missing")?;
@@ -142,7 +272,10 @@ fn ui_ready(app: tauri::AppHandle, passed: bool) -> Result<(), String> {
         let hide_works = !w.is_visible().unwrap_or(true);
         show_popup(&w, None);
         let show_works = w.is_visible().unwrap_or(false);
+        let rounded = has_round_region(&w);
         let ok = passed
+            && theme_passed
+            && clipboard_passed
             && started_hidden
             && frameless
             && topmost
@@ -150,8 +283,9 @@ fn ui_ready(app: tauri::AppHandle, passed: bool) -> Result<(), String> {
             && no_taskbar
             && within_workarea
             && hide_works
-            && show_works;
-        let report=format!("{{\"ui_ready\":{passed},\"snapshot\":{passed},\"started_hidden\":{started_hidden},\"frameless\":{frameless},\"topmost\":{topmost},\"tray\":{tray},\"no_taskbar\":{no_taskbar},\"within_workarea\":{within_workarea},\"hide_works\":{hide_works},\"show_works\":{show_works}}}");
+            && show_works
+            && rounded;
+        let report=format!("{{\"ui_ready\":{passed},\"snapshot\":{passed},\"started_hidden\":{started_hidden},\"frameless\":{frameless},\"topmost\":{topmost},\"tray\":{tray},\"no_taskbar\":{no_taskbar},\"within_workarea\":{within_workarea},\"hide_works\":{hide_works},\"show_works\":{show_works},\"rounded\":{rounded},\"theme_matrix\":{theme_passed},\"clipboard_flow\":{clipboard_passed}}}");
         std::fs::write(root.join("ui-smoke.json"), report).map_err(|e| e.to_string())?;
         app.exit(if ok { 0 } else { 1 });
     }
@@ -237,16 +371,18 @@ fn show_popup(window: &tauri::WebviewWindow, point: Option<(f64, f64)>) {
     position_popup(window, point);
     let _ = window.show();
     enforce_tray_style(window);
+    let _ = round_window(window);
     let _ = window.set_focus();
 }
 #[tauri::command]
 fn set_mode(window: tauri::WebviewWindow, expanded: bool) -> Result<(), String> {
-    let (w, h) = if expanded { (930., 720.) } else { (600., 395.) };
+    let (w, h) = if expanded { (930., 740.) } else { (600., 420.) };
     window
         .set_size(tauri::LogicalSize::new(w, h))
         .map_err(|e| e.to_string())?;
     window.set_always_on_top(true).map_err(|e| e.to_string())?;
     position_popup(&window, None);
+    let _ = round_window(&window);
     Ok(())
 }
 #[tauri::command]
@@ -286,6 +422,15 @@ fn main() {
             )
             .map_err(std::io::Error::other)?;
             app.manage(engine);
+            let smoke = std::env::var_os("QC_V3_SMOKE_DIR").is_some();
+            app.manage(ClipboardInbox(Mutex::new(if smoke {
+                Some("https://example.com/fixture".into())
+            } else {
+                None
+            })));
+            if std::env::var_os("QC_V3_SMOKE_DIR").is_none() {
+                watch_clipboard(app.handle().clone());
+            }
             let show = MenuItem::with_id(app, "show", "Show QuickClip321", true, None::<&str>)?;
             let quit = MenuItem::with_id(app, "quit", "Exit", true, None::<&str>)?;
             let menu = Menu::with_items(app, &[&show, &quit])?;
@@ -350,12 +495,22 @@ fn main() {
             Ok(())
         })
         .on_window_event(|window, event| {
+            if matches!(
+                event,
+                tauri::WindowEvent::Resized(_) | tauri::WindowEvent::ScaleFactorChanged { .. }
+            ) {
+                if let Some(w) = window.app_handle().get_webview_window("main") {
+                    let _ = round_window(&w);
+                }
+            }
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                 api.prevent_close();
                 let _ = window.hide();
             }
         })
         .invoke_handler(tauri::generate_handler![
+            smoke_active,
+            take_clipboard_link,
             media_preview,
             validate_links,
             queue_action,

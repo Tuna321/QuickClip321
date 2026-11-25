@@ -1,10 +1,10 @@
 # QuickClip321 V3 — tray-first experimental migration
 
-Current candidate: 3.0.0-alpha.2. This is not a replacement for the published Python RC2 until baseline parity and release gates pass.
+Current candidate: 3.0.0-alpha.3. This is not a replacement for the published Python RC2 until baseline parity and release gates pass.
 
 ## What is implemented in the candidate
-- Hidden startup, frameless Windows popup, taskbar exclusion, tray click show/hide, quick/advanced modes, monitor work-area placement (Tray/Corner/Custom), Escape and quick-view blur dismissal.
-- Familiar link/preset/format/resolution/preview/destination layout, default 1080p Premiere Ready, clipboard detection only while popup is focused, theme/accent and persistent preferences.
+- Hidden startup, frameless rounded Windows popup, taskbar exclusion, tray click show/hide, quick/advanced modes, monitor work-area placement (Tray/Corner/Custom), Escape and quick-view blur dismissal.
+- Familiar link/preset/format/resolution/preview/destination layout, default 1080p Premiere Ready, native clipboard change capture while hidden with draft protection, six palettes plus System, six accents and persistent preferences.
 - Bounded asynchronous text metadata preview, explicit playlist choice, batch links, sequential queue, cancellation/retry/history and file-safe publishing.
 - Local artist/movie/audio classification with the original built-in database (default Audio/Video folders; manual selection wins).
 - MP4/H.264/AAC verification and conversion, MP3/M4A/WAV/original, optional post-download clipping and subtitle timestamp adjustment, archive metadata option.
@@ -27,6 +27,6 @@ Run the EXE and use the notification area icon (possibly under the overflow arro
 - No measured startup/RAM/CPU comparison or public signed installer. No claim of universal site support or complete parity.
 
 ## Design and audit files
-UX-RESEARCH.md, BASELINE-PARITY.md, BASELINE-SYMBOLS.json, MULTI-PERSPECTIVE.md, NEXT-PASS.md. These are the migration contract, not marketing claims.
+UX-RESEARCH.md, BASELINE-PARITY.md, BASELINE-SYMBOLS.json, MULTI-PERSPECTIVE.md, research-alpha3.md, DECISION-JOURNAL.md, ITERATION-LOG.md, NEXT-PASS.md. These are the migration contract, not marketing claims.
 
 Use media you have permission to download. Do not publish any personal app state, credentials, or generated executable as source.
