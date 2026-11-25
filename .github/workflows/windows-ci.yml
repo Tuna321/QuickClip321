@@ -8,28 +8,46 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: windows-ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     runs-on: windows-latest
-    timeout-minutes: 20
-    env:
-      QUICKCLIP321_DATA_DIR: ${{ runner.temp }}\quickclip321-ci
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Isolate application state
+        shell: pwsh
+        run: |
+          "QUICKCLIP321_DATA_DIR=$env:RUNNER_TEMP\quickclip321-ci" >> $env:GITHUB_ENV
       - name: Install locked dependencies
         run: python -m pip install -r requirements-test-lock.txt
-      - name: Install media tools
-        run: choco install ffmpeg --yes --no-progress
-      - name: Check media tools
+      - name: Locate or install FFmpeg
+        shell: pwsh
         run: |
+          if (-not (Get-Command ffmpeg -ErrorAction SilentlyContinue)) {
+            choco install ffmpeg --yes --no-progress
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
           ffmpeg -version
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           ffprobe -version
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Lint
         run: python -m ruff check quickclip321 tests tools
+      - name: Compile
+        run: python -m compileall -q quickclip321 tests tools
       - name: Tests
-        run: python -m pytest -q -rs --basetemp "${{ runner.temp }}\quickclip321-pytest" 
+        run: python -m pytest -q -rs --basetemp "$env:RUNNER_TEMP\quickclip321-pytest" --junitxml=results.xml
+      - name: Test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-test-report
+          path: results.xml
+          if-no-files-found: ignore
