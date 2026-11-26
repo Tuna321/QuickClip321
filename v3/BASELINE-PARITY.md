@@ -42,3 +42,9 @@ No public stable V3 until each row is implemented and verified, including real t
 - Simplified tray controls: no quick Hide or Auto-organize; global saved organizer setting, manual destination and contextual Reset. Queue toggles. Native fixture verified.
 - Games category: 171 manually curated entries, context and selected aliases, optional Video/Games folder and custom destinations. Built-in catalog total 1134. Development sample 20/20, not unbiased real-world accuracy.
 - Release blockers remain as listed in README and NEXT-PASS: true active resume, clean-machine verified bootstrap, notifications and full parity/physical interaction coverage.
+
+## Alpha 8 delta
+- Catalog: 2302 entries, including 1485 music artists/groups across hip-hop, pop, rock/metal, electronic and other music; 336 films, 310 series and 171 games. Contextual fixtures passed; representative accuracy not established.
+- Controlled pause and restart for eligible single Original transfers: persistent job-owned stage, positive HTTP Range reuse and byte-identical output verified. Not general crash recovery, playlist, conversion or subtitle resume. Windows Job Object supervision added and tested; attach-after-spawn race remains.
+- Managed dependency setup: real empty-root HTTPS installation of pinned yt-dlp, FFmpeg/FFprobe and Node; repeated integrity reuse, tamper refusal and executable version checks passed. Clean VM, update/uninstall and package distribution remain open.
+- Native Win32 frontend prototype: independent state, real tray and basic controls, three isolated smoke tests, one idle process in three measurements. Not feature-equivalent to Tauri. Full native parity and notifications remain release blockers.

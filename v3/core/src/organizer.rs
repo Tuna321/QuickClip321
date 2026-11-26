@@ -43,9 +43,19 @@ fn database() -> &'static Value {
             .expect("built-in organizer database")
     })
 }
-pub fn counts() -> [usize; 4] {
+pub fn counts() -> [usize; 8] {
     let db = database();
-    ["artists", "movies", "tv", "games"].map(|k| db[k].as_array().map_or(0, Vec::len))
+    [
+        "artists",
+        "movies",
+        "tv",
+        "games",
+        "pop",
+        "rock",
+        "electronic",
+        "other_music",
+    ]
+    .map(|k| db[k].as_array().map_or(0, Vec::len))
 }
 pub fn category(info: &Value, preset: &str) -> (&'static str, &'static str) {
     let title = text(info, &["title"]);
@@ -228,18 +238,30 @@ pub fn category(info: &Value, preset: &str) -> (&'static str, &'static str) {
     let music_context =
         music || !track.is_empty() || any(&genre, &["hip hop", "rap", "trap", "drill"]);
     if !commentary {
-        for e in db["artists"].as_array().into_iter().flatten() {
-            let a = aliases(e);
-            if (!artist.is_empty() && a.contains(&artist))
-                || (a.contains(&prefix) && a.contains(&channel) && title.contains(" - "))
-                || (music_context
-                    && (a.contains(&prefix)
-                        || a.contains(&channel)
-                        || (!e["ambiguous"].as_bool().unwrap_or(true)
-                            && a.iter().any(|v| contains(&n, v)))))
-            {
-                return ("rap", "Rap artist metadata");
+        for (key, category) in [
+            ("artists", "rap"),
+            ("pop", "pop"),
+            ("rock", "rock"),
+            ("electronic", "electronic"),
+            ("other_music", "music"),
+        ] {
+            for e in db[key].as_array().into_iter().flatten() {
+                let a = aliases(e);
+                if (!artist.is_empty() && a.contains(&artist))
+                    || (a.contains(&prefix) && a.contains(&channel) && title.contains(" - "))
+                    || (music_context
+                        && (a.contains(&prefix)
+                            || a.contains(&channel)
+                            || (!e["ambiguous"].as_bool().unwrap_or(true)
+                                && a.iter().any(|v| contains(&n, v)))))
+                {
+                    return (category, "Music artist and contextual metadata");
+                }
             }
+        }
+        // Unknown artists can still be classified from explicit track/artist metadata.
+        if !artist.is_empty() && !track.is_empty() {
+            return ("music", "Artist and track metadata");
         }
     }
     ("video", "Video media")
@@ -264,6 +286,10 @@ pub fn configured_destination(
         root.join(if p.detailed_folders {
             match category {
                 "rap" => "Video/Rap",
+                "pop" => "Video/Pop",
+                "rock" => "Video/Rock and Metal",
+                "electronic" => "Video/Electronic",
+                "music" => "Video/Music",
                 "games" => "Video/Games",
                 "film" => "Video/Film and TV",
                 "beats" => "Audio/Beats",
@@ -278,7 +304,7 @@ pub fn configured_destination(
 pub fn folder(category: &str) -> &'static str {
     match category {
         "beats" | "audio" => "Audio",
-        "film" | "rap" | "video" | "games" => "Video",
+        "film" | "rap" | "video" | "games" | "pop" | "rock" | "electronic" | "music" => "Video",
         _ => "Unsorted",
     }
 }
@@ -343,6 +369,43 @@ mod tests {
             configured_destination(&json!({"artist":"XXXTENTACION"}), "editor", d.path(), &p),
             d.path().join("Video/Rap")
         );
+    }
+    #[test]
+    fn music_catalog_and_context() {
+        for (key, expected) in [
+            ("pop", "pop"),
+            ("rock", "rock"),
+            ("electronic", "electronic"),
+            ("other_music", "music"),
+        ] {
+            for e in database()[key].as_array().unwrap() {
+                let name = e["name"].as_str().unwrap();
+                assert_eq!(
+                    category(
+                        &json!({"artist":name,"title":"Fixture Official Audio"}),
+                        "editor"
+                    )
+                    .0,
+                    expected,
+                    "{name}"
+                );
+            }
+        }
+        for (title, expected) in [
+            ("Taylor Swift - Blank Space (Official Music Video)", "pop"),
+            ("Rammstein - Sonne (Official Video)", "rock"),
+            ("Daft Punk - One More Time (Official Video)", "electronic"),
+            ("Miles Davis - So What (Official Audio)", "music"),
+            ("Queen interview", "video"),
+            ("How to use Tool in Photoshop", "video"),
+            ("Metallica reaction", "video"),
+        ] {
+            assert_eq!(
+                category(&json!({"title":title}), "editor").0,
+                expected,
+                "{title}"
+            );
+        }
     }
     #[test]
     fn game_catalog_and_context() {

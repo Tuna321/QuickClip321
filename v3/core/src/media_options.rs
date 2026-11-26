@@ -1,4 +1,4 @@
-use super::{command, err, terminate, Result};
+use super::{command, err, terminate, ProcessTree, Result};
 use serde::{Deserialize, Serialize};
 use std::{
     fs,
@@ -164,6 +164,7 @@ pub fn clip(
     }
     c.arg(&target).stdout(Stdio::null()).stderr(Stdio::null());
     let mut child = c.spawn().map_err(err)?;
+    let _owner = ProcessTree::attach(&mut child)?;
     let started = Instant::now();
     loop {
         if cancel.load(Ordering::SeqCst) || started.elapsed() > Duration::from_secs(4 * 3600) {

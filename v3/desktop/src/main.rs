@@ -204,6 +204,20 @@ fn resume_waiting(engine: State<'_, Engine>, id: String) -> Result<(), String> {
     engine.hold(&id, false)
 }
 #[tauri::command]
+async fn setup_managed_tools(engine: State<'_, Engine>) -> Result<Settings, String> {
+    let engine = engine.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || engine.setup_managed_tools())
+        .await
+        .map_err(|e| e.to_string())?
+}
+#[tauri::command]
+fn tools_ready(engine: State<'_, Engine>) -> bool {
+    let settings = engine.snapshot().settings;
+    settings.yt_dlp.is_file()
+        && settings.ffmpeg.is_file()
+        && settings.ffmpeg.with_file_name("ffprobe.exe").is_file()
+}
+#[tauri::command]
 fn detect_tools() -> [String; 2] {
     [
         find_tool("yt-dlp.exe").to_string_lossy().into_owned(),
@@ -211,7 +225,7 @@ fn detect_tools() -> [String; 2] {
     ]
 }
 #[tauri::command]
-fn organizer_counts() -> [usize; 4] {
+fn organizer_counts() -> [usize; 8] {
     quickclip_core::organizer::counts()
 }
 #[tauri::command]
@@ -493,8 +507,18 @@ fn show_popup(window: &tauri::WebviewWindow, point: Option<(f64, f64)>) {
     let _ = window.set_focus();
 }
 #[tauri::command]
-fn set_mode(window: tauri::WebviewWindow, expanded: bool) -> Result<(), String> {
-    let (w, h) = if expanded { (930., 740.) } else { (600., 420.) };
+fn set_mode(
+    window: tauri::WebviewWindow,
+    expanded: bool,
+    detail: Option<bool>,
+) -> Result<(), String> {
+    let (w, h) = if expanded {
+        (930., 740.)
+    } else if detail.unwrap_or(false) {
+        (600., 560.)
+    } else {
+        (600., 420.)
+    };
     window
         .set_size(tauri::LogicalSize::new(w, h))
         .map_err(|e| e.to_string())?;
@@ -517,7 +541,9 @@ fn main() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_clipboard_manager::init())
         .setup(|app| {
-            let (data, destination) = if let Some(dir) = std::env::var_os("QC_V3_SMOKE_DIR") {
+            let (data, destination) = if let Some(dir) =
+                std::env::var_os("QC_V3_SMOKE_DIR").or_else(|| std::env::var_os("QC_V3_BENCH_DIR"))
+            {
                 let root = PathBuf::from(dir);
                 if !root.is_absolute() || !root.is_dir() {
                     return Err(std::io::Error::other("Smoke directory must already exist").into());
@@ -546,7 +572,9 @@ fn main() {
             } else {
                 None
             })));
-            if std::env::var_os("QC_V3_SMOKE_DIR").is_none() {
+            if std::env::var_os("QC_V3_SMOKE_DIR").is_none()
+                && std::env::var_os("QC_V3_BENCH_DIR").is_none()
+            {
                 watch_clipboard(app.handle().clone());
             }
             let show = MenuItem::with_id(app, "show", "Show QuickClip321", true, None::<&str>)?;
@@ -640,6 +668,8 @@ fn main() {
             pause_waiting,
             resume_waiting,
             detect_tools,
+            tools_ready,
+            setup_managed_tools,
             diagnostics,
             organizer_counts,
             remove,

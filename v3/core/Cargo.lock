@@ -274,7 +274,7 @@ dependencies = [
 
 [[package]]
 name = "quickclip-core"
-version = "3.0.0-alpha.7"
+version = "3.0.0-alpha.8"
 dependencies = [
  "serde",
  "serde_json",
@@ -282,6 +282,7 @@ dependencies = [
  "unicode-normalization",
  "url",
  "uuid",
+ "windows-sys",
 ]
 
 [[package]]

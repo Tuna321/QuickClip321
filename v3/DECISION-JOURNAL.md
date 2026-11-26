@@ -30,3 +30,10 @@
 - Actual Alpha6 native smoke and three foreground finish captures verified. Keep restrained static finishes; avoid a new design language for its own sake. Use source and native UI state tests for the new quick workflow.
 - Games: 171 curated entries, aliases, context gate, optional detailed folder, custom mapping. Shared film/game names need evidence, not raw substring matching. Six public titles plus fourteen adversarial examples in a labeled development fixture; no general accuracy assertion.
 - Release gates remain separate from usability tests. Active resume with verified byte reuse, dependency bootstrap on a clean system, native notifications and full parity cannot be claimed from a passing startup test. No stable tag or merge to main.
+
+## Alpha 8 decisions
+- Keep simple presets and expose format/quality on demand. Foreground visual audit found clipping in the Custom view; expand quick window vertically when details are open.
+- Do not suppress or disguise WebView2 processes: a separate native frontend proves single-process idle feasibility, but replacing the complete frontend requires native feature parity.
+- Use version-pinned HTTPS artifacts with archive/binary SHA-256, scoped installation and explicit consent. Never execute an unverified download; no global PATH changes.
+- Restrict true pause/resume to jobs that can safely reuse partial bytes. Resume result requires actual Range and exact-byte evidence rather than UI labels.
+- Use real sanitized screenshots and existing branding in release README draft; no invented metrics, download URL or stable status. Release only after every mandatory gate.
