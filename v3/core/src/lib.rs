@@ -45,6 +45,8 @@ pub struct Job {
     pub progress: f64,
     pub message: String,
     pub files: Vec<PathBuf>,
+    #[serde(default)]
+    pub resume_on_startup: bool,
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Request {
@@ -236,15 +238,26 @@ pub fn is_playlist(raw: &str) -> bool {
             .split('/')
             .any(|p| matches!(p, "playlist" | "playlists" | "sets" | "albums" | "album"))
 }
-fn js_runtime(tool: &Path) -> String {
-    if let Some(dir) = tool.parent() {
-        if dir.file_name().and_then(|s| s.to_str()) == Some("managed-2026.11.23-9.1-24.22.3")
-            && dir.join("node.exe").is_file()
-        {
-            return format!("node:{}", dir.join("node.exe").display());
+pub fn managed_node_path(tool: &Path) -> Option<PathBuf> {
+    let dir = tool.parent()?;
+    match dir.file_name()?.to_str()? {
+        "managed-2026.11.23-9.1-24.22.3" => {
+            let p = dir.join("node.exe");
+            p.is_file().then_some(p)
         }
+        "yt-dlp-2026.11.23" => {
+            let p = dir
+                .parent()?
+                .join("managed-2026.11.23-9.1-24.22.3/node.exe");
+            p.is_file().then_some(p)
+        }
+        _ => None,
     }
-    "node".into()
+}
+fn js_runtime(tool: &Path) -> String {
+    managed_node_path(tool)
+        .map(|p| format!("node:{}", p.display()))
+        .unwrap_or_else(|| "node".into())
 }
 pub fn preview(raw: &str, tool: &Path) -> Result<Preview> {
     use std::io::{Read, Seek, SeekFrom};
@@ -466,6 +479,8 @@ struct Inner {
     active: std::collections::HashMap<String, Arc<AtomicBool>>,
     pause_requests: std::collections::HashSet<String>,
     notices: std::collections::VecDeque<bool>,
+    shutting_down: bool,
+    maintenance: bool,
 }
 #[derive(Clone, Debug, Serialize)]
 pub struct SetupProgress {
@@ -488,7 +503,29 @@ pub struct Engine {
     setup_progress: Arc<Mutex<SetupProgress>>,
     file: PathBuf,
 }
+struct ToolMaintenance(Engine);
+impl Drop for ToolMaintenance {
+    fn drop(&mut self) {
+        self.0.inner.lock().unwrap().maintenance = false;
+    }
+}
 impl Engine {
+    fn tool_maintenance(&self) -> Result<ToolMaintenance> {
+        let mut x = self.inner.lock().unwrap();
+        if x.maintenance
+            || x.shutting_down
+            || !x.active.is_empty()
+            || x.state
+                .jobs
+                .iter()
+                .any(|j| matches!(j.status, Status::Running | Status::Queued))
+        {
+            return Err("Finish active downloads before changing media tools.".into());
+        }
+        x.maintenance = true;
+        Ok(ToolMaintenance(self.clone()))
+    }
+
     pub fn open(file: PathBuf, defaults: Settings) -> Result<Self> {
         let mut state = match fs::read(&file) {
             Ok(bytes) => serde_json::from_slice::<Snapshot>(&bytes)
@@ -507,9 +544,20 @@ impl Engine {
         }
         state.settings.prefs.normalize();
         for j in &mut state.jobs {
-            if matches!(j.status, Status::Running | Status::Queued) {
-                j.status = Status::Failed;
-                j.message = "Interrupted. Retry explicitly.".into();
+            if j.status == Status::Queued {
+                j.status = Status::Paused;
+                j.resume_on_startup = true;
+                j.message = "Saved queue; resume when ready".into();
+            } else if j.status == Status::Running {
+                if safe_partial(j) {
+                    j.status = Status::Paused;
+                    j.resume_on_startup = true;
+                    j.message = "Interrupted; partial data retained".into();
+                } else {
+                    j.status = Status::Failed;
+                    j.resume_on_startup = false;
+                    j.message = "Interrupted. Retry explicitly.".into();
+                }
             }
         }
         persist(&file, &state)?;
@@ -519,6 +567,8 @@ impl Engine {
                 active: Default::default(),
                 pause_requests: Default::default(),
                 notices: Default::default(),
+                shutting_down: false,
+                maintenance: false,
             })),
             setup_progress: Arc::new(Mutex::new(SetupProgress::default())),
             file,
@@ -527,6 +577,104 @@ impl Engine {
     pub fn setup_progress(&self) -> SetupProgress {
         self.setup_progress.lock().unwrap().clone()
     }
+    #[cfg(windows)]
+    pub fn install_recommended_ytdlp(&self) -> Result<Settings> {
+        let _maintenance = self.tool_maintenance()?;
+        let root = self
+            .file
+            .parent()
+            .ok_or("Missing app data directory")?
+            .join("tools");
+        fs::create_dir_all(&root).map_err(err)?;
+        if !ordinary(&fs::symlink_metadata(&root).map_err(err)?) {
+            return Err("Unsafe tool directory".into());
+        }
+        let dir = root.join("yt-dlp-2026.11.23");
+        fs::create_dir_all(&dir).map_err(err)?;
+        if !ordinary(&fs::symlink_metadata(&dir).map_err(err)?) {
+            return Err("Unsafe tool directory".into());
+        }
+        let target = dir.join("yt-dlp.exe");
+        if !target.exists() {
+            let cached = root.join("managed-2026.11.23-9.1-24.22.3/yt-dlp.exe");
+            let tmp = tempfile::NamedTempFile::new_in(&dir).map_err(err)?;
+            if verified_ytdlp(&cached) {
+                fs::copy(&cached, tmp.path()).map_err(err)?;
+            } else {
+                let system = PathBuf::from(
+                    std::env::var_os("SystemRoot").ok_or("Windows directory unavailable")?,
+                );
+                let mut c = command(&system.join("System32/curl.exe"));
+                c.args([
+                    "-q",
+                    "--silent",
+                    "--show-error",
+                    "--fail",
+                    "--location",
+                    "--max-redirs",
+                    "5",
+                    "--proto",
+                    "=https",
+                    "--proto-redir",
+                    "=https",
+                    "--connect-timeout",
+                    "10",
+                    "--max-time",
+                    "120",
+                    "--max-filesize",
+                    "50000000",
+                    "--output",
+                ])
+                .arg(tmp.path())
+                .arg("https://github.com/yt-dlp/yt-dlp/releases/download/2026.11.23/yt-dlp.exe")
+                .stdout(Stdio::null())
+                .stderr(Stdio::null());
+                if !c.status().map_err(err)?.success() {
+                    return Err("yt-dlp download failed; previous tool preserved".into());
+                }
+            }
+            if !verified_ytdlp(tmp.path()) {
+                return Err("yt-dlp integrity verification failed; previous tool preserved".into());
+            }
+            tmp.persist_noclobber(&target).map_err(err)?;
+        }
+        if !verified_ytdlp(&target) {
+            return Err(
+                "Existing managed yt-dlp failed verification; previous tool preserved".into(),
+            );
+        }
+        if tool_version(&target, "--version").as_deref() != Some("2026.11.23") {
+            return Err("Verified yt-dlp failed version smoke; previous tool preserved".into());
+        }
+        let mut x = self.inner.lock().unwrap();
+        let mut next = x.state.clone();
+        if next.settings.yt_dlp != target {
+            if next.settings.yt_dlp.is_file() {
+                next.settings.prefs.previous_ytdlp = Some(next.settings.yt_dlp.clone());
+            }
+            next.settings.yt_dlp = target;
+            persist(&self.file, &next)?;
+            x.state = next;
+        }
+        Ok(x.state.settings.clone())
+    }
+    pub fn rollback_ytdlp(&self) -> Result<Settings> {
+        let _maintenance = self.tool_maintenance()?;
+        let mut x = self.inner.lock().unwrap();
+        let mut next = x.state.clone();
+        let previous = next
+            .settings
+            .prefs
+            .previous_ytdlp
+            .clone()
+            .filter(|p| p.is_absolute() && p.is_file())
+            .ok_or("No previous yt-dlp executable available")?;
+        next.settings.prefs.previous_ytdlp = Some(next.settings.yt_dlp.clone());
+        next.settings.yt_dlp = previous;
+        persist(&self.file, &next)?;
+        x.state = next;
+        Ok(x.state.settings.clone())
+    }
     /// Install version-pinned tools in the app-owned directory, not on PATH.
     #[cfg(windows)]
     pub fn setup_managed_tools(&self) -> Result<Settings> {
@@ -534,12 +682,13 @@ impl Engine {
         let _lock = INSTALL
             .try_lock()
             .map_err(|_| "Tool setup is already running.")?;
+        let _maintenance = self.tool_maintenance()?;
         *self.setup_progress.lock().unwrap() = SetupProgress::default();
         if self
             .snapshot()
             .jobs
             .iter()
-            .any(|j| matches!(j.status, Status::Running | Status::Queued | Status::Paused))
+            .any(|j| matches!(j.status, Status::Running | Status::Queued))
         {
             return Err("Finish or cancel pending downloads before changing media tools.".into());
         }
@@ -684,6 +833,52 @@ impl Engine {
             .open_hotkey
             .clone()
     }
+    pub fn popup_topmost(&self) -> bool {
+        self.inner
+            .lock()
+            .unwrap()
+            .state
+            .settings
+            .prefs
+            .always_on_top
+    }
+    pub fn tray_summary(&self) -> (usize, usize, usize, f64, String, String) {
+        let x = self.inner.lock().unwrap();
+        let (mut active, mut queued, mut paused, mut progress) = (0, 0, 0, 0.);
+        let mut speeds = Vec::new();
+        for j in &x.state.jobs {
+            match j.status {
+                Status::Running => {
+                    active += 1;
+                    progress += j.progress.clamp(0., 1.);
+                    if let Some(speed) = j
+                        .message
+                        .strip_prefix("Downloading ")
+                        .and_then(|m| m.split(" | ").nth(1))
+                    {
+                        if speed.len() < 30 {
+                            speeds.push(speed);
+                        }
+                    }
+                }
+                Status::Queued => queued += 1,
+                Status::Paused => paused += 1,
+                _ => {}
+            }
+        }
+        (
+            active,
+            queued,
+            paused,
+            if active > 0 {
+                progress / active as f64
+            } else {
+                0.
+            },
+            speeds.join(" + "),
+            x.state.settings.prefs.language.clone(),
+        )
+    }
     pub fn snapshot(&self) -> Snapshot {
         self.inner.lock().unwrap().state.clone()
     }
@@ -698,6 +893,9 @@ impl Engine {
             }
         }
         let mut x = self.inner.lock().unwrap();
+        if x.shutting_down || x.maintenance {
+            return Err("Wait for maintenance to finish.".into());
+        }
         let mut next = x.state.clone();
         next.settings = settings;
         persist(&self.file, &next)?;
@@ -707,6 +905,9 @@ impl Engine {
         Ok(())
     }
     pub fn enqueue(&self, r: Request) -> Result<String> {
+        self.enqueue_checked(r, true)
+    }
+    pub fn enqueue_checked(&self, r: Request, allow_duplicate: bool) -> Result<String> {
         let url = validate_url(r.url.trim())?;
         selector(&r.preset, &r.quality)?;
         r.options.validate()?;
@@ -714,6 +915,9 @@ impl Engine {
             return Err("Choose an absolute destination folder.".into());
         }
         let mut x = self.inner.lock().unwrap();
+        if x.shutting_down || x.maintenance {
+            return Err("Saving queue before exit".into());
+        }
         if x.state.jobs.iter().any(|j| {
             matches!(j.status, Status::Queued | Status::Running | Status::Paused)
                 && j.url == url
@@ -721,10 +925,21 @@ impl Engine {
                 && j.quality == r.quality
                 && j.playlist == r.playlist
                 && j.organize == r.organize
-                && j.options == r.options
+                && same_output_options(&j.options, &r.options)
                 && j.destination == r.destination
         }) {
             return Err("Already in the queue.".into());
+        }
+        if !allow_duplicate {
+            if let Some(j) = x
+                .state
+                .jobs
+                .iter()
+                .rev()
+                .find(|j| completed_duplicate(j, &r, &url))
+            {
+                return Err(format!("Duplicate completed job: {}", j.id));
+            }
         }
         let id = Uuid::new_v4().simple().to_string();
         let mut next = x.state.clone();
@@ -754,6 +969,7 @@ impl Engine {
             progress: 0.,
             message: "Queued".into(),
             files: vec![],
+            resume_on_startup: false,
         });
         persist(&self.file, &next)?;
         x.state = next;
@@ -761,11 +977,115 @@ impl Engine {
         self.kick();
         Ok(id)
     }
+    pub fn begin_idle_update(&self) -> Result<()> {
+        let mut x = self.inner.lock().unwrap();
+        if x.shutting_down
+            || x.maintenance
+            || !x.active.is_empty()
+            || x.state
+                .jobs
+                .iter()
+                .any(|j| matches!(j.status, Status::Running | Status::Queued | Status::Paused))
+        {
+            return Err(
+                "Finish pending downloads and tool setup before installing updates.".into(),
+            );
+        }
+        persist(&self.file, &x.state)?;
+        x.shutting_down = true;
+        Ok(())
+    }
+    pub fn prepare_safe_exit(&self) -> Result<()> {
+        let mut x = self.inner.lock().unwrap();
+        if x.shutting_down || x.maintenance {
+            return Err("Wait for current maintenance to finish.".into());
+        }
+        let mut next = x.state.clone();
+        let mut running = Vec::new();
+        for j in &mut next.jobs {
+            if j.status == Status::Queued {
+                j.status = Status::Paused;
+                j.message = "Saved queue; resume when ready".into();
+                j.resume_on_startup = true;
+            } else if j.status == Status::Running
+                && resumable(j)
+                && j.message.starts_with("Downloading")
+                && safe_partial(j)
+            {
+                j.resume_on_startup = true;
+                running.push(j.id.clone());
+                j.message = "Pausing; preserving partial data".into();
+            }
+        }
+        persist(&self.file, &next)?;
+        x.state = next;
+        x.shutting_down = true;
+        for id in running {
+            if let Some(flag) = x.active.get(&id).cloned() {
+                x.pause_requests.insert(id);
+                flag.store(true, Ordering::SeqCst);
+            }
+        }
+        Ok(())
+    }
+    pub fn resume_saved_queue(&self) -> Result<usize> {
+        let mut x = self.inner.lock().unwrap();
+        if x.shutting_down || x.maintenance {
+            return Err("Saving queue before exit".into());
+        }
+        let mut next = x.state.clone();
+        let mut count = 0;
+        for j in &mut next.jobs {
+            if j.status == Status::Paused && j.resume_on_startup {
+                if j.progress > 0. && !safe_partial(j) {
+                    j.resume_on_startup = false;
+                    j.message = "Partial data unavailable; retry explicitly".into();
+                    continue;
+                }
+                j.status = Status::Queued;
+                j.resume_on_startup = false;
+                j.message = "Queued".into();
+                count += 1;
+            }
+        }
+        if count == 0
+            && next
+                .jobs
+                .iter()
+                .zip(&x.state.jobs)
+                .all(|(a, b)| a.resume_on_startup == b.resume_on_startup)
+        {
+            return Ok(0);
+        }
+        persist(&self.file, &next)?;
+        x.state = next;
+        drop(x);
+        if count > 0 {
+            self.kick();
+        }
+        Ok(count)
+    }
+    pub fn abort_safe_exit(&self) {
+        self.inner.lock().unwrap().shutting_down = false;
+    }
+    pub fn safe_exit_ready(&self) -> bool {
+        let x = self.inner.lock().unwrap();
+        x.active.is_empty()
+            && persist(&self.file, &x.state).is_ok()
+            && !x
+                .state
+                .jobs
+                .iter()
+                .any(|j| matches!(j.status, Status::Running | Status::Queued))
+    }
     pub fn bulk_action(&self, action: &str) -> Result<()> {
         if !matches!(action, "cancel_all" | "clear_pending" | "clear_completed") {
             return Err("Unknown queue action.".into());
         }
         let mut x = self.inner.lock().unwrap();
+        if x.shutting_down || x.maintenance {
+            return Err("Saving queue before exit".into());
+        }
         let mut next = x.state.clone();
         match action {
             "cancel_all" | "clear_pending" => {
@@ -793,6 +1113,9 @@ impl Engine {
     }
     pub fn cancel(&self, id: &str) -> Result<()> {
         let mut x = self.inner.lock().unwrap();
+        if x.shutting_down || x.maintenance {
+            return Err("Saving queue before exit".into());
+        }
         x.pause_requests.remove(id);
         if let Some(flag) = x.active.get(id) {
             flag.store(true, Ordering::SeqCst);
@@ -815,15 +1138,19 @@ impl Engine {
     }
     pub fn hold(&self, id: &str, paused: bool) -> Result<()> {
         let mut x = self.inner.lock().unwrap();
+        if x.shutting_down || x.maintenance {
+            return Err("Saving queue before exit".into());
+        }
         let mut next = x.state.clone();
         let j = next
             .jobs
             .iter_mut()
             .find(|j| j.id == id)
             .ok_or("Unknown job")?;
+        j.resume_on_startup = false;
         if paused && j.status == Status::Running {
             if !resumable(j) || !j.message.starts_with("Downloading") || !safe_partial(j) {
-                return Err("Pause is available during a single Original download with a reusable partial file.".into());
+                return Err("Pause is available only during a supported single transfer with a reusable partial file.".into());
             }
             let flag = x.active.get(id).cloned().ok_or("Download is finishing.")?;
             j.message = "Pausing; preserving partial data".into();
@@ -884,7 +1211,9 @@ impl Engine {
     }
     fn kick(&self) {
         let mut x = self.inner.lock().unwrap();
-        if x.active.len() >= usize::from(x.state.settings.prefs.concurrent_downloads) {
+        if x.shutting_down
+            || x.active.len() >= usize::from(x.state.settings.prefs.concurrent_downloads)
+        {
             return;
         }
         let Some(i) = x.state.jobs.iter().position(|j| j.status == Status::Queued) else {
@@ -922,6 +1251,7 @@ impl Engine {
                     Ok(files) => {
                         job.files = files;
                         job.status = Status::Completed;
+                        job.resume_on_startup = false;
                         job.progress = 1.;
                         job.message = "Download completed".into();
                     }
@@ -930,6 +1260,7 @@ impl Engine {
                             job.status = Status::Paused;
                             job.message="Paused. Partial data retained; Resume continues when supported by the source.".into();
                         } else {
+                            job.resume_on_startup = false;
                             job.status = if pause_requested {
                                 Status::Failed
                             } else if cancel.load(Ordering::SeqCst) {
@@ -974,6 +1305,80 @@ impl Engine {
             engine.kick();
         });
         self.kick();
+    }
+}
+fn verified_ytdlp(path: &Path) -> bool {
+    use sha2::{Digest, Sha256};
+    use std::io::Read;
+    let Ok(m) = fs::symlink_metadata(path) else {
+        return false;
+    };
+    if !m.is_file() || !ordinary(&m) || m.len() == 0 || m.len() > 50_000_000 {
+        return false;
+    }
+    let Ok(mut f) = fs::File::open(path) else {
+        return false;
+    };
+    let mut hash = Sha256::new();
+    let mut bytes = [0; 65536];
+    loop {
+        match f.read(&mut bytes) {
+            Ok(0) => break,
+            Ok(n) => hash.update(&bytes[..n]),
+            Err(_) => return false,
+        }
+    }
+    hash.finalize()
+        .iter()
+        .map(|b| format!("{b:02x}"))
+        .collect::<String>()
+        == "622ed48023cac1daa52a3bf3a6ac38f03514de214b5f0fa069389fd0f6d17e5c"
+}
+pub fn tool_version(path: &Path, flag: &str) -> Option<String> {
+    use std::io::{Read, Seek, SeekFrom};
+    if !path.is_absolute() || !path.is_file() || !matches!(flag, "--version" | "-version") {
+        return None;
+    }
+    let mut output = tempfile::tempfile().ok()?;
+    let mut c = command(path);
+    c.arg(flag)
+        .stdout(Stdio::from(output.try_clone().ok()?))
+        .stderr(Stdio::null());
+    let mut child = c.spawn().ok()?;
+    let _tree = ProcessTree::attach(&mut child).ok()?;
+    let start = Instant::now();
+    loop {
+        if start.elapsed() > Duration::from_secs(8) || output.metadata().ok()?.len() > 65536 {
+            terminate(&mut child);
+            return None;
+        }
+        match child.try_wait() {
+            Ok(Some(s)) if s.success() => break,
+            Ok(Some(_)) => return None,
+            Ok(None) => {}
+            Err(_) => {
+                terminate(&mut child);
+                return None;
+            }
+        }
+        thread::sleep(Duration::from_millis(50));
+    }
+    output.seek(SeekFrom::Start(0)).ok()?;
+    let mut bytes = vec![];
+    output.take(1024).read_to_end(&mut bytes).ok()?;
+    let line = String::from_utf8_lossy(&bytes);
+    let text = line
+        .lines()
+        .next()?
+        .trim()
+        .chars()
+        .filter(|c| !c.is_control())
+        .take(120)
+        .collect::<String>();
+    if text.is_empty() {
+        None
+    } else {
+        Some(text)
     }
 }
 fn command(tool: &Path) -> Command {
@@ -1179,7 +1584,16 @@ fn ensure_editor(
     Ok(out)
 }
 fn classify_error(lower: &str) -> &'static str {
-    if lower.contains("403")
+    if lower.contains("removed for violating")
+        || lower.contains("video has been removed")
+        || lower.contains("video was removed")
+    {
+        "The video was removed by the source."
+    } else if lower.contains("private video") || lower.contains("video is private") {
+        "This video is private."
+    } else if lower.contains("video unavailable") || lower.contains("video is unavailable") {
+        "The video is unavailable at the source."
+    } else if lower.contains("403")
         || lower.contains("401")
         || lower.contains("sign in")
         || lower.contains("login")
@@ -1213,7 +1627,7 @@ fn download(
 ) -> Result<Vec<PathBuf>> {
     // Only explicitly requested short video clips use the experimental section path.
     // All ordinary downloads, audio, playlists and sidecars retain the original path.
-    if fast_section(j) {
+    if fast_section(j) && s.prefs.limit_kib_per_second == 0 {
         progress(0., "Trying fast clip download".into());
         match download_once(j, s, cancel, &mut progress, true) {
             Err(e) if e.starts_with("Section unavailable: ") && !cancel.load(Ordering::SeqCst) => {
@@ -1261,9 +1675,77 @@ fn fast_section(j: &Job) -> bool {
             end.is_finite() && start.is_finite() && end > start && end - start <= 600.
         })
 }
-fn resumable(j: &Job) -> bool {
-    j.preset == "original"
+#[cfg(test)]
+#[test]
+fn completed_duplicate_exact_match() {
+    let dir = tempfile::tempdir().unwrap();
+    let file = dir.path().join("fixture.mp4");
+    fs::write(&file, b"fixture").unwrap();
+    let mut r = Request {
+        url: "https://example.com/media".into(),
+        preset: "editor".into(),
+        quality: "1080".into(),
+        playlist: false,
+        organize: false,
+        options: Default::default(),
+        destination: dir.path().into(),
+    };
+    let j = Job {
+        id: Uuid::new_v4().simple().to_string(),
+        url: r.url.clone(),
+        preset: r.preset.clone(),
+        quality: r.quality.clone(),
+        playlist: false,
+        organize: false,
+        options: r.options.clone(),
+        destination: r.destination.clone(),
+        status: Status::Completed,
+        progress: 1.,
+        message: "Done".into(),
+        files: vec![file.clone()],
+        resume_on_startup: false,
+    };
+    assert!(completed_duplicate(&j, &r, &r.url));
+    r.options.subtitle_format = "srt".into();
+    assert!(completed_duplicate(&j, &r, &r.url));
+    r.quality = "720".into();
+    assert!(!completed_duplicate(&j, &r, &r.url));
+    r.quality = "1080".into();
+    r.options.clip_end = Some(5.);
+    assert!(!completed_duplicate(&j, &r, &r.url));
+    r.options = Default::default();
+    fs::remove_file(file).unwrap();
+    assert!(!completed_duplicate(&j, &r, &r.url));
+}
+fn same_output_options(a: &MediaOptions, b: &MediaOptions) -> bool {
+    let normalize = |p: &MediaOptions| {
+        let mut p = p.clone();
+        if p.subtitle_languages.is_empty() {
+            p.subtitle_format.clear();
+            p.subtitle_auto = false;
+        }
+        p
+    };
+    normalize(a) == normalize(b)
+}
+fn completed_duplicate(j: &Job, r: &Request, url: &str) -> bool {
+    j.status == Status::Completed
         && !j.playlist
+        && !r.playlist
+        && j.url == url
+        && j.preset == r.preset
+        && (j.quality == r.quality || matches!(r.preset.as_str(), "mp3" | "m4a" | "wav"))
+        && j.organize == r.organize
+        && same_output_options(&j.options, &r.options)
+        && j.destination == r.destination
+        && !j.files.is_empty()
+        && j.files.iter().all(|f| f.is_file())
+}
+fn resumable(j: &Job) -> bool {
+    matches!(
+        j.preset.as_str(),
+        "original" | "editor" | "mp3" | "m4a" | "wav"
+    ) && !j.playlist
         && !j.options.clipping()
         && !j.options.archive
         && j.options.subtitle_languages.is_empty()
@@ -1573,8 +2055,18 @@ fn download_once(
         "--fragment-retries",
         "2",
         "--concurrent-fragments",
-        &s.prefs.fragment_concurrency.to_string(),
+        &if s.prefs.limit_kib_per_second > 0 {
+            "1".to_string()
+        } else {
+            s.prefs.fragment_concurrency.to_string()
+        },
     ]);
+    if s.prefs.limit_kib_per_second > 0 {
+        c.args([
+            "--limit-rate",
+            &format!("{}K", s.prefs.limit_kib_per_second),
+        ]);
+    }
     if j.playlist {
         c.arg("--yes-playlist");
     } else {
@@ -1748,9 +2240,12 @@ fn download_once(
         }
         if !cancel.load(Ordering::SeqCst) {
             if let Some(h) = hint {
-                e.push_str(" ");
-                e.push_str(h);
+                e = h.to_string();
             }
+        }
+        if staging.empty() {
+            staging.finish();
+            return Err(e);
         }
         let retained = staging.keep();
         return Err(format!(
@@ -1924,6 +2419,7 @@ mod tests {
             progress: 0.,
             message: String::new(),
             files: vec![],
+            resume_on_startup: false,
         };
         let stage = Stage::open(&j).unwrap();
         fs::write(stage.path().join("file.mp4.part"), b"partial").unwrap();
@@ -1995,6 +2491,15 @@ mod tests {
         let installed = engine.setup_managed_tools().unwrap();
         assert_eq!(installed.yt_dlp, target.join("yt-dlp.exe"));
         assert_eq!(installed.ffmpeg, target.join("ffmpeg.exe"));
+        let updated = engine.install_recommended_ytdlp().unwrap();
+        assert_eq!(
+            updated.yt_dlp,
+            d.path().join("tools/yt-dlp-2026.11.23/yt-dlp.exe")
+        );
+        assert_eq!(updated.ffmpeg, installed.ffmpeg);
+        assert!(verified_ytdlp(&updated.yt_dlp));
+        assert_eq!(engine.rollback_ytdlp().unwrap().yt_dlp, installed.yt_dlp);
+
         assert_eq!(engine.snapshot().settings.yt_dlp, installed.yt_dlp);
         assert!(js_runtime(&installed.yt_dlp).starts_with("node:"));
         fs::write(target.join("yt-dlp.exe"), b"tampered fixture").unwrap();
@@ -2136,18 +2641,19 @@ mod tests {
                         let stopping = server_stop.clone();
                         let count = server_bytes.clone();
                         workers.push(thread::spawn(move||{
-                            let _=sock.set_read_timeout(Some(Duration::from_secs(3)));let _=sock.set_write_timeout(Some(Duration::from_secs(3)));
+                            let _=sock.set_read_timeout(Some(Duration::from_secs(3)));let _=sock.set_write_timeout(Some(Duration::from_secs(30)));
                             let mut request=vec![];let mut byte=[0];
                             while request.len()<16384&&sock.read_exact(&mut byte).is_ok(){request.push(byte[0]);if request.ends_with(b"\r\n\r\n"){break}}
                             let text=String::from_utf8_lossy(&request).to_ascii_lowercase();
-                            let range=text.lines().find_map(|line|line.strip_prefix("range: bytes=")).and_then(|v|v.split('-').next()).and_then(|v|v.parse::<usize>().ok()).unwrap_or(0);
-                            if range>=data.len(){let _=sock.write_all(b"HTTP/1.1 416 Range Not Satisfiable\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");return}
+                            let range_header=text.lines().find_map(|line|line.strip_prefix("range: bytes="));
+                            let (range,end)=range_header.and_then(|v|v.split_once('-')).map(|(a,b)|(a.parse::<usize>().unwrap_or(0),b.parse::<usize>().unwrap_or(data.len()-1).min(data.len()-1))).unwrap_or((0,data.len()-1));
+                            if range>=data.len()||end<range{let _=sock.write_all(format!("HTTP/1.1 416 Range Not Satisfiable\r\nContent-Range: bytes */{}\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",data.len()).as_bytes());return}
                             if range>0{range_seen.fetch_min(range as u64,Ordering::SeqCst);}
-                            let status=if range>0{"206 Partial Content"}else{"200 OK"};
-                            let extra=if range>0{format!("Content-Range: bytes {}-{}/{}\r\n",range,data.len()-1,data.len())}else{String::new()};
-                            let h=format!("HTTP/1.1 {status}\r\nContent-Type: video/mp4\r\nAccept-Ranges: bytes\r\nContent-Length: {}\r\n{extra}Connection: close\r\n\r\n",data.len()-range);
+                            let status=if range_header.is_some(){"206 Partial Content"}else{"200 OK"};
+                            let extra=if range_header.is_some(){format!("Content-Range: bytes {}-{}/{}\r\n",range,end,data.len())}else{String::new()};
+                            let h=format!("HTTP/1.1 {status}\r\nContent-Type: video/mp4\r\nAccept-Ranges: bytes\r\nContent-Length: {}\r\n{extra}Connection: close\r\n\r\n",end-range+1);
                             if sock.write_all(h.as_bytes()).is_err(){return}
-                            if !text.starts_with("head "){for block in data[range..].chunks(16*1024){if stopping.load(Ordering::SeqCst)||sock.write_all(block).is_err(){break;}count.fetch_add(block.len() as u64,Ordering::SeqCst);thread::sleep(Duration::from_millis(15));}}
+                            if !text.starts_with("head "){for block in data[range..=end].chunks(16*1024){if stopping.load(Ordering::SeqCst)||sock.write_all(block).is_err(){break;}count.fetch_add(block.len() as u64,Ordering::SeqCst);thread::sleep(Duration::from_millis(15));}}
                             let _=sock.flush();let _=sock.shutdown(std::net::Shutdown::Write);
                         }));
                     }
@@ -2170,7 +2676,7 @@ mod tests {
             prefs: Preferences::default(),
         };
         let engine = Engine::open(state.clone(), settings.clone()).unwrap();
-        let id = engine
+        let _id = engine
             .enqueue(Request {
                 url: format!("http://{addr}/range.mp4"),
                 preset: "original".into(),
@@ -2189,7 +2695,7 @@ mod tests {
                     && j.message.starts_with("Downloading")
                     && safe_partial(&j)
                 {
-                    engine.hold(&id, true).unwrap();
+                    engine.prepare_safe_exit().unwrap();
                     break;
                 }
                 assert!(
@@ -2223,12 +2729,14 @@ mod tests {
                 thread::sleep(Duration::from_millis(40));
             };
             assert!(partial > 0 && partial < bytes.len() as u64);
+            assert!(engine.safe_exit_ready());
+            assert!(engine.snapshot().jobs[0].resume_on_startup);
             // Reopen persisted paused job, equivalent to an orderly app restart.
             drop(engine);
             high.store(u64::MAX, Ordering::SeqCst);
             let reopened = Engine::open(state, settings.clone()).unwrap();
             assert_eq!(reopened.snapshot().jobs[0].status, Status::Paused);
-            reopened.hold(&id, false).unwrap();
+            assert_eq!(reopened.resume_saved_queue().unwrap(), 1);
             let started = Instant::now();
             let final_job = loop {
                 let j = reopened.snapshot().jobs[0].clone();
@@ -2408,6 +2916,7 @@ mod tests {
             progress: 0.,
             message: String::new(),
             files: vec![],
+            resume_on_startup: false,
         };
         let metadata = preview(&job.url, &settings.yt_dlp);
         let thumb_preview = preview(&format!("http://{address}/page"), &settings.yt_dlp);
@@ -2507,6 +3016,7 @@ mod tests {
                     progress: 0.,
                     message: String::new(),
                     files: vec![],
+                    resume_on_startup: false,
                 });
             }
         }
@@ -2618,4 +3128,104 @@ mod tests {
         drop(engine);
         assert!(Engine::open(p, settings).is_ok());
     }
+}
+
+#[cfg(test)]
+#[test]
+fn classified_media_errors() {
+    assert_eq!(
+        classify_error(
+            "error: this video has been removed for violating youtube's community guidelines"
+        ),
+        "The video was removed by the source."
+    );
+    assert_eq!(
+        classify_error("error: private video"),
+        "This video is private."
+    );
+    assert_eq!(
+        classify_error("error: connection timed out"),
+        "Network error. Check connectivity and retry."
+    );
+    assert_eq!(
+        classify_error("error: requested format is not available"),
+        "Selected format is unavailable. Try Best or Original."
+    );
+    assert_eq!(
+        classify_error("error: no space left"),
+        "Check folder permissions and available storage."
+    );
+}
+
+#[cfg(test)]
+#[test]
+fn crash_recovery_and_idle_update_gate() {
+    let d = tempfile::tempdir().unwrap();
+    let path = d.path().join("state.json");
+    let settings = Settings {
+        destination: d.path().to_owned(),
+        yt_dlp: PathBuf::new(),
+        ffmpeg: PathBuf::new(),
+        prefs: Preferences::default(),
+    };
+    let make = |status: Status| Job {
+        id: Uuid::new_v4().simple().to_string(),
+        url: "https://example.com/fixture".into(),
+        preset: "editor".into(),
+        quality: "720".into(),
+        playlist: false,
+        organize: false,
+        options: Default::default(),
+        destination: d.path().to_owned(),
+        status,
+        progress: 0.2,
+        message: "Downloading".into(),
+        files: vec![],
+        resume_on_startup: false,
+    };
+    let valid = make(Status::Running);
+    let stage = Stage::open(&valid).unwrap();
+    fs::write(stage.path().join("fixture.mp4.part"), b"partial data").unwrap();
+    let unsafe_job = make(Status::Running);
+    let unsafe_stage = Stage::open(&unsafe_job).unwrap();
+    fs::write(
+        unsafe_stage.path().join("unexpected.mp4"),
+        b"completed or unknown output",
+    )
+    .unwrap();
+    let queued = make(Status::Queued);
+    let manual = make(Status::Paused);
+    persist(
+        &path,
+        &Snapshot {
+            settings: settings.clone(),
+            jobs: vec![valid.clone(), unsafe_job.clone(), queued, manual],
+        },
+    )
+    .unwrap();
+    let e = Engine::open(path, settings).unwrap();
+    let jobs = e.snapshot().jobs;
+    assert_eq!(jobs[0].status, Status::Paused);
+    assert!(jobs[0].resume_on_startup);
+    assert_eq!(jobs[1].status, Status::Failed);
+    assert!(!jobs[1].resume_on_startup);
+    assert_eq!(jobs[2].status, Status::Paused);
+    assert!(jobs[2].resume_on_startup);
+    assert_eq!(jobs[3].status, Status::Paused);
+    assert!(!jobs[3].resume_on_startup);
+    assert_eq!(
+        fs::read(unsafe_stage.path().join("unexpected.mp4")).unwrap(),
+        b"completed or unknown output"
+    );
+    assert!(e.begin_idle_update().is_err());
+    for j in jobs.iter().filter(|j| j.status == Status::Paused) {
+        e.cancel(&j.id).unwrap();
+    }
+    assert!(e.begin_idle_update().is_ok());
+    assert!(e.safe_exit_ready());
+    e.abort_safe_exit();
+    let guard = e.tool_maintenance().unwrap();
+    assert!(e.begin_idle_update().is_err());
+    drop(guard);
+    assert!(e.begin_idle_update().is_ok());
 }

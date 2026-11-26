@@ -98,8 +98,12 @@ unsafe extern "system" fn wndproc(hwnd: HWND, msg: u32, w: WPARAM, l: LPARAM) ->
     }
 }
 fn smoke_event(name: &str, text: &str) {
-    if std::env::var_os("QC_SHORTCUT_SMOKE").is_some() {
-        if let Some(dir) = std::env::var_os("QC_V3_SMOKE_DIR") {
+    if std::env::var_os("QC_SHORTCUT_SMOKE").is_some()
+        || std::env::var_os("QC_COMPLETION_SMOKE").is_some()
+    {
+        if let Some(dir) =
+            std::env::var_os("QC_V3_SMOKE_DIR").or_else(|| std::env::var_os("QC_V3_BENCH_DIR"))
+        {
             let _ = std::fs::write(std::path::PathBuf::from(dir).join(name), text);
         }
     }
@@ -172,6 +176,7 @@ fn run(rx: mpsc::Receiver<Notice>) {
                 ShowWindow(hwnd, SW_SHOWNOACTIVATE);
                 UpdateWindow(hwnd);
                 shown = Instant::now();
+                smoke_event("notice-message.txt", &n.text);
                 smoke_event(
                     "notice-shown.txt",
                     if before == GetForegroundWindow() {

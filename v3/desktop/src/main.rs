@@ -6,6 +6,14 @@ use tauri_plugin_clipboard_manager::ClipboardExt;
 #[derive(Default)]
 struct ClipboardInbox(Mutex<Option<String>>);
 #[derive(Default)]
+struct DuplicateInbox(Mutex<Vec<Request>>);
+#[tauri::command]
+fn take_duplicate_requests(state: State<'_, DuplicateInbox>) -> Vec<Request> {
+    std::mem::take(&mut *state.0.lock().unwrap())
+}
+#[derive(Default)]
+struct ExitPending(std::sync::atomic::AtomicBool);
+#[derive(Default)]
 struct ClipboardConsumption {
     sequence: Mutex<Option<u32>>,
     submitted: Mutex<Vec<(String, String)>>,
@@ -158,6 +166,13 @@ fn run_shortcut(app: &tauri::AppHandle, action: &str) {
         );
         return;
     }
+    if app
+        .state::<ExitPending>()
+        .0
+        .load(std::sync::atomic::Ordering::Acquire)
+    {
+        return;
+    }
     let message = match action {
         "open" => {
             if let Some(w) = app.get_webview_window("main") {
@@ -167,12 +182,7 @@ fn run_shortcut(app: &tauri::AppHandle, action: &str) {
         }
         "folder" => {
             let path = s.prefs.last_destination.as_ref().unwrap_or(&s.destination);
-            if std::fs::create_dir_all(path).is_ok()
-                && std::process::Command::new("explorer.exe")
-                    .arg(path)
-                    .spawn()
-                    .is_ok()
-            {
+            if std::fs::create_dir_all(path).is_ok() && reveal_folder(path).is_ok() {
                 return;
             }
             if tr {
@@ -215,7 +225,7 @@ fn run_shortcut(app: &tauri::AppHandle, action: &str) {
                     s.prefs.smart_organizer
                 };
                 let seq = matching_clipboard_sequence(app, &url);
-                match engine.enqueue(Request {
+                let request = Request {
                     url: url.clone(),
                     preset,
                     quality,
@@ -223,7 +233,8 @@ fn run_shortcut(app: &tauri::AppHandle, action: &str) {
                     organize,
                     options: Default::default(),
                     destination,
-                }) {
+                };
+                match engine.enqueue_checked(request.clone(), false) {
                     Ok(id) => {
                         consume_link(app, &url, seq, Some(id.clone()));
                         let running = engine
@@ -237,6 +248,18 @@ fn run_shortcut(app: &tauri::AppHandle, action: &str) {
                             (false, true) => "Download started",
                             _ => "Added to queue",
                         }
+                    }
+                    Err(e) if e.starts_with("Duplicate completed job: ") => {
+                        let inbox = app.state::<DuplicateInbox>();
+                        let mut pending = inbox.0.lock().unwrap();
+                        if pending.len() < 8 {
+                            pending.push(request);
+                        }
+                        drop(pending);
+                        if let Some(w) = app.get_webview_window("main") {
+                            show_popup(&w, None);
+                        }
+                        return;
                     }
                     Err(_) => {
                         if tr {
@@ -556,7 +579,15 @@ fn enqueue(
     app: tauri::AppHandle,
     engine: State<'_, Engine>,
     request: Request,
+    allow_duplicate: Option<bool>,
 ) -> Result<String, String> {
+    if app
+        .state::<ExitPending>()
+        .0
+        .load(std::sync::atomic::Ordering::Acquire)
+    {
+        return Err("Saving queue before exit".into());
+    }
     if !configured_tools_ready(&engine.snapshot().settings) {
         return Err("QuickClip321 is not ready yet. Complete media setup first.".into());
     }
@@ -566,7 +597,7 @@ fn enqueue(
     } else {
         None
     };
-    let id = engine.enqueue(request)?;
+    let id = engine.enqueue_checked(request, allow_duplicate.unwrap_or(false))?;
     consume_link(&app, &url, seq, None);
     Ok(id)
 }
@@ -585,19 +616,22 @@ fn resume_waiting(engine: State<'_, Engine>, id: String) -> Result<(), String> {
 #[tauri::command]
 async fn setup_managed_tools(engine: State<'_, Engine>) -> Result<Settings, String> {
     let engine = engine.inner().clone();
-    tauri::async_runtime::spawn_blocking(move || engine.setup_managed_tools())
-        .await
-        .map_err(|e| e.to_string())?
+    tauri::async_runtime::spawn_blocking(move || {
+        let settings = engine.setup_managed_tools()?;
+        if !isolated_run() {
+            let _ = engine.resume_saved_queue();
+        }
+        Ok(settings)
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 #[tauri::command]
 fn setup_progress(engine: State<'_, Engine>) -> quickclip_core::SetupProgress {
     engine.setup_progress()
 }
 fn configured_tools_ready(settings: &Settings) -> bool {
-    let managed_node = settings.yt_dlp.parent().is_some_and(|p| {
-        p.file_name().and_then(|v| v.to_str()) == Some("managed-2026.11.23-9.1-24.22.3")
-            && p.join("node.exe").is_file()
-    });
+    let managed_node = quickclip_core::managed_node_path(&settings.yt_dlp).is_some();
     settings.yt_dlp.is_absolute()
         && settings.yt_dlp.is_file()
         && settings.ffmpeg.is_absolute()
@@ -658,7 +692,26 @@ fn diagnostics(engine: State<'_, Engine>) -> String {
             s.jobs.iter().filter(|j| j.status == status).count()
         ));
     }
-    out.push_str("Privacy: report excludes URLs, file paths, clipboard and error logs.");
+    out.push_str("Privacy: report excludes URLs, file paths, clipboard and error logs.\n");
+    for (label, needle) in [
+        ("Removed source", "removed by the source"),
+        ("Private video", "video is private"),
+        ("Network", "Network error"),
+        ("Format", "Selected format"),
+        ("Storage", "folder permissions"),
+        ("Media tools", "Media engine"),
+        ("Interrupted", "Interrupted"),
+    ] {
+        let n = s
+            .jobs
+            .iter()
+            .filter(|j| j.status == quickclip_core::Status::Failed && j.message.contains(needle))
+            .count();
+        if n > 0 {
+            out.push_str(&format!("{label}: {n} failed jobs\n"));
+        }
+    }
+
     out
 }
 #[tauri::command]
@@ -760,11 +813,7 @@ fn open_downloads(engine: State<'_, Engine>) -> Result<(), String> {
         return Err("Invalid download folder.".into());
     }
     std::fs::create_dir_all(&folder).map_err(|e| e.to_string())?;
-    std::process::Command::new("explorer.exe")
-        .arg(folder)
-        .spawn()
-        .map_err(|e| e.to_string())?;
-    Ok(())
+    reveal_folder(&folder)
 }
 #[tauri::command]
 fn open_folder(engine: State<'_, Engine>, id: String) -> Result<(), String> {
@@ -777,20 +826,47 @@ fn open_folder(engine: State<'_, Engine>, id: String) -> Result<(), String> {
     if job.files.is_empty() {
         return Err("No saved media.".into());
     }
-    let folder = job
-        .files
-        .first()
+    let file = job.files.iter().find(|p| p.is_file());
+    let folder = file
+        .or_else(|| job.files.first())
         .and_then(|p| p.parent())
-        .unwrap_or(&job.destination);
+        .ok_or("No saved media folder.")?;
     if !folder.is_dir() {
+        return Err("The original download folder no longer exists.".into());
+    }
+    reveal_folder(folder)
+}
+#[cfg(windows)]
+fn reveal_folder(folder: &std::path::Path) -> Result<(), String> {
+    use std::os::windows::ffi::OsStrExt;
+    use windows_sys::Win32::UI::Shell::ShellExecuteW;
+    use windows_sys::Win32::UI::WindowsAndMessaging::SW_SHOWNORMAL;
+    if !folder.is_absolute() || !folder.is_dir() {
         return Err("Folder unavailable.".into());
     }
-    std::process::Command::new("explorer.exe")
-        .arg(folder)
-        .spawn()
-        .map_err(|e| e.to_string())?;
-    Ok(())
+    let verb: Vec<u16> = "open".encode_utf16().chain(Some(0)).collect();
+    let path: Vec<u16> = folder.as_os_str().encode_wide().chain(Some(0)).collect();
+    let status = unsafe {
+        ShellExecuteW(
+            std::ptr::null_mut(),
+            verb.as_ptr(),
+            path.as_ptr(),
+            std::ptr::null(),
+            std::ptr::null(),
+            SW_SHOWNORMAL,
+        )
+    };
+    if status as isize <= 32 {
+        Err("Windows could not open the download folder.".into())
+    } else {
+        Ok(())
+    }
 }
+#[cfg(not(windows))]
+fn reveal_folder(_: &std::path::Path) -> Result<(), String> {
+    Err("Windows required".into())
+}
+
 #[tauri::command]
 fn persist_fixture_report(app: tauri::AppHandle, passed: bool) -> Result<(), String> {
     let root = std::env::var_os("QC_V3_SMOKE_DIR").ok_or("Not a smoke test")?;
@@ -1013,20 +1089,157 @@ fn apply_topmost(window: &tauri::WebviewWindow, top: bool) -> Result<(), String>
 fn apply_topmost(window: &tauri::WebviewWindow, top: bool) -> Result<(), String> {
     window.set_always_on_top(top).map_err(|e| e.to_string())
 }
+// A tray click can move focus to Explorer before the mouse-up event.
+// Visibility and physical z-order, not focus, determine toggle behavior.
 fn toggle_popup(window: &tauri::WebviewWindow, point: Option<(f64, f64)>) {
-    let top = window
-        .state::<Engine>()
-        .snapshot()
-        .settings
-        .prefs
-        .always_on_top;
-    if window.is_visible().unwrap_or(false) && (top || window.is_focused().unwrap_or(false)) {
+    if window.is_visible().unwrap_or(false) && !popup_covered(window, false) {
         let _ = window.hide();
     } else {
         show_popup(window, point);
     }
 }
+#[cfg(not(windows))]
+fn popup_covered(_: &tauri::WebviewWindow, _: bool) -> bool {
+    false
+}
+#[cfg(windows)]
+fn popup_covered(window: &tauri::WebviewWindow, foreground_only: bool) -> bool {
+    use windows_sys::Win32::{
+        Foundation::{HWND, RECT},
+        UI::WindowsAndMessaging::*,
+    };
+    if window.state::<Engine>().popup_topmost() {
+        return false;
+    }
+    let Ok(hwnd) = window.hwnd() else {
+        return false;
+    };
+    let hwnd = hwnd.0 as HWND;
+    unsafe {
+        let mut own: RECT = std::mem::zeroed();
+        if GetWindowRect(hwnd, &mut own) == 0 {
+            return false;
+        }
+        let mut own_pid = 0;
+        GetWindowThreadProcessId(hwnd, &mut own_pid);
+        let mut other = GetWindow(hwnd, GW_HWNDPREV);
+        // Inspect only windows above ours. No screenshot, pixel capture or focus dependency.
+        for _ in 0..512 {
+            if other.is_null() {
+                break;
+            }
+            let next = GetWindow(other, GW_HWNDPREV);
+            let mut pid = 0;
+            GetWindowThreadProcessId(other, &mut pid);
+            if pid != own_pid && IsWindowVisible(other) != 0 && IsIconic(other) == 0 {
+                let mut name = [0u16; 128];
+                let n = GetClassNameW(other, name.as_mut_ptr(), name.len() as i32).max(0) as usize;
+                let class = String::from_utf16_lossy(&name[..n]);
+                let ex = GetWindowLongPtrW(other, GWL_EXSTYLE) as u32;
+                let mut cloaked: u32 = 0;
+                #[link(name = "dwmapi")]
+                extern "system" {
+                    fn DwmGetWindowAttribute(
+                        hwnd: HWND,
+                        attribute: u32,
+                        value: *mut std::ffi::c_void,
+                        size: u32,
+                    ) -> i32;
+                }
+                let _ = DwmGetWindowAttribute(other, 14, (&mut cloaked as *mut u32).cast(), 4);
+                let shell = matches!(
+                    class.as_str(),
+                    "Shell_TrayWnd"
+                        | "Shell_SecondaryTrayWnd"
+                        | "NotifyIconOverflowWindow"
+                        | "TopLevelWindowForOverflowXamlIsland"
+                        | "Progman"
+                        | "WorkerW"
+                        | "tooltips_class32"
+                        | "XamlExplorerHostIslandWindow"
+                        | "Windows.UI.Core.CoreWindow"
+                );
+                let mut r: RECT = std::mem::zeroed();
+                if !shell
+                    && cloaked == 0
+                    && ex & WS_EX_TRANSPARENT == 0
+                    && ex & WS_EX_TOOLWINDOW == 0
+                    && GetWindowRect(other, &mut r) != 0
+                    && rect_overlap(
+                        (own.left, own.top, own.right, own.bottom),
+                        (r.left, r.top, r.right, r.bottom),
+                    )
+                {
+                    // Foreground windows must also be above the popup to count as covering.
+                    let foreground = GetForegroundWindow();
+                    if !foreground_only
+                        || foreground == other
+                        || GetAncestor(foreground, GA_ROOT) == other
+                    {
+                        return true;
+                    }
+                }
+            }
+            other = next;
+        }
+    }
+    false
+}
+fn rect_overlap(a: (i32, i32, i32, i32), b: (i32, i32, i32, i32)) -> bool {
+    a.0.max(b.0) < a.2.min(b.2) && a.1.max(b.1) < a.3.min(b.3)
+}
+#[derive(Default)]
+struct PopupGuard {
+    pending: std::sync::atomic::AtomicBool,
+    last_show: Mutex<Option<std::time::Instant>>,
+}
+fn watch_popup(app: tauri::AppHandle) {
+    std::thread::spawn(move || loop {
+        std::thread::sleep(std::time::Duration::from_millis(200));
+        if app.state::<Engine>().popup_topmost() {
+            continue;
+        }
+        use std::sync::atomic::Ordering;
+        if app
+            .state::<PopupGuard>()
+            .pending
+            .swap(true, Ordering::AcqRel)
+        {
+            continue;
+        }
+        let handle = app.clone();
+        if app
+            .run_on_main_thread(move || {
+                handle
+                    .state::<PopupGuard>()
+                    .pending
+                    .store(false, Ordering::Release);
+                let Some(w) = handle.get_webview_window("main") else {
+                    return;
+                };
+                if !w.is_visible().unwrap_or(false) {
+                    return;
+                }
+                let recent = handle
+                    .state::<PopupGuard>()
+                    .last_show
+                    .lock()
+                    .unwrap()
+                    .is_some_and(|t| t.elapsed() < std::time::Duration::from_millis(500));
+                if !recent && popup_covered(&w, true) {
+                    let _ = w.hide();
+                }
+            })
+            .is_err()
+        {
+            app.state::<PopupGuard>()
+                .pending
+                .store(false, Ordering::Release);
+        }
+    });
+}
 fn show_popup(window: &tauri::WebviewWindow, point: Option<(f64, f64)>) {
+    *window.state::<PopupGuard>().last_show.lock().unwrap() = Some(std::time::Instant::now());
     let _ = window.set_shadow(false);
     let _ = apply_topmost(
         window,
@@ -1128,11 +1341,100 @@ fn send_notification(app: &tauri::AppHandle, success: bool, test: bool) -> Resul
 fn send_notification(_: &tauri::AppHandle, _: bool, _: bool) -> Result<(), String> {
     Err("Notifications require Windows.".into())
 }
+fn watch_tray_progress(app: tauri::AppHandle) {
+    let Some(base) = app.default_window_icon().cloned() else {
+        return;
+    };
+    let raw = base.rgba().to_vec();
+    let (w, h) = (base.width(), base.height());
+    std::thread::spawn(move || {
+        let mut last = String::new();
+        let mut last_step = -2;
+        loop {
+            let (active, queued, paused, avg, speeds, lang) = app.state::<Engine>().tray_summary();
+            let percent = (avg * 100.).round() as i32;
+            let tr = lang == "tr";
+            let mut label = if active == 0 && queued == 0 && paused == 0 {
+                "QuickClip321".to_string()
+            } else if tr {
+                format!("QuickClip321 | \u{0130}ndiriliyor: {active} | S\u{0131}rada: {queued} | Bekliyor: {paused} | %{percent}")
+            } else {
+                format!("QuickClip321 | Active: {active} | Queued: {queued} | Paused: {paused} | {percent}%")
+            };
+            if !speeds.is_empty() {
+                label.push_str(" | ");
+                label.push_str(&speeds);
+            }
+            let label = label.chars().take(120).collect::<String>();
+            let step = if active == 0 { -1 } else { percent / 5 };
+            if let Some(tray) = app.tray_by_id("quickclip321-tray") {
+                if label != last {
+                    let _ = tray.set_tooltip(Some(&label));
+                    last = label;
+                }
+                if step != last_step {
+                    let mut pixels = raw.clone();
+                    if step >= 0 && w >= 16 && h >= 16 {
+                        let cx = (w as f64 - 1.) / 2.;
+                        let cy = (h as f64 - 1.) / 2.;
+                        let radius = cx.min(cy) - 1.;
+                        for y in 0..h {
+                            for x in 0..w {
+                                let dx = x as f64 - cx;
+                                let dy = y as f64 - cy;
+                                let d = (dx * dx + dy * dy).sqrt();
+                                if (d - radius).abs() <= (w as f64 / 24.).max(0.8) {
+                                    let angle = dx.atan2(-dy).rem_euclid(std::f64::consts::TAU)
+                                        / std::f64::consts::TAU;
+                                    let i = ((y * w + x) * 4) as usize;
+                                    pixels[i..i + 4].copy_from_slice(
+                                        if angle <= step as f64 / 20. {
+                                            &[171, 123, 255, 255]
+                                        } else {
+                                            &[75, 67, 95, 255]
+                                        },
+                                    );
+                                }
+                            }
+                        }
+                    }
+                    if tray
+                        .set_icon(Some(tauri::image::Image::new_owned(pixels, w, h)))
+                        .is_ok()
+                    {
+                        last_step = step;
+                    }
+                }
+            }
+            std::thread::sleep(std::time::Duration::from_millis(1000));
+        }
+    });
+}
 fn watch_notifications(app: tauri::AppHandle) {
     std::thread::spawn(move || loop {
-        for success in app.state::<Engine>().take_notifications() {
-            let result = send_notification(&app, success, false);
+        let notices = app.state::<Engine>().take_notifications();
+        if !notices.is_empty() {
+            let tr = app.state::<Engine>().tray_summary().5 == "tr";
+            let completed = notices.iter().filter(|x| **x).count();
+            let failed = notices.len() - completed;
+            let message = if notices.len() == 1 {
+                match (tr, completed == 1) {
+                    (true, true) => "\u{0130}ndirme tamamland\u{0131}",
+                    (true, false) => "\u{0130}ndirme ba\u{015f}ar\u{0131}s\u{0131}z",
+                    (false, true) => "Download completed",
+                    (false, false) => "Download failed",
+                }
+                .to_string()
+            } else if tr {
+                format!("{completed} tamamland\u{0131} | {failed} ba\u{015f}ar\u{0131}s\u{0131}z")
+            } else {
+                format!("{completed} completed | {failed} failed")
+            };
+            let h = app.clone();
+            let _ = app.run_on_main_thread(move || show_shortcut_toast(&h, &message));
             if let Some(dir) = std::env::var_os("QC_V3_BENCH_DIR") {
+                let success = failed == 0;
+                let result = send_notification(&app, success, false);
                 let _ = std::fs::write(
                     PathBuf::from(dir).join("notification-result.txt"),
                     format!("success={success};shell_accepted={}", result.is_ok()),
@@ -1141,6 +1443,312 @@ fn watch_notifications(app: tauri::AppHandle) {
         }
         std::thread::sleep(std::time::Duration::from_millis(350));
     });
+}
+
+mod signed_update;
+#[tauri::command]
+async fn tool_versions(engine: State<'_, Engine>) -> Result<String, String> {
+    let settings = engine.snapshot().settings;
+    tauri::async_runtime::spawn_blocking(move||{
+        let y=quickclip_core::tool_version(&settings.yt_dlp,"--version").unwrap_or_else(||"Unavailable".into());
+        let f=quickclip_core::tool_version(&settings.ffmpeg,"-version").unwrap_or_else(||"Unavailable".into());
+        let n=quickclip_core::managed_node_path(&settings.yt_dlp).unwrap_or_else(||find_tool("node.exe"));
+        let node=quickclip_core::tool_version(&n,"--version").unwrap_or_else(||"Unavailable".into());
+        let probe=quickclip_core::tool_version(&settings.ffmpeg.with_file_name("ffprobe.exe"),"-version").unwrap_or_else(||"Unavailable".into());
+        format!("yt-dlp: {y}\nFFmpeg: {f}\nFFprobe: {probe}\nNode: {node}\nVerified recommended: yt-dlp 2026.11.23 / FFmpeg 9.1 / Node 24.22.3")
+    }).await.map_err(|_|"Tool version check failed".into())
+}
+#[tauri::command]
+async fn update_ytdlp(engine: State<'_, Engine>) -> Result<Settings, String> {
+    let e = engine.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || e.install_recommended_ytdlp())
+        .await
+        .map_err(|_| "Tool update failed".to_string())?
+}
+#[tauri::command]
+fn rollback_ytdlp(engine: State<'_, Engine>) -> Result<Settings, String> {
+    engine.rollback_ytdlp()
+}
+
+mod update_check;
+#[derive(Default)]
+struct UpdateRuntime {
+    ready: Mutex<Option<signed_update::Staged>>,
+    busy: std::sync::atomic::AtomicBool,
+    notice: Mutex<String>,
+}
+#[derive(serde::Serialize)]
+struct UpdateStatus {
+    ready: Option<signed_update::ReadyInfo>,
+    busy: bool,
+    message: String,
+}
+#[tauri::command]
+fn update_status(state: State<'_, UpdateRuntime>) -> UpdateStatus {
+    UpdateStatus {
+        ready: state.ready.lock().unwrap().as_ref().map(|x| x.info()),
+        busy: state.busy.load(std::sync::atomic::Ordering::Acquire),
+        message: state.notice.lock().unwrap().clone(),
+    }
+}
+fn stage_for_channel(
+    app: &tauri::AppHandle,
+    channel: &str,
+    explicit_switch: bool,
+) -> Result<signed_update::ReadyInfo, String> {
+    use std::sync::atomic::Ordering;
+    let r = app.state::<UpdateRuntime>();
+    if r.busy.swap(true, Ordering::AcqRel) {
+        return Err("Update operation already running".into());
+    }
+    let result = (|| {
+        let i = update_check::check(channel)?;
+        if !i.signed_available || (!explicit_switch && i.switch_available) {
+            return Err("No eligible signed update".into());
+        }
+        let target = i
+            .latest_in_channel
+            .ok_or("No release on selected channel")?;
+        *r.notice.lock().unwrap() = "Downloading and verifying signed update".into();
+        let staged = signed_update::stage(&target, channel)?;
+        let info = staged.info();
+        *r.ready.lock().unwrap() = Some(staged);
+        let handle = app.clone();
+        let tr = app.state::<Engine>().tray_summary().5 == "tr";
+        let _ = app.run_on_main_thread(move || {
+            show_shortcut_toast(
+                &handle,
+                if tr {
+                    "G\u{00fc}ncelleme haz\u{0131}r"
+                } else {
+                    "Update ready to install"
+                },
+            )
+        });
+        Ok(info)
+    })();
+    *r.notice.lock().unwrap() = if result.is_ok() {
+        "Verified update ready".into()
+    } else {
+        "Update not staged; check release and retry".into()
+    };
+    r.busy.store(false, Ordering::Release);
+    result
+}
+#[tauri::command]
+async fn stage_signed_update(
+    app: tauri::AppHandle,
+    channel: String,
+) -> Result<signed_update::ReadyInfo, String> {
+    if isolated_run() {
+        return Err("Network updates disabled in fixture mode".into());
+    }
+    tauri::async_runtime::spawn_blocking(move || stage_for_channel(&app, &channel, true))
+        .await
+        .map_err(|_| "Update staging failed".to_string())?
+}
+fn install_ready(app: &tauri::AppHandle, explicit: bool) -> Result<(), String> {
+    use std::sync::atomic::Ordering;
+    if isolated_run() {
+        return Err("Installation disabled in fixture mode".into());
+    }
+    let r = app.state::<UpdateRuntime>();
+    if r.busy.swap(true, Ordering::AcqRel) {
+        return Err("Update operation already running".into());
+    }
+    let result = (|| {
+        let engine = app.state::<Engine>();
+        let ready = r.ready.lock().unwrap();
+        let staged = ready.as_ref().ok_or("No verified update ready")?;
+        let info = staged.info();
+        let prefs = engine.snapshot().settings.prefs;
+        if app.state::<ExitPending>().0.load(Ordering::Acquire) {
+            return Err("Exit already scheduled".into());
+        }
+        if info.channel != prefs.update_channel {
+            return Err("Selected channel changed; check again".into());
+        }
+        let current = semver::Version::parse(env!("CARGO_PKG_VERSION"))
+            .map_err(|_| "Invalid current version")?;
+        let target = semver::Version::parse(&info.version).map_err(|_| "Invalid target version")?;
+        let current_nightly = current.pre.as_str().split('.').any(|p| p == "nightly");
+        if !explicit
+            && (target <= current
+                || (info.channel == "nightly") != current_nightly
+                || prefs.update_mode != "automatic")
+        {
+            return Err("Automatic channel switching is disabled".into());
+        }
+        if target <= current && (info.channel == "nightly") == current_nightly {
+            return Err("Downgrade on the same channel refused".into());
+        }
+        let state = app
+            .path()
+            .app_local_data_dir()
+            .map_err(|_| "State directory unavailable")?
+            .join("state.json");
+        // Acquire the queue lock before starting the replacement helper.
+        engine.begin_idle_update()?;
+        if let Err(e) = signed_update::install(staged, &state) {
+            engine.abort_safe_exit();
+            return Err(e);
+        }
+        app.exit(0);
+        Ok(())
+    })();
+    if result.is_err() {
+        r.busy.store(false, Ordering::Release);
+    }
+    result
+}
+#[tauri::command]
+fn install_signed_update(app: tauri::AppHandle) -> Result<(), String> {
+    install_ready(&app, true)
+}
+#[tauri::command]
+fn startup_health() -> Result<(), String> {
+    signed_update::report_health()
+}
+fn watch_updates(app: tauri::AppHandle) {
+    std::thread::spawn(move || {
+        std::thread::sleep(std::time::Duration::from_secs(15));
+        let mut last_check = None::<std::time::Instant>;
+        let mut last_channel = String::new();
+        loop {
+            let engine = app.state::<Engine>();
+            let prefs = engine.snapshot().settings.prefs;
+            let (a, q, p, _, _, _) = engine.tray_summary();
+            let idle = a == 0 && q == 0 && p == 0;
+            let due = last_channel != prefs.update_channel
+                || last_check.is_none_or(|v| v.elapsed() >= std::time::Duration::from_secs(86400));
+            if idle && due {
+                last_channel = prefs.update_channel.clone();
+                last_check = Some(std::time::Instant::now());
+                if let Ok(i) = update_check::check(&prefs.update_channel) {
+                    if i.signed_available && !i.switch_available && i.available.is_some() {
+                        let handle = app.clone();
+                        let _ = app.run_on_main_thread(move || {
+                            show_shortcut_toast(&handle, "Update available")
+                        });
+                        if prefs.update_mode != "manual" {
+                            let _ = stage_for_channel(&app, &prefs.update_channel, false);
+                        }
+                    }
+                }
+            }
+            if idle
+                && prefs.update_mode == "automatic"
+                && app.state::<UpdateRuntime>().ready.lock().unwrap().is_some()
+            {
+                let h = app.clone();
+                let _ = app.run_on_main_thread(move || {
+                    let _ = install_ready(&h, false);
+                });
+            }
+            std::thread::sleep(std::time::Duration::from_secs(30));
+        }
+    });
+}
+
+#[tauri::command]
+async fn download_public_beta(app: tauri::AppHandle) -> Result<String, String> {
+    if isolated_run() {
+        return Err("Download disabled in fixture mode".into());
+    }
+    let destination = app
+        .path()
+        .download_dir()
+        .map_err(|_| "Downloads folder unavailable")?
+        .join("QuickClip321-Releases");
+    tauri::async_runtime::spawn_blocking(move||{
+        use sha2::{Digest,Sha256};
+        let expected="e2ecf9ddc7494c04c1279f914dff1295d86cca05788c62642317a156f886d7a6";
+        std::fs::create_dir_all(&destination).map_err(|e|e.to_string())?;
+        let target=destination.join("QuickClip321-3.0.0-beta.5-win-x64.exe");
+        let verified=|p:&std::path::Path|->bool{
+            std::fs::metadata(p).ok().is_some_and(|m|m.len()==12_628_992)&&std::fs::read(p).ok().is_some_and(|b|Sha256::digest(b).iter().map(|n|format!("{n:02x}")).collect::<String>()==expected)
+        };
+        if !target.exists(){
+            let tmp=tempfile::NamedTempFile::new_in(&destination).map_err(|e|e.to_string())?;
+            let system=std::env::var_os("SystemRoot").ok_or("Windows directory unavailable")?;
+            let mut cmd=std::process::Command::new(PathBuf::from(system).join("System32/curl.exe"));
+            #[cfg(windows)]{use std::os::windows::process::CommandExt;cmd.creation_flags(0x08000000);}
+            let status=cmd.args(["-q","--silent","--show-error","--fail","--location","--max-redirs","5","--proto","=https","--proto-redir","=https","--connect-timeout","10","--max-time","120","--max-filesize","12628992","--output"]).arg(tmp.path()).arg("https://github.com/Tuna321/QuickClip321/releases/download/v3.0.0-beta.5/QuickClip321-3.0.0-beta.5-win-x64.exe").status().map_err(|_|"Download unavailable")?;
+            if !status.success()||!verified(tmp.path()){return Err("Release download failed verification".into());}
+            tmp.persist_noclobber(&target).map_err(|_|"Could not save verified release")?;
+        }
+        if !verified(&target){return Err("Existing release file has unexpected contents; not overwritten".into());}
+        reveal_folder(&destination)?;
+        Ok("Verified public Beta 5 saved. Exit Nightly before launching it manually.".into())
+    }).await.map_err(|_|"Release download failed".to_string())?
+}
+#[tauri::command]
+async fn check_app_updates(channel: String) -> Result<update_check::UpdateInfo, String> {
+    tauri::async_runtime::spawn_blocking(move || update_check::check(&channel))
+        .await
+        .map_err(|_| "Update check failed".to_string())?
+}
+#[tauri::command]
+fn copy_diagnostics(app: tauri::AppHandle, engine: State<'_, Engine>) -> Result<(), String> {
+    let report = diagnostics(engine);
+    app.clipboard()
+        .write_text(report)
+        .map_err(|_| "Could not copy diagnostic report".into())
+}
+#[tauri::command]
+fn export_preferences(engine: State<'_, Engine>) -> Result<String, String> {
+    let mut p =
+        serde_json::to_value(engine.snapshot().settings.prefs).map_err(|e| e.to_string())?;
+    let obj = p.as_object_mut().ok_or("Invalid preferences")?;
+    for key in [
+        "last_destination",
+        "category_paths",
+        "last_organize",
+        "previous_ytdlp",
+    ] {
+        obj.remove(key);
+    }
+    serde_json::to_string_pretty(&serde_json::json!({"schema":1,"preferences":p}))
+        .map_err(|e| e.to_string())
+}
+#[tauri::command]
+fn import_preferences(
+    window: tauri::WebviewWindow,
+    engine: State<'_, Engine>,
+    data: String,
+) -> Result<(), String> {
+    if data.len() > 262144 {
+        return Err("Settings backup is too large".into());
+    }
+    let v: serde_json::Value =
+        serde_json::from_str(&data).map_err(|_| "Invalid settings backup")?;
+    if v["schema"].as_u64() != Some(1) {
+        return Err("Unsupported settings backup".into());
+    }
+    let mut p = engine.snapshot().settings;
+    let mut current = serde_json::to_value(&p.prefs).map_err(|e| e.to_string())?;
+    let target = current.as_object_mut().ok_or("Invalid preferences")?;
+    let source = v["preferences"]
+        .as_object()
+        .ok_or("Invalid settings backup")?;
+    for (k, value) in source {
+        if target.contains_key(k)
+            && !matches!(
+                k.as_str(),
+                "last_destination"
+                    | "category_paths"
+                    | "last_organize"
+                    | "run_on_startup"
+                    | "update_channel"
+                    | "update_mode"
+                    | "previous_ytdlp"
+            )
+        {
+            target.insert(k.clone(), value.clone());
+        }
+    }
+    p.prefs = serde_json::from_value(current).map_err(|_| "Invalid settings values")?;
+    save_settings(window, engine, p)
 }
 fn main() {
     tauri::Builder::default()
@@ -1180,12 +1788,19 @@ fn main() {
             if let Err(e) = sync_startup(engine.snapshot().settings.prefs.run_on_startup) {
                 eprintln!("{e}");
             }
+            if !needs_setup && !isolated_run() {
+                let _ = engine.resume_saved_queue();
+            }
             app.manage(engine);
+            app.manage(PopupGuard::default());
             app.manage(HotkeyStatus::default());
             app.manage(CaptureUntil::default());
             app.manage(TestUntil::default());
             let smoke = std::env::var_os("QC_V3_SMOKE_DIR").is_some();
             app.manage(ClipboardConsumption::default());
+            app.manage(DuplicateInbox::default());
+            app.manage(ExitPending::default());
+            app.manage(UpdateRuntime::default());
             app.manage(ClipboardInbox(Mutex::new(if smoke {
                 Some("https://example.com/fixture".into())
             } else {
@@ -1198,7 +1813,8 @@ fn main() {
             }
             let show = MenuItem::with_id(app, "show", "Show QuickClip321", true, None::<&str>)?;
             let quit = MenuItem::with_id(app, "quit", "Exit", true, None::<&str>)?;
-            let menu = Menu::with_items(app, &[&show, &quit])?;
+            let cancel_exit=MenuItem::with_id(app,"cancel_exit","Cancel scheduled exit",true,None::<&str>)?;
+            let menu = Menu::with_items(app, &[&show, &quit,&cancel_exit])?;
             let mut tray = TrayIconBuilder::with_id("quickclip321-tray")
                 .menu(&menu)
                 .tooltip("QuickClip321")
@@ -1210,18 +1826,40 @@ fn main() {
                         }
                     }
                     "quit" => {
-                        let active = app.state::<Engine>().snapshot().jobs.iter().any(|j| {
-                            matches!(
-                                j.status,
-                                quickclip_core::Status::Running | quickclip_core::Status::Queued
-                            )
-                        });
-                        if active {
-                            if let Some(w) = app.get_webview_window("main") {
-                                show_popup(&w, None);
+                        use std::sync::atomic::Ordering;
+                        let pending=app.state::<ExitPending>();
+                        if pending.0.swap(true,Ordering::AcqRel){return;}
+                        match app.state::<Engine>().prepare_safe_exit(){
+                            Ok(())=>{
+                                let handle=app.clone();
+                                let tr=app.state::<Engine>().tray_summary().5=="tr";
+                                show_shortcut_toast(app,if tr{"Kuyruk korunuyor; g\u{00fc}venli \u{00e7}\u{0131}k\u{0131}\u{015f}"}else{"Saving queue; exiting safely"});
+                                std::thread::spawn(move||{
+                                    // Unsupported active jobs may finish normally. Do not interrupt processing.
+                                    while handle.state::<ExitPending>().0.load(Ordering::Acquire) {
+                                        if handle.state::<Engine>().safe_exit_ready(){
+                                            let h=handle.clone();
+                                            let _=handle.run_on_main_thread(move||{
+                                                if h.state::<ExitPending>().0.load(Ordering::Acquire){h.exit(0);}
+                                            });
+                                            return;
+                                        }
+                                        std::thread::sleep(std::time::Duration::from_millis(500));
+                                    }
+                                });
                             }
-                        } else {
-                            app.exit(0);
+                            Err(e)=>{
+                                pending.0.store(false,Ordering::Release);
+                                show_shortcut_toast(app,&e);
+                                if let Some(w)=app.get_webview_window("main"){show_popup(&w,None);}
+                            }
+                        }
+                    }
+                    "cancel_exit"=>{
+                        use std::sync::atomic::Ordering;
+                        if app.state::<ExitPending>().0.swap(false,Ordering::AcqRel){
+                            app.state::<Engine>().abort_safe_exit();
+                            show_shortcut_toast(app,"Exit cancelled; resume held jobs in Queue");
                         }
                     }
                     _ => {}
@@ -1263,6 +1901,9 @@ fn main() {
                 }
             }
             if !smoke {
+                watch_popup(app.handle().clone());
+                watch_tray_progress(app.handle().clone());
+                if !isolated_run(){watch_updates(app.handle().clone());}
                 watch_notifications(app.handle().clone());
             }
             // Explicit isolated fixture only; normal users never auto-enqueue.
@@ -1312,9 +1953,21 @@ fn main() {
         })
         .invoke_handler(tauri::generate_handler![
             visual_page,
+            check_app_updates,
+            tool_versions,
+            update_ytdlp,
+            rollback_ytdlp,
+            stage_signed_update,
+            install_signed_update,
+            update_status,
+            startup_health,
+            download_public_beta,
+            export_preferences,
+            import_preferences,
             smoke_active,
             take_clipboard_link,
             take_submitted_links,
+            take_duplicate_requests,
             media_preview,
             live_preview_frame,
             validate_links,
@@ -1330,6 +1983,7 @@ fn main() {
             setup_managed_tools,
             setup_progress,
             diagnostics,
+            copy_diagnostics,
             organizer_counts,
             remove,
             save_settings,
@@ -1348,4 +2002,15 @@ fn main() {
         ])
         .run(tauri::generate_context!())
         .expect("QuickClip321 startup failed");
+}
+
+#[cfg(test)]
+mod popup_tests {
+    use super::rect_overlap;
+    #[test]
+    fn overlap_geometry() {
+        assert!(rect_overlap((0, 0, 100, 100), (50, 50, 150, 150)));
+        assert!(!rect_overlap((0, 0, 100, 100), (100, 0, 200, 100)));
+        assert!(!rect_overlap((-100, -100, 0, 0), (0, 0, 100, 100)));
+    }
 }

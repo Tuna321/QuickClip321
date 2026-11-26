@@ -2992,10 +2992,11 @@ dependencies = [
 
 [[package]]
 name = "quickclip-core"
-version = "3.0.0-beta.5"
+version = "3.0.0-beta.6.nightly.2"
 dependencies = [
  "serde",
  "serde_json",
+ "sha2 0.11.2",
  "tempfile",
  "unicode-normalization",
  "url",
@@ -3005,16 +3006,19 @@ dependencies = [
 
 [[package]]
 name = "quickclip321-v3"
-version = "3.0.0-beta.5"
+version = "3.0.0-beta.6.nightly.2"
 dependencies = [
  "quickclip-core",
+ "semver",
  "serde",
  "serde_json",
+ "sha2 0.11.2",
  "tauri",
  "tauri-build",
  "tauri-plugin-clipboard-manager",
  "tauri-plugin-dialog",
  "tauri-plugin-single-instance",
+ "tempfile",
  "windows-sys 0.61.2",
 ]
 

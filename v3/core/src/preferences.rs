@@ -34,6 +34,8 @@ pub struct Preferences {
     pub startup_view: String,
     pub theme: String,
     pub language: String,
+    pub update_channel: String,
+    pub update_mode: String,
     pub open_hotkey: String,
     pub shortcuts: BTreeMap<String, String>,
     pub always_on_top: bool,
@@ -52,6 +54,8 @@ pub struct Preferences {
     pub material: String,
     pub detailed_folders: bool,
     pub concurrent_downloads: u8,
+    pub limit_kib_per_second: u32,
+    pub previous_ytdlp: Option<PathBuf>,
     pub profiles: Vec<Profile>,
     pub rules: Vec<Rule>,
     pub category_paths: BTreeMap<String, PathBuf>,
@@ -65,6 +69,8 @@ impl Default for Preferences {
             startup_view: "quick".into(),
             theme: "Dark".into(),
             language: "en".into(),
+            update_channel: "stable".into(),
+            update_mode: "semi".into(),
             open_hotkey: "Ctrl+Alt+Space".into(),
             shortcuts: BTreeMap::new(),
             always_on_top: true,
@@ -83,6 +89,8 @@ impl Default for Preferences {
             material: "Flat".into(),
             detailed_folders: true,
             concurrent_downloads: 1,
+            limit_kib_per_second: 0,
+            previous_ytdlp: None,
             profiles: vec![],
             rules: vec![],
             category_paths: BTreeMap::new(),
@@ -160,6 +168,12 @@ impl Preferences {
     }
     pub fn normalize(&mut self) {
         let d = Self::default();
+        if !matches!(self.update_channel.as_str(), "stable" | "nightly") {
+            self.update_channel = d.update_channel.clone();
+        }
+        if !matches!(self.update_mode.as_str(), "manual" | "semi" | "automatic") {
+            self.update_mode = d.update_mode.clone();
+        }
         if !matches!(self.language.as_str(), "en" | "tr") {
             self.language = d.language.clone();
         }
@@ -236,6 +250,14 @@ impl Preferences {
             self.material = "Flat".into();
         }
         self.concurrent_downloads = self.concurrent_downloads.clamp(1, 3);
+        self.limit_kib_per_second = self.limit_kib_per_second.min(1_048_576);
+        if self
+            .previous_ytdlp
+            .as_ref()
+            .is_some_and(|p| !p.is_absolute())
+        {
+            self.previous_ytdlp = None;
+        }
         let mut names = std::collections::HashSet::new();
         self.profiles.retain(|p| {
             !p.name.trim().is_empty()
