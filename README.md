@@ -4,9 +4,9 @@
 <img src="v3/assets/beta2-logo-light.png" width="80" alt="QuickClip321 logo">
 </picture></p>
 <h1 align="center">QuickClip321</h1>
-<p align="center"><strong>Copy. Click. Download.</strong><br>Free, open-source video and audio downloader for Windows. Built for creators, made for everyone.</p>
+<p align="center"><strong>Copy. Click. Download.</strong><br>The free, open-source video and audio downloader that lives in your Windows system tray.</p>
 <p align="center">
-<a href="https://github.com/Tuna321/QuickClip321/releases/download/v3.0.0-beta.2/QuickClip321-3.0.0-beta.2-win-x64.exe"><img src="v3/assets/beta2-download-exe.png" width="288" alt="Download for Windows x64 - EXE"></a>
+<a href="https://github.com/Tuna321/QuickClip321/releases/download/v3.0.0-beta.2/QuickClip321-3.0.0-beta.2-win-x64.exe"><img src="v3/assets/beta2-download-graphite.png" width="288" alt="Download for Windows x64 - EXE"></a>
 </p>
 <p align="center"><sub>Windows x64 &nbsp; / &nbsp; Portable EXE &nbsp; / &nbsp; Beta 2</sub></p>
 <p align="center"><strong>FREE &nbsp; / &nbsp; MIT LICENSE &nbsp; / &nbsp; RUST</strong></p>
@@ -14,9 +14,19 @@
 
 <p align="center"><img src="v3/assets/beta2-hero.jpg" width="900" alt="Copy, Click, Download: actual QuickClip321 beta 2 dark quick view"></p>
 
-## Your media. Your workflow.
+## Your downloader, always within reach.
 
-QuickClip321 stays in your Windows notification area. Copy a media link, open the popup, choose a format and download. No account, no subscription, no browser extension required.
+**Copy a link. Click the tray icon. Hit Download.**
+
+QuickClip321 is designed around the Windows system tray, not a full-size downloader window. Keep your browser or editor open, copy a media link, and bring up a compact popup with the link ready when clipboard capture is enabled. Downloads continue in the background, and Windows notifies you when they're done.
+
+| 01 / COPY | 02 / CLICK | 03 / DOWNLOAD |
+| :--- | :--- | :--- |
+| Copy a media URL | Click QuickClip321 in the system tray | Start the download with your saved settings |
+
+After setup, there is no need to open the Start menu, switch to a large application window or manually paste every link. No account, subscription or browser extension required.
+
+### Ready for your workflow
 
 | **Premiere Ready** | **Fast Download** | **Audio** |
 | --- | --- | --- |
@@ -35,10 +45,11 @@ Format and resolution are independently adjustable. Save your own presets in the
 > [!IMPORTANT]
 > This is a public beta, not a stable release. The executable is unsigned; Windows may warn or block it. Verify the download against the release's SHA-256 checksum and keep Windows security enabled. Run on startup is enabled by default and can be disabled in Settings.
 
-## Small on the outside. Powerful underneath.
+## A small popup. A full downloader.
 
 | Feature | What you can do |
 | --- | --- |
+| System tray | Open a compact popup from the notification area; keep downloads running in the background. |
 | Clipboard capture | Bring a copied link into the popup, without auto-downloading. |
 | Media formats | MP4, original, MP3, M4A and WAV; available quality depends on the source. |
 | Advanced downloads | Batch links, playlists, optional clipping, available subtitles and metadata. |
