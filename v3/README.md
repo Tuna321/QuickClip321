@@ -1,6 +1,6 @@
 # QuickClip321 V3 — Windows tray downloader
 
-Current public preview: 3.0.0-beta.5. This is a public beta, not a stable release.
+Current public preview: 3.0.0-beta.6 (Stable track), with 3.0.0-beta.6.nightly.3 on the experimental track. Both are prereleases, not a production-stable release.
 
 ## What is implemented in the candidate
 - Hidden startup, frameless rounded Windows popup, taskbar exclusion, tray click show/hide, quick/advanced modes, monitor work-area placement (Tray/Corner/Custom), Escape and quick-view blur dismissal.

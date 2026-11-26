@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.0.0-beta.6 - 2026-11-27
+
+- Signed public beta and Nightly channels, explicit verified switching, restart health check and rollback backup.
+- Actual saved-file folder, duplicate warning and optional redownload, native completion/failure notices from the shared queue.
+- Per-download speed cap, queue recovery, settings export/import, recommended media-tool update and rollback.
+- Local fixture, real app, signed round-trip and packaging tests; no final 3.0 production-stable certification.
+
 ## 3.0.0-beta.5 - 2026-11-26
 
 - Custom global and in-app shortcuts, native localized fade notices and last-used download settings.

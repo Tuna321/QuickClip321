@@ -18,6 +18,8 @@
 
 - Final public Beta 6 executable passed the same real application tests: unlimited 3.42 s, capped 10.80 s, exact bytes, both completion paths, duplicate/folder and settings. Final signed swap in both directions passed with settings and prior EXEs preserved.
 
+- Both GitHub prereleases published with seven verified assets each. The actual Rust update discovery and signed staging path downloaded and authenticated both public releases (live test passed). Final Beta 6 UI smoke: 14/14 checks passed.
+
 ## Limitations
 - No clean Windows VM or second physical machine in this session; no claim of universal site/format compatibility, abrupt physical power-cut safety, or full native frontend parity. WebView2 is still required.
 - No Authenticode certificate; signed updater manifests authenticate release payloads but do not remove Windows SmartScreen warnings.
