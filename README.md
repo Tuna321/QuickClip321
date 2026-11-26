@@ -12,7 +12,7 @@
 <p align="center"><strong>FREE &nbsp; / &nbsp; MIT LICENSE &nbsp; / &nbsp; RUST</strong></p>
 <p align="center"><a href="https://github.com/Tuna321/QuickClip321/releases/download/v3.0.0-beta.2/QuickClip321-3.0.0-beta.2-win-x64.exe"><strong>Download EXE (11.1 MiB)</strong></a> | <a href="https://github.com/Tuna321/QuickClip321/releases/download/v3.0.0-beta.2/QuickClip321-3.0.0-beta.2-win-x64-portable.zip">ZIP (3.5 MiB)</a> | <a href="https://github.com/Tuna321/QuickClip321/releases/tag/v3.0.0-beta.2">Release notes</a> | <a href="#get-started">Get started</a> | <a href="https://github.com/Tuna321/QuickClip321/issues/new/choose">Give feedback</a></p>
 
-<p align="center"><img src="v3/assets/beta2-hero.jpg" width="900" alt="Copy, Click, Download: actual QuickClip321 beta 2 dark quick view"></p>
+<p align="center"><img src="v3/assets/beta2-system-tray.jpg" width="900" alt="One click away: click the QuickClip321 Q icon in the Windows system tray to open the compact downloader popup"></p>
 
 ## Your downloader, always within reach.
 
@@ -25,6 +25,8 @@ QuickClip321 is designed around the Windows system tray, not a full-size downloa
 | Copy a media URL | Click QuickClip321 in the system tray | Start the download with your saved settings |
 
 After setup, there is no need to open the Start menu, switch to a large application window or manually paste every link. No account, subscription or browser extension required.
+
+<p align="center"><img src="v3/assets/beta2-hero.jpg" width="900" alt="Copy, Click, Download: actual QuickClip321 beta 2 dark quick view"></p>
 
 ### Ready for your workflow
 
