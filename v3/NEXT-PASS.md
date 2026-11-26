@@ -1,3 +1,3 @@
-# Next pass: public Beta 3 feedback
+# Next pass: public Beta 5 feedback
 
-Prioritize actual first-use reports. Keep automatic verified setup and no global changes. Reproduce failure/retry, clean VM/WebView2 availability, tool update/recovery and real source compatibility. Stable release gates and native migration remain separate. Verify release artifacts and preserve older versions.
+Prioritize reported regressions, real-site preview and clip fallback coverage, shortcut conflicts and language completeness. Preserve ordinary download speed settings. Clean VM/WebView2, slow-network testing and native parity remain open.

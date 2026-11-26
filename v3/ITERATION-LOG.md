@@ -74,3 +74,5 @@ External Beta 3 tester reported a frozen-looking setup screen and later confirme
 Final Beta 4 cold setup, restart and download tests passed; core 25/25, UI smoke all true. Release package validated. Existing download engine unchanged.
 
 Beta 4 public prerelease published, five assets verified. Direct public download and README updated.
+
+Beta 5 approved after maintainer testing. Five release assets published with verified SHA-256 digests; public EXE downloaded and hash-checked before updating main. Native notice, persisted preferences, clipboard consumption and UI smoke passed. Public beta limitations documented.
