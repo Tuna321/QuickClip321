@@ -28,3 +28,6 @@ Unsigned Windows x64 EXE, WebView2, first-use verified media tools may require a
 - Main README / Pages source tray-first wording; original purple hero preserved.
 - Neutral graphite CTA; inspect live GitHub both themes.
 - Creator demo and community messages are drafts; no social posts or external submissions sent.
+
+## Beta 5 positioning update
+Lead with keyboard-first downloading while the popup is hidden, 12.63 MB EXE / 3.93 MB ZIP (app only), 25,693 local catalog records, compact quick view and eligible partial clips. Keep the dependency download caveat adjacent to size. Do not claim minimum RAM, universal recognition, exclusive features or fastest-in-market without benchmarks. Actual earlier UI screenshots remain labeled as such.

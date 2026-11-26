@@ -4,91 +4,111 @@
 <img src="v3/assets/beta2-logo-light.png" width="80" alt="QuickClip321 logo">
 </picture></p>
 <h1 align="center">QuickClip321</h1>
-<p align="center"><strong>Copy. Click. Download.</strong><br>The free, open-source video and audio downloader that lives in your Windows system tray.</p>
+<p align="center"><strong>Copy. Click. Download.</strong><br>Download video and audio without leaving your workflow.<br>A free, open-source Windows downloader built around your system tray and keyboard.</p>
 <p align="center">
 <a href="https://github.com/Tuna321/QuickClip321/releases/download/v3.0.0-beta.5/QuickClip321-3.0.0-beta.5-win-x64.exe"><img src="v3/assets/beta2-download-graphite.png" width="288" alt="Download for Windows x64 - EXE"></a>
 </p>
 <p align="center"><sub>Windows x64 &nbsp; / &nbsp; Portable EXE &nbsp; / &nbsp; Beta 5</sub></p>
 <p align="center"><strong>FREE &nbsp; / &nbsp; MIT LICENSE &nbsp; / &nbsp; RUST</strong></p>
-<p align="center"><a href="https://github.com/Tuna321/QuickClip321/releases/download/v3.0.0-beta.5/QuickClip321-3.0.0-beta.5-win-x64.exe"><strong>Download EXE (12.0 MiB)</strong></a> | <a href="https://github.com/Tuna321/QuickClip321/releases/download/v3.0.0-beta.5/QuickClip321-3.0.0-beta.5-win-x64-portable.zip">ZIP (3.8 MiB)</a> | <a href="https://github.com/Tuna321/QuickClip321/releases/tag/v3.0.0-beta.5">Release notes</a> | <a href="#get-started">Get started</a> | <a href="https://github.com/Tuna321/QuickClip321/issues/new/choose">Give feedback</a></p>
+<p align="center"><a href="https://github.com/Tuna321/QuickClip321/releases/download/v3.0.0-beta.5/QuickClip321-3.0.0-beta.5-win-x64.exe"><strong>Download EXE (12.63 MB)</strong></a> | <a href="https://github.com/Tuna321/QuickClip321/releases/download/v3.0.0-beta.5/QuickClip321-3.0.0-beta.5-win-x64-portable.zip">ZIP (3.93 MB)</a> | <a href="https://github.com/Tuna321/QuickClip321/releases/tag/v3.0.0-beta.5">Release notes</a> | <a href="#get-started">Get started</a> | <a href="https://github.com/Tuna321/QuickClip321/issues/new/choose">Give feedback</a></p>
 
-<p align="center"><img src="v3/assets/beta2-system-tray.jpg" width="900" alt="One click away: click the QuickClip321 Q icon in the Windows system tray to open the compact downloader popup"></p>
+| **12.63 MB** | **25,693** | **8 shortcuts** | **Free & open source** |
+| :---: | :---: | :---: | :---: |
+| Portable EXE | Local catalog records | Fully customizable | MIT-licensed & open source |
 
-## Your downloader, always within reach.
+<sub>EXE size excludes separately installed media tools. Catalog count includes curated and contextual title records.</sub>
 
-**Copy a link. Click the tray icon. Hit Download.**
+<p align="center"><img src="v3/assets/beta2-system-tray.jpg" width="900" alt="The QuickClip321 Q icon in the Windows system tray opens the compact downloader popup"></p>
 
-QuickClip321 is designed around the Windows system tray, not a full-size downloader window. Keep your browser or editor open, copy a media link, and bring up a compact popup with the link ready when clipboard capture is enabled. Downloads continue in the background, and Windows notifies you when they're done.
+## 01 / Download without opening a window
 
-| 01 / COPY | 02 / CLICK | 03 / DOWNLOAD |
-| :--- | :--- | :--- |
-| Copy a media URL | Click QuickClip321 in the system tray | Start the download with your saved settings |
+**Copy a link. Press a shortcut. Keep working.**
 
-After setup, there is no need to open the Start menu, switch to a large application window or manually paste every link. No account, subscription or browser extension required.
+No need to switch to a downloader window, paste a URL or choose the same settings over and over. QuickClip321 runs in your system tray and can start a download from your keyboard while you are editing, browsing or working in another app.
 
-<p align="center"><img src="v3/assets/beta2-hero.jpg" width="900" alt="Copy, Click, Download: actual QuickClip321 beta 2 dark quick view"></p>
-<p align="center"><sub>Quick view shown in Beta 2; Beta 5 adds keyboard workflows, size estimates and smarter organization.</sub></p>
-
-### Copy. Shortcut. Download.
-
-Skip the popup entirely: copy a link and press a global shortcut, even while editing or browsing.
-
-| Default shortcut | Action |
+| Copy a link, then press | Get |
 | --- | --- |
-| Ctrl + Shift + 3 | Download MP3 |
-| Ctrl + Shift + 4 | Download MP4 |
-| Ctrl + Shift + D | Download with your last-used format |
-| Ctrl + Alt + Space | Open / hide QuickClip321 |
-| Ctrl + Shift + O | Open download folder |
+| <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>3</kbd> | MP3 audio |
+| <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>4</kbd> | Editor-ready MP4 |
+| <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>D</kbd> | Your last-used format |
+| <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>Space</kbd> | Open / hide QuickClip321 |
+| <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>O</kbd> | Open your download folder |
 
-Customize, disable and test shortcuts in Advanced > Shortcuts. Your last destination and quality are remembered, and a small native fade notification confirms your action.
+Your destination and quality are remembered. A small, native fade notification confirms the action without taking focus away from your work. All eight global and in-app shortcuts can be changed, disabled or tested in **Advanced > Shortcuts**. Global shortcuts work while QuickClip321 is running, even with its popup hidden.
 
-### Ready for your workflow
+## 02 / A small download. A complete workflow.
+
+**12.63 MB portable EXE. Just 3.93 MB as a ZIP.**
+
+QuickClip321 is built with Rust and uses the Windows WebView2 runtime. Download the standalone executable, save it in a permanent folder and open it. There is no large application installer or account setup.
+
+On first launch, missing media tools are automatically downloaded, verified and configured. Live progress shows what is being installed. No manual FFmpeg setup, administrator privileges or system PATH edits.
+
+The EXE size refers to QuickClip321 itself. First-time media-tool setup may require approximately 170-200 MB of additional downloads; WebView2 is required. Small file size is not a claim about RAM use.
+
+## 03 / 25,693 records. Less file chaos.
+
+**Download your media. Let QuickClip321 help sort it.**
+
+The local organizer recognizes artists, games, movies, TV shows and music genres using curated titles, contextual matching and available media metadata. The library works locally, without sending classification requests to an AI service.
+
+| **5,215** | **8,066** | **5,124** | **7,288** |
+| :---: | :---: | :---: | :---: |
+| Games | Films | TV series | Music records |
+
+Choose broad or detailed categories, add your own title rules, or assign custom folders. A manually chosen destination takes precedence. Matching is contextual, not guaranteed for every title.
+
+<details>
+<summary><strong>See the organizer interface</strong></summary>
+<br><img src="v3/assets/beta2-organizer-Dark-Flat.png" width="900" alt="Earlier V3 organizer interface showing custom title rules and destinations">
+</details>
+
+## 04 / One simple popup. Everything you need.
+
+**Simple by default. Advanced when you want it.**
+
+Prefer clicking instead of keyboard shortcuts? Copy a link and click the Q icon in the system tray. With clipboard capture enabled, your link is already waiting. Choose a format, resolution and destination, then download. Keep working as transfers continue in the background.
+
+<p align="center"><img src="v3/assets/beta2-hero.jpg" width="900" alt="Actual V3 quick-view interface showing presets, link, format, resolution and destination"></p>
+<p align="center"><sub>Actual Beta 2 quick-view screenshot. Beta 5 adds shortcuts, size estimates and more controls.</sub></p>
 
 | **Premiere Ready** | **Fast Download** | **Audio** |
 | --- | --- | --- |
-| Editing-friendly MP4 | Original format, without extra compatibility conversion | MP3 for audio workflows |
+| Editing-friendly MP4 | Original format without extra compatibility conversion | MP3, M4A or WAV |
 
-Format and resolution are independently adjustable. Save your own presets in the advanced workspace.
+Switch between quick view and the advanced workspace. Customize themes, accents, popup position and always-on-top behavior. English and Turkish interface options are available.
 
-## Get started
+<p align="center"><img src="v3/assets/beta2-quick-Light-Flat.png" width="600" alt="Actual Beta 2 quick view in light theme"></p>
 
-1. **[Download Beta 5 for Windows x64](https://github.com/Tuna321/QuickClip321/releases/download/v3.0.0-beta.5/QuickClip321-3.0.0-beta.5-win-x64.exe).** Save the EXE in a permanent folder and open it. No extraction required. The one-time setup shows live download progress if needed.
-2. **Copy a media link.** Click the Q icon in the system tray (look under the hidden icons arrow if necessary).
-3. **Choose and download.** Select your preset, format and resolution. On first launch, missing media tools are automatically downloaded, verified and configured. No manual FFmpeg setup.
+## 05 / Download what you need, not the whole video.
 
-**Requirements:** Windows x64 with the Microsoft Edge WebView2 Runtime. The portable EXE is approximately 12.0 MiB. A compressed ZIP with license notices is also available. Automatic first-use setup may download approximately 170-200 MB of media tools. No admin rights or global PATH modifications are required by the managed setup.
+**Need a five-second clip? Try downloading just that part.**
 
-> [!IMPORTANT]
-> This is a public beta, not a stable release. The executable is unsigned; Windows may warn or block it. Verify the download against the release's SHA-256 checksum and keep Windows security enabled. Run on startup is enabled by default and can be disabled in Settings.
+Set clip start and end before downloading. For eligible short video clips, QuickClip321 first tries to retrieve the requested section, checks the result, and falls back to a full download and trim when necessary. Supported sources can save substantial transfer time and bandwidth.
 
-## A small popup. A full downloader.
+Estimated source transfer size helps you choose quality. During eligible downloads, the preview can sample frames from the existing partial file without fetching a second video. Source support and container layout determine availability.
+
+## More control, without clutter
 
 | Feature | What you can do |
 | --- | --- |
-| System tray | Open a compact popup from the notification area; keep downloads running in the background. |
-| Clipboard capture | Bring a copied link into the popup, without auto-downloading. |
-| Media formats | MP4, original, MP3, M4A and WAV; available quality depends on the source. |
-| Advanced downloads | Batch links, playlists, smart partial clipping with full-download fallback, available subtitles and metadata. |
-| Live preview | Estimated source size and local partial-file frames where supported; no extra video transfer. |
-| Language | English and Turkish interface. |
-| Shortcuts | Custom global and in-app bindings with test mode. |
-| Queue | Run up to three simultaneous jobs, cancel or retry, and review history. |
-| Notifications | Get a Windows notification when a download completes or fails. |
-| Smart organizer | Sort media using 25,693 curated and contextual catalog records, custom title rules and folder overrides. |
-| Appearance | Choose light/dark palettes, accents, optional textures and popup position. |
+| Batch and playlists | Queue multiple links or supported playlists. |
+| Background queue | Run up to three simultaneous jobs, hold waiting jobs, cancel or retry, and review history. |
+| Notifications | Get Windows notifications when downloads complete or fail. |
+| Profiles | Save your favorite format and resolution combinations. |
+| Subtitles and metadata | Retrieve available subtitles and optional media metadata. |
+| Local settings | Keep custom rules, preferences and history between launches. |
 
-<p align="center"><img src="v3/assets/beta2-quick-Light-Flat.png" width="600" alt="Actual light theme in QuickClip321 V3 Beta 2"></p>
-<p align="center"><sub>Light theme | the same quick workflow, a different look.</sub></p>
+## Get started
 
-### Keep your downloads organized
+1. **[Download Beta 5 for Windows x64](https://github.com/Tuna321/QuickClip321/releases/download/v3.0.0-beta.5/QuickClip321-3.0.0-beta.5-win-x64.exe).** Save the EXE in a permanent folder and open it.
+2. Let the one-time verified media-tool setup finish if required.
+3. Copy a media link. Press a shortcut or click the Q icon in the notification area and hit Download.
 
-Music, rap, pop, rock/metal, electronic, film, TV, games and more. The organizer uses local contextual rules and metadata rather than sending the library to an AI service. Choose broad folders or detailed categories. A manually chosen destination overrides automatic routing.
+**Requirements:** Windows x64 and Microsoft Edge WebView2. First-use media-tool setup may download approximately 170-200 MB.
 
-<details>
-<summary><strong>See the advanced organizer</strong></summary>
-<br><img src="v3/assets/beta2-organizer-Dark-Flat.png" width="900" alt="Actual QuickClip321 advanced organizer with custom title rules and destinations">
-</details>
+> [!IMPORTANT]
+> This is an unsigned public beta, not a stable release. Verify the download against the release SHA-256 checksum and keep Windows security enabled. Run on startup is enabled by default and can be disabled in Settings. Media compatibility depends on the source. Only save media you have permission to download.
 
 ## Help shape V3
 
