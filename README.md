@@ -1,17 +1,19 @@
-<p align="center"><picture><img src="v3/assets/readme-hero.svg" width="100%" alt="QuickClip321 — Copy a link. Hit a shortcut. Keep creating. Actual Beta 2 interface shown."></picture></p>
-
 # QuickClip321 — Free Windows video &amp; audio downloader
 
-**QuickClip321** is a free, open-source Windows video and audio downloader for video editors, content creators and anyone who wants to save authorized media without interrupting their workflow. It runs in the system tray, uses global keyboard shortcuts, and supports MP4, MP3, M4A, WAV and original-format downloads through yt-dlp and FFmpeg.
+**Copy a link. Press a shortcut. Keep creating.**
 
-<p align="center"><a href="https://github.com/Tuna321/QuickClip321/releases/download/v3.0.0-beta.5/QuickClip321-3.0.0-beta.5-win-x64.exe"><img src="v3/assets/readme-download.svg" width="310" alt="Download for Windows x64 — portable EXE"></a></p>
+QuickClip321 is a free, open-source Windows video and audio downloader that lives in your system tray. Get editing-ready MP4 or MP3 without opening a downloader window. Powered by yt-dlp and FFmpeg.
+
+<p align="center"><a href="https://github.com/Tuna321/QuickClip321/releases/download/v3.0.0-beta.5/QuickClip321-3.0.0-beta.5-win-x64.exe"><img src="v3/assets/beta2-download-graphite.png" width="288" alt="Download for Windows x64 — portable EXE"></a></p>
 <p align="center"><strong>V3 Beta 5 · 12.63 MB EXE</strong> &nbsp; / &nbsp; <a href="https://github.com/Tuna321/QuickClip321/releases/download/v3.0.0-beta.5/QuickClip321-3.0.0-beta.5-win-x64-portable.zip">Portable ZIP (3.93 MB)</a> &nbsp; / &nbsp; <a href="https://github.com/Tuna321/QuickClip321/releases/tag/v3.0.0-beta.5">Release notes</a></p>
 <p align="center"><sub>Unsigned public beta · Windows x64 + WebView2 · First-run media tools may require an additional 170–200 MB.</sub></p>
+
+<p align="center"><picture><img src="v3/assets/readme-hero.svg" width="100%" alt="QuickClip321 — Copy a link. Hit a shortcut. Keep creating. Actual Beta 5 interface shown."></picture></p>
 
 <p align="center"><picture><img src="v3/assets/readme-metrics.svg" width="100%" alt="12.63 MB portable EXE, 25,693 local catalog records, 8 customizable shortcuts, free and MIT licensed."></picture></p>
 <sub>EXE size excludes separately installed media tools. Catalog count includes curated and contextual title records.</sub>
 
-**[Keyboard shortcuts](#01--download-without-opening-a-window) · [Smart organizer](#03--25693-records-less-file-chaos) · [Get started](#get-started) · [FAQ](#good-to-know) · [Feedback](#help-shape-v3)**
+**[Product website](https://tuna321.github.io/QuickClip321/) · [Keyboard shortcuts](#01--download-without-opening-a-window) · [Smart organizer](#03--25693-records-less-file-chaos) · [Why QuickClip321?](#why-quickclip321) · [Get started](#get-started) · [FAQ](#good-to-know) · [Feedback](#help-shape-v3)**
 
 ## 01 / Download without opening a window
 
@@ -27,7 +29,7 @@ No need to switch to a downloader window, paste a URL or choose the same setting
 | <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>Space</kbd> | Open / hide QuickClip321 |
 | <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>O</kbd> | Open your download folder |
 
-<p align="center"><picture><img src="v3/assets/beta2-system-tray.jpg" width="900" alt="Actual earlier V3 Windows system tray and compact downloader popup"></picture></p>
+<p align="center"><picture><img src="v3/assets/beta5-shortcuts.png" width="760" alt="Actual Beta 5 shortcuts workspace with configurable keyboard actions"></picture></p>
 
 Your destination and quality are remembered. A small, native fade notification confirms the action without taking focus away from your work. All eight global and in-app shortcuts can be changed, disabled or tested in **Advanced > Shortcuts**. Global shortcuts work while QuickClip321 is running, even with its popup hidden.
 
@@ -55,7 +57,7 @@ Choose broad or detailed categories, add your own title rules, or assign custom 
 
 <details>
 <summary><strong>See the organizer interface</strong></summary>
-<br><picture><img src="v3/assets/beta2-organizer-Dark-Flat.png" width="900" alt="Earlier V3 organizer interface showing custom title rules and destinations"></picture>
+<br><picture><img src="v3/assets/beta5-organizer.png" width="900" alt="Actual Beta 5 organizer interface showing custom title rules and destinations"></picture>
 </details>
 
 ## 04 / One simple popup. Everything you need.
@@ -70,9 +72,18 @@ Prefer clicking instead of keyboard shortcuts? Copy a link and click the Q icon 
 | --- | --- | --- |
 | Editing-friendly MP4 | Original format without extra compatibility conversion | MP3, M4A or WAV |
 
+<p align="center"><picture><source media="(prefers-reduced-motion: reduce)" srcset="docs/advanced-still.png"><img src="v3/assets/beta5-advanced-demo.gif" width="720" alt="Actual Beta 5 switching from compact Quick View to the advanced Queue workspace"></picture></p>
+<p align="center"><sub>Recorded from the published Beta 5 Windows EXE. The GIF shows the real Quick View to Advanced transition.</sub></p>
+
+<details>
+<summary><strong>Watch a real local test download complete</strong></summary>
+<p align="center"><picture><source media="(prefers-reduced-motion: reduce)" srcset="v3/assets/beta5-download-complete.png"><img src="v3/assets/beta5-download-demo.gif" width="720" alt="Actual Beta 5 local fixture download, from starting to completed"></picture></p>
+<sub>Authorized synthetic local video fixture; the test output folder is redacted. Output was verified as H.264/AAC. This edited loop is a functional demonstration, not an internet speed benchmark.</sub>
+</details>
+
 Switch between quick view and the advanced workspace. Customize themes, accents, popup position and always-on-top behavior. English and Turkish interface options are available.
 
-<p align="center"><picture><img src="v3/assets/beta2-quick-Light-Flat.png" width="600" alt="Actual Beta 2 quick view in light theme"></picture></p>
+<p align="center"><picture><img src="v3/assets/beta5-quick-light.png" width="600" alt="Actual Beta 5 quick view in light theme"></picture></p>
 
 ## 05 / Download what you need, not the whole video.
 
@@ -93,6 +104,22 @@ Estimated source transfer size helps you choose quality. During eligible downloa
 | Subtitles and metadata | Retrieve available subtitles and optional media metadata. |
 | Local settings | Keep custom rules, preferences and history between launches. |
 
+## Why QuickClip321?
+
+QuickClip321 is built for **repeated downloads in a Windows creative workflow**, rather than simply adding another downloader window. It shares the underlying yt-dlp ecosystem with other graphical downloaders, but optimizes the path from copied link to usable media.
+
+| Workflow | QuickClip321 V3 Beta 5 | Manual yt-dlp CLI | Parabolic |
+| --- | --- | --- | --- |
+| Start a download | Global hotkey or tray popup | Terminal command; can be scripted | Graphical downloader |
+| Video/audio formats | MP4, MP3, M4A, WAV, original | Configurable via command-line options | MP4, WebM, MP3, Opus, FLAC, WAV |
+| Organization | Built-in contextual catalog and custom folder rules | Output templates and user scripting | See its documentation for available options |
+| Windows distribution | 12.63 MB portable EXE; separate first-use media tools | CLI binaries and optional tools | Installer / portable options depending on release |
+| Platforms | Windows x64 | Windows, macOS, Linux | Windows, macOS, Linux |
+
+[yt-dlp documentation](https://github.com/yt-dlp/yt-dlp) · [Parabolic documentation](https://github.com/NickvisionApps/Parabolic) · [Parabolic releases](https://github.com/NickvisionApps/Parabolic/releases)
+
+This is a workflow comparison based on documented features as of 26 November 2026, not a performance ranking. Other tools may be customized; no claim is made that they lack undocumented features. QuickClip321 remains a public beta.
+
 ## Get started
 
 1. **[Download Beta 5 for Windows x64](https://github.com/Tuna321/QuickClip321/releases/download/v3.0.0-beta.5/QuickClip321-3.0.0-beta.5-win-x64.exe).** Save the EXE in a permanent folder and open it.
@@ -108,6 +135,7 @@ Estimated source transfer size helps you choose quality. During eligible downloa
 
 QuickClip321 V3 is in public beta. Try it in your everyday workflow and tell us what feels slow, confusing or missing.
 
+- [Join GitHub Discussions](https://github.com/Tuna321/QuickClip321/discussions) for questions and ideas.
 - [Report a bug or request a feature](https://github.com/Tuna321/QuickClip321/issues/new/choose).
 - Include the version, Windows version, steps to reproduce and a reviewed error message. Do not share private links, cookies or credentials.
 - If it makes your workflow easier, [star the project](https://github.com/Tuna321/QuickClip321/stargazers).
