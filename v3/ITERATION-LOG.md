@@ -65,3 +65,5 @@ Friend's first-use feedback: manual FFmpeg setup caused friction. Automatic veri
 Final updated core suite: 25/25 passed; isolated native UI smoke: all checks true. Normal Beta 3 launched. Verified EXE and ZIP hashes; original Beta 2 retained. Release asset publication not yet verified, public download links remain Beta 2.
 
 Final updated core suite: 25/25 passed; isolated native UI smoke: all checks true. Normal Beta 3 launched. Verified EXE and ZIP hashes; original Beta 2 retained.
+
+Beta 3 public prerelease published at tag v3.0.0-beta.3 after authorization and retry of a transient DNS failure. All five release assets verified against local file hashes. Public download links updated to Beta 3. Beta 2 remains available.
