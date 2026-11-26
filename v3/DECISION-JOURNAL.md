@@ -40,3 +40,6 @@
 
 ## Public repository cleanup
 Keep the previous implementation and its notices in legacy/python and backup/pre-v3-cleanup, with historical release tags intact. Remove obsolete source, tests, build scripts, CI and public links from the active tree. Keep V3 application sources and historical engineering audit records. Exclude only the two auxiliary Python screenshot/smoke scripts from language statistics; do not relabel code. No binary or release change.
+
+## Public Beta 2 distribution and visual polish
+Primary download changed to the exact previously tested portable executable extracted from the released ZIP. Keep ZIP and its checksum available, attach independent EXE checksum and license notices. No code or runtime change. Use frameless transparent logo variants for GitHub dark/light mode and a flat CTA with independent platform text. Do not misrepresent language statistics; GitHub Linguist recomputes asynchronously.

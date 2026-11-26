@@ -1,11 +1,16 @@
-<p align="center"><img src="v3/assets/beta2-logo-tile.png" width="104" alt="QuickClip321 logo"></p>
+<p align="center"><picture>
+<source media="(prefers-color-scheme: dark)" srcset="v3/assets/beta2-logo-dark.png">
+<source media="(prefers-color-scheme: light)" srcset="v3/assets/beta2-logo-light.png">
+<img src="v3/assets/beta2-logo-light.png" width="80" alt="QuickClip321 logo">
+</picture></p>
 <h1 align="center">QuickClip321</h1>
 <p align="center"><strong>Copy. Click. Download.</strong><br>Free, open-source video and audio downloader for Windows. Built for creators, made for everyone.</p>
 <p align="center">
-<a href="https://github.com/Tuna321/QuickClip321/releases/download/v3.0.0-beta.2/QuickClip321-3.0.0-beta.2-win-x64-portable.zip"><img src="v3/assets/beta2-download.png" width="340" alt="Download for Windows x64 - portable ZIP - Beta 2"></a>
+<a href="https://github.com/Tuna321/QuickClip321/releases/download/v3.0.0-beta.2/QuickClip321-3.0.0-beta.2-win-x64.exe"><img src="v3/assets/beta2-download-exe.png" width="288" alt="Download for Windows x64 - EXE"></a>
 </p>
+<p align="center"><sub>Windows x64 &nbsp; / &nbsp; Portable EXE &nbsp; / &nbsp; Beta 2</sub></p>
 <p align="center"><strong>FREE &nbsp; / &nbsp; MIT LICENSE &nbsp; / &nbsp; RUST</strong></p>
-<p align="center"><a href="https://github.com/Tuna321/QuickClip321/releases/download/v3.0.0-beta.2/QuickClip321-3.0.0-beta.2-win-x64-portable.zip"><strong>Download ZIP (3.5 MiB)</strong></a> | <a href="https://github.com/Tuna321/QuickClip321/releases/tag/v3.0.0-beta.2">Release notes</a> | <a href="#get-started">Get started</a> | <a href="https://github.com/Tuna321/QuickClip321/issues/new/choose">Give feedback</a></p>
+<p align="center"><a href="https://github.com/Tuna321/QuickClip321/releases/download/v3.0.0-beta.2/QuickClip321-3.0.0-beta.2-win-x64.exe"><strong>Download EXE (11.1 MiB)</strong></a> | <a href="https://github.com/Tuna321/QuickClip321/releases/download/v3.0.0-beta.2/QuickClip321-3.0.0-beta.2-win-x64-portable.zip">ZIP (3.5 MiB)</a> | <a href="https://github.com/Tuna321/QuickClip321/releases/tag/v3.0.0-beta.2">Release notes</a> | <a href="#get-started">Get started</a> | <a href="https://github.com/Tuna321/QuickClip321/issues/new/choose">Give feedback</a></p>
 
 <p align="center"><img src="v3/assets/beta2-hero.jpg" width="900" alt="Copy, Click, Download: actual QuickClip321 beta 2 dark quick view"></p>
 
@@ -21,14 +26,14 @@ Format and resolution are independently adjustable. Save your own presets in the
 
 ## Get started
 
-1. **[Download Beta 2 for Windows x64](https://github.com/Tuna321/QuickClip321/releases/download/v3.0.0-beta.2/QuickClip321-3.0.0-beta.2-win-x64-portable.zip).** Extract the ZIP into a permanent folder, then open **QuickClip321.exe**.
+1. **[Download Beta 2 for Windows x64](https://github.com/Tuna321/QuickClip321/releases/download/v3.0.0-beta.2/QuickClip321-3.0.0-beta.2-win-x64.exe).** Save the EXE in a permanent folder and open it. No extraction required.
 2. **Copy a media link.** Click the Q icon in the system tray (look under the hidden icons arrow if necessary).
 3. **Choose and download.** Select your preset, format and resolution. If prompted, select **Set up tools** and confirm the verified media-tool download.
 
-**Requirements:** Windows x64 with the Microsoft Edge WebView2 Runtime. The portable ZIP is approximately 3.5 MiB. First-use setup may download approximately 170-200 MB of media tools. No admin rights or global PATH modifications are required by the managed setup.
+**Requirements:** Windows x64 with the Microsoft Edge WebView2 Runtime. The portable EXE is approximately 11.1 MiB. A compressed ZIP with license notices is also available. First-use setup may download approximately 170-200 MB of media tools. No admin rights or global PATH modifications are required by the managed setup.
 
 > [!IMPORTANT]
-> This is a public beta, not a stable release. The executable is unsigned; Windows may warn or block it. Verify the ZIP against the release's SHA-256 checksum and keep Windows security enabled. Run on startup is enabled by default and can be disabled in Settings.
+> This is a public beta, not a stable release. The executable is unsigned; Windows may warn or block it. Verify the download against the release's SHA-256 checksum and keep Windows security enabled. Run on startup is enabled by default and can be disabled in Settings.
 
 ## Small on the outside. Powerful underneath.
 
@@ -66,7 +71,7 @@ QuickClip321 V3 is in public beta. Try it in your everyday workflow and tell us 
 
 <details>
 <summary>How do I verify the download?</summary>
-<br>Download SHA256SUMS.txt from the release. In PowerShell run <code>Get-FileHash .\QuickClip321-3.0.0-beta.2-win-x64-portable.zip -Algorithm SHA256</code> and compare the hash. A matching hash confirms the ZIP matches the published artifact, not that it is digitally signed.
+<br>Download <a href="https://github.com/Tuna321/QuickClip321/releases/download/v3.0.0-beta.2/SHA256-EXE.txt">SHA256-EXE.txt</a> from the release. In PowerShell run <code>Get-FileHash .\QuickClip321-3.0.0-beta.2-win-x64.exe -Algorithm SHA256</code> and compare the hash. For the ZIP, use SHA256SUMS.txt. A matching hash confirms the download matches the published artifact, not that it is digitally signed.
 </details>
 
 <details>
@@ -83,11 +88,11 @@ QuickClip321 V3 is in public beta. Try it in your everyday workflow and tell us 
 </details>
 <details>
 <summary>How do I stop startup or remove it?</summary>
-<br>Turn off Run on startup in Advanced &gt; Settings, exit using the tray menu, and delete the extracted application folder. Settings, history and managed tools remain in the V3 application data folder; remove them only if you no longer need them. Downloads are stored separately.
+<br>Turn off Run on startup in Advanced &gt; Settings, exit using the tray menu, and delete the downloaded EXE or extracted application folder. Settings, history and managed tools remain in the V3 application data folder; remove them only if you no longer need them. Downloads are stored separately.
 </details>
 
 ## Developers
 
-The V3 application uses Rust, Tauri and WebView2, with separately installed yt-dlp, FFmpeg/FFprobe and Node.js media tools. Source, lockfiles and build commands are available in [V3 development documentation](v3/README.md). See [V3 licensing and dependencies](docs/V3-THIRD-PARTY.md) and [release notes](https://github.com/Tuna321/QuickClip321/releases/tag/v3.0.0-beta.2).
+The V3 application uses Rust, Tauri and WebView2, with separately installed yt-dlp, FFmpeg/FFprobe and Node.js media tools. Source, lockfiles and build commands are available in [V3 development documentation](v3/README.md). See [V3 licensing and dependencies](docs/V3-THIRD-PARTY.md), [license and notices for the EXE](https://github.com/Tuna321/QuickClip321/releases/download/v3.0.0-beta.2/LICENSE-AND-NOTICES.txt) and [release notes](https://github.com/Tuna321/QuickClip321/releases/tag/v3.0.0-beta.2).
 
 <p align="center"><strong>Made by 321. Built to stay out of your way.</strong><br><a href="LICENSE">MIT License</a> | <a href="https://github.com/Tuna321/QuickClip321/issues">Community</a></p>
