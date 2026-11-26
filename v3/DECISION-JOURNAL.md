@@ -24,3 +24,9 @@
 - Contextual playlist visibility uses URL clues and extractor results; stale responses ignored, consent reset per input. Single-item default unchanged.
 - Curated local catalog expanded; counts are entries not verified unique artists globally. Conservative contextual matching and positive/negative fixtures, no real-world accuracy claim. Default Audio/Video routing retained; more specific paths opt-in. User rules and manual path override still win.
 - Three desk-review passes and three repeated core regressions; not three repetitions of every individual engineering operation. Active-transfer resume, dependency bootstrap and notifications remain deferred.
+
+## Alpha 7 decisions
+- Ten distinct hypothetical user scenarios in research-alpha7.md, grounded in actual external feature requests but not real user testing. Retain tray-first workflow; remove Hide and per-download organizer toggle, keep saved global setting, manual override and contextual Reset. Queue toggles rather than always opening. No feature count target.
+- Actual Alpha6 native smoke and three foreground finish captures verified. Keep restrained static finishes; avoid a new design language for its own sake. Use source and native UI state tests for the new quick workflow.
+- Games: 171 curated entries, aliases, context gate, optional detailed folder, custom mapping. Shared film/game names need evidence, not raw substring matching. Six public titles plus fourteen adversarial examples in a labeled development fixture; no general accuracy assertion.
+- Release gates remain separate from usability tests. Active resume with verified byte reuse, dependency bootstrap on a clean system, native notifications and full parity cannot be claimed from a passing startup test. No stable tag or merge to main.

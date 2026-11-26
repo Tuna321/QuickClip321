@@ -43,9 +43,9 @@ fn database() -> &'static Value {
             .expect("built-in organizer database")
     })
 }
-pub fn counts() -> [usize; 3] {
+pub fn counts() -> [usize; 4] {
     let db = database();
-    ["artists", "movies", "tv"].map(|k| db[k].as_array().map_or(0, Vec::len))
+    ["artists", "movies", "tv", "games"].map(|k| db[k].as_array().map_or(0, Vec::len))
 }
 pub fn category(info: &Value, preset: &str) -> (&'static str, &'static str) {
     let title = text(info, &["title"]);
@@ -75,6 +75,57 @@ pub fn category(info: &Value, preset: &str) -> (&'static str, &'static str) {
         };
     }
     let db = database();
+    let game = normalized(text(info, &["game", "game_title"]));
+    let explicit_screen = !text(info, &["series", "tv_show", "movie", "movie_title"]).is_empty();
+    let game_context = any(
+        &n,
+        &[
+            "gameplay",
+            "walkthrough",
+            "playthrough",
+            "speedrun",
+            "boss fight",
+            "game trailer",
+            "gameplay trailer",
+            "oynanis",
+            "oyun",
+            "let s play",
+        ],
+    );
+    // Title-prefix numbered trailers for known games; require gaming evidence for ambiguous cross-media names.
+    for e in db["games"].as_array().into_iter().flatten() {
+        let a = aliases(e);
+        if (!game.is_empty() && a.contains(&game))
+            || a.iter().any(|v| {
+                if !contains(&n, v) {
+                    return false;
+                }
+                if game_context && !explicit_screen {
+                    return true;
+                }
+                let distinctive = v.split_whitespace().count() >= 3
+                    || matches!(
+                        v.as_str(),
+                        "minecraft"
+                            | "fortnite"
+                            | "valorant"
+                            | "roblox"
+                            | "gta 6"
+                            | "gta vi"
+                            | "gta 5"
+                            | "gta v"
+                            | "gta6"
+                            | "gta5"
+                    );
+                distinctive
+                    && (n.starts_with(&format!("{v} trailer"))
+                        || n.starts_with(&format!("{v} official trailer"))
+                        || n == format!("official {v} trailer"))
+            })
+        {
+            return ("games", "Game title and gaming context");
+        }
+    }
     let series = normalized(text(info, &["series", "tv_show"]));
     let movie = normalized(text(info, &["movie", "movie_title"]));
     let clip = any(
@@ -83,7 +134,7 @@ pub fn category(info: &Value, preset: &str) -> (&'static str, &'static str) {
             "scene", "clip", "sahne", "fragman", "trailer", "film", "dizi", "bolum", "episode",
         ],
     );
-    let tv_context = any(&n, &["dizi", "bolum", "episode"]);
+    let tv_context = any(&n, &["dizi", "bolum", "episode", "season", "sezon"]);
     for key in ["movies", "tv"] {
         for e in db[key].as_array().into_iter().flatten() {
             let a = aliases(e);
@@ -98,7 +149,7 @@ pub fn category(info: &Value, preset: &str) -> (&'static str, &'static str) {
                             return true;
                         }
                         let contextual = if key == "tv" {
-                            tv_context || any(&n, &["scene", "clip", "sahne"])
+                            tv_context || any(&n, &["scene", "clip", "sahne", "trailer", "fragman"])
                         } else {
                             any(&n, &["scene", "trailer", "fragman", "sahne", "film"])
                         };
@@ -180,6 +231,7 @@ pub fn category(info: &Value, preset: &str) -> (&'static str, &'static str) {
         for e in db["artists"].as_array().into_iter().flatten() {
             let a = aliases(e);
             if (!artist.is_empty() && a.contains(&artist))
+                || (a.contains(&prefix) && a.contains(&channel) && title.contains(" - "))
                 || (music_context
                     && (a.contains(&prefix)
                         || a.contains(&channel)
@@ -212,6 +264,7 @@ pub fn configured_destination(
         root.join(if p.detailed_folders {
             match category {
                 "rap" => "Video/Rap",
+                "games" => "Video/Games",
                 "film" => "Video/Film and TV",
                 "beats" => "Audio/Beats",
                 "audio" => "Audio/Music",
@@ -225,7 +278,7 @@ pub fn configured_destination(
 pub fn folder(category: &str) -> &'static str {
     match category {
         "beats" | "audio" => "Audio",
-        "film" | "rap" | "video" => "Video",
+        "film" | "rap" | "video" | "games" => "Video",
         _ => "Unsorted",
     }
 }
@@ -290,6 +343,63 @@ mod tests {
             configured_destination(&json!({"artist":"XXXTENTACION"}), "editor", d.path(), &p),
             d.path().join("Video/Rap")
         );
+    }
+    #[test]
+    fn game_catalog_and_context() {
+        let db = database();
+        assert!(counts()[3] >= 100);
+        for e in db["games"].as_array().unwrap() {
+            let name = e["name"].as_str().unwrap();
+            assert_eq!(
+                category(&json!({"game":name}), "editor").0,
+                "games",
+                "{name}"
+            );
+        }
+        for (title, expected) in [
+            ("Grand Theft Auto VI Trailer 2", "games"),
+            ("GTA 6 gameplay", "games"),
+            ("Roblox gameplay", "games"),
+            ("Rust programming tutorial", "video"),
+            ("Portal door installation", "video"),
+            ("Control panel tutorial", "video"),
+            ("The Last of Us episode 1", "film"),
+            (
+                "Rick and Morty | Season 8 Official Trailer | adult swim",
+                "film",
+            ),
+            ("Oppenheimer | Official Trailer", "film"),
+        ] {
+            assert_eq!(
+                category(&json!({"title":title}), "editor").0,
+                expected,
+                "{title}"
+            );
+        }
+    }
+    #[test]
+    fn labeled_sample() {
+        let rows: Value = serde_json::from_str(include_str!("organizer_sample.json")).unwrap();
+        let mut totals = std::collections::BTreeMap::<String, (usize, usize, usize)>::new();
+        let mut correct = 0;
+        let mut wrong = vec![];
+        for row in rows.as_array().unwrap() {
+            let expected = row["expected"].as_str().unwrap();
+            let actual = category(&row["info"], row["preset"].as_str().unwrap_or("editor")).0;
+            if actual == expected {
+                correct += 1;
+                totals.entry(expected.into()).or_default().0 += 1;
+            } else {
+                totals.entry(actual.into()).or_default().1 += 1;
+                totals.entry(expected.into()).or_default().2 += 1;
+                wrong.push(format!("{}: {expected} -> {actual}", row["info"]["title"]));
+            }
+        }
+        println!(
+            "Labeled sample: {correct}/{}; (TP, FP, FN) = {totals:?}",
+            rows.as_array().unwrap().len()
+        );
+        assert!(wrong.is_empty(), "{wrong:?}");
     }
     #[test]
     fn expanded_catalog_cases() {

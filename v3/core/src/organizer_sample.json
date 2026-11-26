@@ -1,0 +1,169 @@
+[
+  {
+    "kind": "public title",
+    "source": "https://www.youtube.com/watch?v=VQRLujxTm3c",
+    "info": {
+      "title": "Grand Theft Auto VI Trailer 2"
+    },
+    "expected": "games",
+    "preset": "editor"
+  },
+  {
+    "kind": "public title",
+    "source": "https://www.youtube.com/watch?v=ySYnTO7leqI",
+    "info": {
+      "title": "Rick and Morty | Season 8 Official Trailer | adult swim"
+    },
+    "expected": "film",
+    "preset": "editor"
+  },
+  {
+    "kind": "public title",
+    "source": "https://www.youtube.com/watch?v=bK6ldnjE3Y0",
+    "info": {
+      "title": "Oppenheimer | Official Trailer"
+    },
+    "expected": "film",
+    "preset": "editor"
+  },
+  {
+    "kind": "public title",
+    "source": "https://www.youtube.com/watch?v=H58vbez_m4E",
+    "info": {
+      "title": "Kendrick Lamar - Not Like Us",
+      "channel": "Kendrick Lamar"
+    },
+    "expected": "rap",
+    "preset": "editor"
+  },
+  {
+    "kind": "public title",
+    "source": "https://minecraft.wiki/w/Official_Minecraft_Trailer",
+    "info": {
+      "title": "Official Minecraft Trailer"
+    },
+    "expected": "games",
+    "preset": "editor"
+  },
+  {
+    "kind": "public title",
+    "source": "https://hvr.biz/videos/watch.php?v=turn-on-dark-mode",
+    "info": {
+      "title": "How to Turn On Dark Mode in Windows 11"
+    },
+    "expected": "video",
+    "preset": "editor"
+  },
+  {
+    "kind": "synthetic adversarial",
+    "info": {
+      "title": "Rust programming tutorial"
+    },
+    "expected": "video",
+    "preset": "editor"
+  },
+  {
+    "kind": "synthetic adversarial",
+    "info": {
+      "title": "Portal door installation"
+    },
+    "expected": "video",
+    "preset": "editor"
+  },
+  {
+    "kind": "synthetic adversarial",
+    "info": {
+      "title": "Control panel tutorial"
+    },
+    "expected": "video",
+    "preset": "editor"
+  },
+  {
+    "kind": "synthetic adversarial",
+    "info": {
+      "title": "Drake interview"
+    },
+    "expected": "video",
+    "preset": "editor"
+  },
+  {
+    "kind": "synthetic adversarial",
+    "info": {
+      "title": "Dark mode tutorial episode 1"
+    },
+    "expected": "video",
+    "preset": "editor"
+  },
+  {
+    "kind": "synthetic adversarial",
+    "info": {
+      "title": "GTA 6 gameplay"
+    },
+    "expected": "games",
+    "preset": "editor"
+  },
+  {
+    "kind": "synthetic adversarial",
+    "info": {
+      "title": "Roblox gameplay"
+    },
+    "expected": "games",
+    "preset": "editor"
+  },
+  {
+    "kind": "synthetic adversarial",
+    "info": {
+      "title": "The Last of Us episode 1"
+    },
+    "expected": "film",
+    "preset": "editor"
+  },
+  {
+    "kind": "synthetic adversarial",
+    "info": {
+      "title": "The Last of Us Part II gameplay"
+    },
+    "expected": "games",
+    "preset": "editor"
+  },
+  {
+    "kind": "synthetic adversarial",
+    "info": {
+      "title": "Minecraft movie trailer"
+    },
+    "expected": "video",
+    "preset": "editor"
+  },
+  {
+    "kind": "synthetic adversarial",
+    "info": {
+      "title": "Lil Uzi Vert - Just Wanna Rock (Official Music Video)"
+    },
+    "expected": "rap",
+    "preset": "editor"
+  },
+  {
+    "kind": "synthetic adversarial",
+    "info": {
+      "title": "How to repair a glass door"
+    },
+    "expected": "video",
+    "preset": "editor"
+  },
+  {
+    "kind": "synthetic adversarial",
+    "info": {
+      "title": "Rick and Morty episode 1"
+    },
+    "expected": "film",
+    "preset": "editor"
+  },
+  {
+    "kind": "synthetic adversarial",
+    "info": {
+      "title": "Fortnite official trailer"
+    },
+    "expected": "games",
+    "preset": "editor"
+  }
+]

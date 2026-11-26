@@ -861,7 +861,7 @@ fn download_once(
         .args([
             "--no-simulate",
             "--print-to-file",
-            "after_move:%(.{filepath,title,artist,album_artist,channel,uploader,series,tv_show,movie,movie_title,vcodec,track,genre})j",
+            "after_move:%(.{filepath,title,artist,album_artist,channel,uploader,series,tv_show,movie,movie_title,vcodec,track,genre,game,game_title})j",
         ])
         .arg(staging.path().join("outputs.jsonl"));
     if !j.options.subtitle_languages.is_empty() {

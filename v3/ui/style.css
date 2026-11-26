@@ -37,3 +37,5 @@
 @media(prefers-reduced-motion:reduce){.check input[type=checkbox],.check input[type=checkbox]::before{transition:none}}
 @media(forced-colors:active){.check input[type=checkbox]{appearance:auto}.check input[type=checkbox]::before{display:none}.shell{background-image:none!important}}
 .organizer-toolbar{position:sticky;top:0;display:flex;justify-content:flex-end;background:var(--bg);padding:4px 0 8px;z-index:2}
+
+.playlist-row:has(>label[hidden]){display:none}.quick-status-row{margin-top:12px}.quick-status-row #quickQueue[aria-expanded="true"]{background:var(--active);border-color:var(--accent)}.destination-row #autoFolder[hidden]{display:none!important}

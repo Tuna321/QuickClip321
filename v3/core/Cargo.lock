@@ -274,7 +274,7 @@ dependencies = [
 
 [[package]]
 name = "quickclip-core"
-version = "3.0.0-alpha.6"
+version = "3.0.0-alpha.7"
 dependencies = [
  "serde",
  "serde_json",

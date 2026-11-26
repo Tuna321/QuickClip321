@@ -211,7 +211,7 @@ fn detect_tools() -> [String; 2] {
     ]
 }
 #[tauri::command]
-fn organizer_counts() -> [usize; 3] {
+fn organizer_counts() -> [usize; 4] {
     quickclip_core::organizer::counts()
 }
 #[tauri::command]

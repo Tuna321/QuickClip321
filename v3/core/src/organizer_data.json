@@ -4868,5 +4868,891 @@
       "aliases": [],
       "ambiguous": true
     }
+  ],
+  "games": [
+    {
+      "name": "Grand Theft Auto VI",
+      "aliases": [
+        "GTA 6",
+        "GTA VI",
+        "GTA6"
+      ],
+      "ambiguous": true
+    },
+    {
+      "name": "Grand Theft Auto V",
+      "aliases": [
+        "GTA 5",
+        "GTA V",
+        "GTA5"
+      ],
+      "ambiguous": true
+    },
+    {
+      "name": "Grand Theft Auto IV",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Grand Theft Auto San Andreas",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Grand Theft Auto Vice City",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Red Dead Redemption 2",
+      "aliases": [
+        "RDR2",
+        "RDR 2"
+      ],
+      "ambiguous": true
+    },
+    {
+      "name": "Red Dead Redemption",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Minecraft",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Roblox",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Fortnite",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Valorant",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Counter-Strike 2",
+      "aliases": [
+        "CS2",
+        "CS 2"
+      ],
+      "ambiguous": true
+    },
+    {
+      "name": "Counter-Strike Global Offensive",
+      "aliases": [
+        "CSGO",
+        "CS GO"
+      ],
+      "ambiguous": true
+    },
+    {
+      "name": "League of Legends",
+      "aliases": [
+        "LoL"
+      ],
+      "ambiguous": true
+    },
+    {
+      "name": "Dota 2",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Apex Legends",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Overwatch 2",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Call of Duty Warzone",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Call of Duty Modern Warfare",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Call of Duty Black Ops",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Battlefield 6",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Battlefield 2042",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Battlefield 1",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "PUBG Battlegrounds",
+      "aliases": [
+        "PUBG"
+      ],
+      "ambiguous": true
+    },
+    {
+      "name": "Rocket League",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Rainbow Six Siege",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Escape from Tarkov",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Rust",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "DayZ",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "ARK Survival Ascended",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Terraria",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Stardew Valley",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Hades",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Hades II",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Hollow Knight",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Hollow Knight Silksong",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Elden Ring",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Dark Souls",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Dark Souls III",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Bloodborne",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Sekiro Shadows Die Twice",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Demon's Souls",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Cyberpunk 2077",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Witcher 3 Wild Hunt",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Baldur's Gate 3",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Elder Scrolls V Skyrim",
+      "aliases": [
+        "Skyrim"
+      ],
+      "ambiguous": true
+    },
+    {
+      "name": "Fallout 4",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Fallout New Vegas",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Starfield",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "DOOM Eternal",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "DOOM The Dark Ages",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Half-Life",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Half-Life 2",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Portal",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Portal 2",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Left 4 Dead 2",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Team Fortress 2",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Garry's Mod",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Last of Us Part I",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Last of Us Part II",
+      "aliases": [
+        "TLOU2"
+      ],
+      "ambiguous": true
+    },
+    {
+      "name": "God of War Ragnarök",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "God of War",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Ghost of Tsushima",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Ghost of Yōtei",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Horizon Zero Dawn",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Horizon Forbidden West",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Marvel's Spider-Man 2",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Uncharted 4",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Death Stranding",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Death Stranding 2",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Metal Gear Solid",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Metal Gear Solid 3",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Resident Evil 4",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Resident Evil Village",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Silent Hill 2",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Dead Space",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Alan Wake 2",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Control",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Assassin's Creed Shadows",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Assassin's Creed Valhalla",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Far Cry 3",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Far Cry 5",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Hitman World of Assassination",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Watch Dogs",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Forza Horizon 5",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Forza Horizon 4",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Gran Turismo 7",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Need for Speed Heat",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Assetto Corsa",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "BeamNG.drive",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Euro Truck Simulator 2",
+      "aliases": [
+        "ETS2"
+      ],
+      "ambiguous": true
+    },
+    {
+      "name": "American Truck Simulator",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Microsoft Flight Simulator",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "FIFA 23",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "EA Sports FC 25",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "NBA 2K25",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Tekken 8",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Street Fighter 6",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Mortal Kombat 1",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Super Smash Bros Ultimate",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Legend of Zelda Breath of the Wild",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Legend of Zelda Tears of the Kingdom",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Super Mario Odyssey",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Mario Kart 8 Deluxe",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Animal Crossing New Horizons",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Pokémon Scarlet",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Pokémon Violet",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Genshin Impact",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Honkai Star Rail",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Zenless Zone Zero",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Wuthering Waves",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Monster Hunter Wilds",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Monster Hunter World",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Final Fantasy VII Rebirth",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Final Fantasy XIV",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "World of Warcraft",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Diablo IV",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Path of Exile 2",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Black Myth Wukong",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Clair Obscur Expedition 33",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Brawl Stars",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Clash Royale",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Clash of Clans",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Among Us",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Fall Guys",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Lethal Company",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Phasmophobia",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Content Warning",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Sons of the Forest",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Subnautica",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Five Nights at Freddy's",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Poppy Playtime",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Undertale",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Deltarune",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Balatro",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Geometry Dash",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Cuphead",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Celeste",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Dead Cells",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "No Man's Sky",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Outer Wilds",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Disco Elysium",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "It Takes Two",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Split Fiction",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "A Way Out",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Satisfactory",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Factorio",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Cities Skylines",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Sims 4",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Civilization VI",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Civilization VII",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Age of Empires IV",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Hearts of Iron IV",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Crusader Kings III",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Mount & Blade II Bannerlord",
+      "aliases": [
+        "Bannerlord"
+      ],
+      "ambiguous": true
+    },
+    {
+      "name": "Kenshi",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Project Zomboid",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Helldivers 2",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Palworld",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Warframe",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Destiny 2",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Sea of Thieves",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "War Thunder",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Unturned",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "RimWorld",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Slay the Spire",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Vampire Survivors",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "PowerWash Simulator",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Trackmania",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "osu!",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "osu!mania",
+      "aliases": [],
+      "ambiguous": true
+    }
   ]
 }

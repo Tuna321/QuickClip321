@@ -12,7 +12,7 @@ pub struct Rule {
     pub contains: String,
     pub category: String,
 }
-pub const CATEGORIES: [&str; 5] = ["audio", "beats", "film", "rap", "video"];
+pub const CATEGORIES: [&str; 6] = ["audio", "beats", "film", "rap", "video", "games"];
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(default)]

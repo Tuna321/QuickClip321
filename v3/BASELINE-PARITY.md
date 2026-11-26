@@ -37,3 +37,8 @@ No public stable V3 until each row is implemented and verified, including real t
 - Optional surface finishes and checkbox transitions; static CSS, reduced-motion/forced-colors fallbacks. Native Liquid Glass not implemented.
 - Catalog expanded from 14/4/5 to 317 hip-hop and related artist entries, 336 film entries, 310 series entries. Normalized contextual matching, custom mappings and optional detailed subfolders. Real-world accuracy remains unmeasured. Original default Audio/Video preserved.
 - True active pause/resume, verified dependency installation, native notifications remain open.
+
+## Alpha 7 delta
+- Simplified tray controls: no quick Hide or Auto-organize; global saved organizer setting, manual destination and contextual Reset. Queue toggles. Native fixture verified.
+- Games category: 171 manually curated entries, context and selected aliases, optional Video/Games folder and custom destinations. Built-in catalog total 1134. Development sample 20/20, not unbiased real-world accuracy.
+- Release blockers remain as listed in README and NEXT-PASS: true active resume, clean-machine verified bootstrap, notifications and full parity/physical interaction coverage.
