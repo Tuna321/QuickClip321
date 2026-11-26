@@ -1,0 +1,2745 @@
+{
+  "commit": "ec9e9a1e3ba81b2a14eece66d551bcc15d703de7",
+  "files": {
+    "build_hooks/hook-ssl.py": {
+      "lines": 9,
+      "symbols": []
+    },
+    "launcher.py": {
+      "lines": 3,
+      "symbols": []
+    },
+    "quickclip321/__init__.py": {
+      "lines": 3,
+      "symbols": []
+    },
+    "quickclip321/__main__.py": {
+      "lines": 3,
+      "symbols": []
+    },
+    "quickclip321/acceptance.py": {
+      "lines": 139,
+      "symbols": [
+        {
+          "type": "FunctionDef",
+          "name": "destination_acceptance",
+          "start": 22,
+          "end": 139,
+          "doc": null
+        },
+        {
+          "type": "ClassDef",
+          "name": "QuietHandler",
+          "start": 82,
+          "end": 84,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "log_message",
+          "start": 83,
+          "end": 84,
+          "doc": null
+        }
+      ]
+    },
+    "quickclip321/assistant.py": {
+      "lines": 174,
+      "symbols": [
+        {
+          "type": "ClassDef",
+          "name": "AssistantError",
+          "start": 14,
+          "end": 15,
+          "doc": "A safe, user-facing assistant failure without request or response secrets."
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_filename",
+          "start": 23,
+          "end": 28,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_public_metadata",
+          "start": 31,
+          "end": 45,
+          "doc": "Whitelist fields before any remote request; never include URL or local paths."
+        },
+        {
+          "type": "FunctionDef",
+          "name": "suggest_local",
+          "start": 48,
+          "end": 75,
+          "doc": "Return a transparent local suggestion without changing an existing job."
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_parse_remote",
+          "start": 92,
+          "end": 109,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "suggest_remote",
+          "start": 112,
+          "end": 174,
+          "doc": "Send only the shown, whitelisted metadata after an explicit UI action.\n\nThis function does not run automatically and never changes a download job.\nOllama is restricted to loopback. Call it from a worker thread, not Tk's UI thread."
+        }
+      ]
+    },
+    "quickclip321/branding.py": {
+      "lines": 20,
+      "symbols": [
+        {
+          "type": "FunctionDef",
+          "name": "brand_tile",
+          "start": 10,
+          "end": 20,
+          "doc": null
+        }
+      ]
+    },
+    "quickclip321/credentials.py": {
+      "lines": 78,
+      "symbols": [
+        {
+          "type": "ClassDef",
+          "name": "CredentialError",
+          "start": 10,
+          "end": 11,
+          "doc": "Credential storage is unavailable for this Windows user."
+        },
+        {
+          "type": "ClassDef",
+          "name": "_DataBlob",
+          "start": 14,
+          "end": 15,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_crypt",
+          "start": 18,
+          "end": 48,
+          "doc": null
+        },
+        {
+          "type": "ClassDef",
+          "name": "CredentialStore",
+          "start": 51,
+          "end": 78,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "__init__",
+          "start": 52,
+          "end": 56,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "save",
+          "start": 58,
+          "end": 65,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "load",
+          "start": 67,
+          "end": 75,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "clear",
+          "start": 77,
+          "end": 78,
+          "doc": null
+        }
+      ]
+    },
+    "quickclip321/diagnostics.py": {
+      "lines": 98,
+      "symbols": [
+        {
+          "type": "FunctionDef",
+          "name": "smoke_worker",
+          "start": 9,
+          "end": 15,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "packaged_smoke",
+          "start": 18,
+          "end": 98,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "check",
+          "start": 50,
+          "end": 86,
+          "doc": null
+        }
+      ]
+    },
+    "quickclip321/engine.py": {
+      "lines": 340,
+      "symbols": [
+        {
+          "type": "FunctionDef",
+          "name": "terminate_tree",
+          "start": 22,
+          "end": 37,
+          "doc": "Terminate worker and owned FFmpeg children, never unrelated processes."
+        },
+        {
+          "type": "ClassDef",
+          "name": "DownloadEngine",
+          "start": 40,
+          "end": 340,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "__init__",
+          "start": 41,
+          "end": 56,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "start",
+          "start": 58,
+          "end": 69,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "stop",
+          "start": 71,
+          "end": 75,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "add_listener",
+          "start": 77,
+          "end": 78,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_emit",
+          "start": 80,
+          "end": 85,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_save",
+          "start": 87,
+          "end": 89,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "submit",
+          "start": 91,
+          "end": 105,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "cancel",
+          "start": 107,
+          "end": 109,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "pause",
+          "start": 111,
+          "end": 112,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_interrupt",
+          "start": 114,
+          "end": 121,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "retry",
+          "start": 123,
+          "end": 136,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "cancel_all",
+          "start": 138,
+          "end": 140,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "clear_pending",
+          "start": 142,
+          "end": 145,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "remove",
+          "start": 147,
+          "end": 158,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_cleanup_partial",
+          "start": 160,
+          "end": 165,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_run",
+          "start": 167,
+          "end": 194,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_execute",
+          "start": 196,
+          "end": 297,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_apply_event",
+          "start": 299,
+          "end": 340,
+          "doc": null
+        }
+      ]
+    },
+    "quickclip321/errors.py": {
+      "lines": 110,
+      "symbols": [
+        {
+          "type": "FunctionDef",
+          "name": "redact_sensitive",
+          "start": 10,
+          "end": 34,
+          "doc": "Remove credentials from yt-dlp diagnostics before queue, persistence or logging."
+        },
+        {
+          "type": "FunctionDef",
+          "name": "classify_error",
+          "start": 37,
+          "end": 110,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "redact_url",
+          "start": 17,
+          "end": 30,
+          "doc": null
+        }
+      ]
+    },
+    "quickclip321/instance.py": {
+      "lines": 32,
+      "symbols": [
+        {
+          "type": "ClassDef",
+          "name": "SingleInstance",
+          "start": 7,
+          "end": 32,
+          "doc": "Keep a process-owned lock so two tray copies cannot run together."
+        },
+        {
+          "type": "FunctionDef",
+          "name": "__init__",
+          "start": 10,
+          "end": 28,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "close",
+          "start": 30,
+          "end": 32,
+          "doc": null
+        }
+      ]
+    },
+    "quickclip321/main.py": {
+      "lines": 81,
+      "symbols": [
+        {
+          "type": "ClassDef",
+          "name": "RedactingFormatter",
+          "start": 14,
+          "end": 18,
+          "doc": "Sanitize complete log lines, including formatted exception tracebacks."
+        },
+        {
+          "type": "FunctionDef",
+          "name": "configure_logging",
+          "start": 21,
+          "end": 31,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "report_startup_failure",
+          "start": 34,
+          "end": 44,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "main",
+          "start": 47,
+          "end": 77,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "format",
+          "start": 17,
+          "end": 18,
+          "doc": null
+        }
+      ]
+    },
+    "quickclip321/media_tools.py": {
+      "lines": 96,
+      "symbols": [
+        {
+          "type": "FunctionDef",
+          "name": "managed_tools",
+          "start": 23,
+          "end": 28,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "install_media_tools",
+          "start": 31,
+          "end": 77,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_download_archive",
+          "start": 80,
+          "end": 96,
+          "doc": null
+        }
+      ]
+    },
+    "quickclip321/models.py": {
+      "lines": 82,
+      "symbols": [
+        {
+          "type": "ClassDef",
+          "name": "JobStatus",
+          "start": 10,
+          "end": 20,
+          "doc": null
+        },
+        {
+          "type": "ClassDef",
+          "name": "DownloadJob",
+          "start": 33,
+          "end": 82,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "to_dict",
+          "start": 76,
+          "end": 77,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "from_dict",
+          "start": 80,
+          "end": 82,
+          "doc": null
+        }
+      ]
+    },
+    "quickclip321/organizer.py": {
+      "lines": 263,
+      "symbols": [
+        {
+          "type": "FunctionDef",
+          "name": "normalize",
+          "start": 16,
+          "end": 20,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "ensure_database",
+          "start": 74,
+          "end": 81,
+          "doc": null
+        },
+        {
+          "type": "ClassDef",
+          "name": "Classification",
+          "start": 85,
+          "end": 89,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "classify",
+          "start": 92,
+          "end": 179,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "resolve_destination",
+          "start": 182,
+          "end": 189,
+          "doc": "Shared by preview and actual publication; manual choice has highest precedence."
+        },
+        {
+          "type": "FunctionDef",
+          "name": "load_database",
+          "start": 192,
+          "end": 232,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "publish",
+          "start": 235,
+          "end": 263,
+          "doc": "Stage on destination volume, then publish atomically without overwriting media."
+        }
+      ]
+    },
+    "quickclip321/playlist.py": {
+      "lines": 53,
+      "symbols": [
+        {
+          "type": "FunctionDef",
+          "name": "is_playlist_url",
+          "start": 4,
+          "end": 8,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "single_video_url",
+          "start": 11,
+          "end": 20,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "safety_options",
+          "start": 23,
+          "end": 25,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "duplicate_key",
+          "start": 28,
+          "end": 53,
+          "doc": null
+        }
+      ]
+    },
+    "quickclip321/popup.py": {
+      "lines": 283,
+      "symbols": [
+        {
+          "type": "ClassDef",
+          "name": "Rect",
+          "start": 12,
+          "end": 19,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "placement",
+          "start": 22,
+          "end": 60,
+          "doc": "All coordinates are physical pixels, including monitors left of the primary."
+        },
+        {
+          "type": "FunctionDef",
+          "name": "positioned",
+          "start": 63,
+          "end": 74,
+          "doc": "Clamp a fixed popup to one monitor's work area."
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_user",
+          "start": 77,
+          "end": 105,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "enable_dpi_awareness",
+          "start": 108,
+          "end": 114,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "hwnd_for",
+          "start": 117,
+          "end": 118,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "rect_for",
+          "start": 121,
+          "end": 125,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "popup_styles",
+          "start": 128,
+          "end": 136,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "icon_rect",
+          "start": 139,
+          "end": 166,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "tray_context",
+          "start": 169,
+          "end": 213,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_clip_popup_corners",
+          "start": 216,
+          "end": 226,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "position_popup",
+          "start": 229,
+          "end": 249,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "pointer_state",
+          "start": 252,
+          "end": 265,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "foreground_owned",
+          "start": 268,
+          "end": 272,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "should_dismiss",
+          "start": 275,
+          "end": 283,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "contains",
+          "start": 18,
+          "end": 19,
+          "doc": null
+        },
+        {
+          "type": "ClassDef",
+          "name": "GUID",
+          "start": 143,
+          "end": 149,
+          "doc": null
+        },
+        {
+          "type": "ClassDef",
+          "name": "Identifier",
+          "start": 151,
+          "end": 152,
+          "doc": null
+        },
+        {
+          "type": "ClassDef",
+          "name": "MonitorInfo",
+          "start": 186,
+          "end": 192,
+          "doc": null
+        }
+      ]
+    },
+    "quickclip321/preview.py": {
+      "lines": 76,
+      "symbols": [
+        {
+          "type": "FunctionDef",
+          "name": "fetch_preview",
+          "start": 9,
+          "end": 76,
+          "doc": null
+        }
+      ]
+    },
+    "quickclip321/process_owner.py": {
+      "lines": 73,
+      "symbols": [
+        {
+          "type": "ClassDef",
+          "name": "ProcessOwner",
+          "start": 8,
+          "end": 73,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "__init__",
+          "start": 9,
+          "end": 68,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "close",
+          "start": 70,
+          "end": 73,
+          "doc": null
+        },
+        {
+          "type": "ClassDef",
+          "name": "Basic",
+          "start": 15,
+          "end": 26,
+          "doc": null
+        },
+        {
+          "type": "ClassDef",
+          "name": "IO",
+          "start": 28,
+          "end": 32,
+          "doc": null
+        },
+        {
+          "type": "ClassDef",
+          "name": "Extended",
+          "start": 34,
+          "end": 42,
+          "doc": null
+        }
+      ]
+    },
+    "quickclip321/profiles.py": {
+      "lines": 25,
+      "symbols": [
+        {
+          "type": "FunctionDef",
+          "name": "load_profiles",
+          "start": 12,
+          "end": 25,
+          "doc": null
+        }
+      ]
+    },
+    "quickclip321/settings.py": {
+      "lines": 110,
+      "symbols": [
+        {
+          "type": "FunctionDef",
+          "name": "app_data_dir",
+          "start": 12,
+          "end": 19,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "default_download_dir",
+          "start": 22,
+          "end": 23,
+          "doc": null
+        },
+        {
+          "type": "ClassDef",
+          "name": "AppSettings",
+          "start": 27,
+          "end": 52,
+          "doc": null
+        },
+        {
+          "type": "ClassDef",
+          "name": "SettingsStore",
+          "start": 55,
+          "end": 110,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "__init__",
+          "start": 56,
+          "end": 59,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "load",
+          "start": 61,
+          "end": 105,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "save",
+          "start": 107,
+          "end": 110,
+          "doc": null
+        }
+      ]
+    },
+    "quickclip321/storage.py": {
+      "lines": 77,
+      "symbols": [
+        {
+          "type": "ClassDef",
+          "name": "JobStore",
+          "start": 14,
+          "end": 77,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "__init__",
+          "start": 15,
+          "end": 19,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_connect",
+          "start": 22,
+          "end": 30,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_initialize",
+          "start": 32,
+          "end": 36,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "save",
+          "start": 38,
+          "end": 51,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "get",
+          "start": 53,
+          "end": 56,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "list",
+          "start": 58,
+          "end": 61,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "recover_interrupted",
+          "start": 63,
+          "end": 73,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "delete",
+          "start": 75,
+          "end": 77,
+          "doc": null
+        }
+      ]
+    },
+    "quickclip321/support.py": {
+      "lines": 15,
+      "symbols": [
+        {
+          "type": "FunctionDef",
+          "name": "redact_support_text",
+          "start": 10,
+          "end": 15,
+          "doc": null
+        }
+      ]
+    },
+    "quickclip321/ui.py": {
+      "lines": 1397,
+      "symbols": [
+        {
+          "type": "FunctionDef",
+          "name": "load_brand_image",
+          "start": 56,
+          "end": 59,
+          "doc": "Load the supplied mark on a theme-independent dark badge."
+        },
+        {
+          "type": "FunctionDef",
+          "name": "parse_urls",
+          "start": 62,
+          "end": 73,
+          "doc": "One URL per line; report invalid input before submitting any jobs."
+        },
+        {
+          "type": "ClassDef",
+          "name": "QuickClipApp",
+          "start": 76,
+          "end": 1397,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "__init__",
+          "start": 77,
+          "end": 145,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "button",
+          "start": 147,
+          "end": 158,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_build_ui",
+          "start": 160,
+          "end": 316,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_help",
+          "start": 318,
+          "end": 336,
+          "doc": "Show a tip only after the pointer rests on the info mark."
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_schedule_help",
+          "start": 338,
+          "end": 340,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_show_help",
+          "start": 342,
+          "end": 360,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_hide_help",
+          "start": 362,
+          "end": 370,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_set_window_size",
+          "start": 372,
+          "end": 375,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_on_map",
+          "start": 377,
+          "end": 379,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_on_popup_configure",
+          "start": 381,
+          "end": 388,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_hide_from_taskbar",
+          "start": 390,
+          "end": 392,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_place_bottom_right",
+          "start": 394,
+          "end": 407,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_monitor_outside_click",
+          "start": 409,
+          "end": 422,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_dismiss_on_focus_out",
+          "start": 424,
+          "end": 432,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_resize_quick",
+          "start": 434,
+          "end": 438,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_destination_payload",
+          "start": 440,
+          "end": 447,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_update_destination",
+          "start": 449,
+          "end": 454,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_url_changed",
+          "start": 456,
+          "end": 473,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_show_playlist",
+          "start": 475,
+          "end": 480,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_start_preview",
+          "start": 482,
+          "end": 493,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_stop_preview",
+          "start": 495,
+          "end": 503,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_poll_preview",
+          "start": 505,
+          "end": 544,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_select_profile",
+          "start": 546,
+          "end": 549,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_paste_media_url",
+          "start": 551,
+          "end": 561,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "start_download",
+          "start": 563,
+          "end": 617,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_drain_events",
+          "start": 619,
+          "end": 644,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_handle_job_event",
+          "start": 646,
+          "end": 665,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_notify",
+          "start": 667,
+          "end": 676,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "toggle_expanded",
+          "start": 678,
+          "end": 691,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_navigate",
+          "start": 693,
+          "end": 767,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_copy_support_report",
+          "start": 769,
+          "end": 772,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_export_support_report",
+          "start": 774,
+          "end": 788,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_build_download_options",
+          "start": 790,
+          "end": 846,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_build_settings",
+          "start": 848,
+          "end": 897,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_save_ai_model",
+          "start": 899,
+          "end": 902,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_save_ai_key",
+          "start": 904,
+          "end": 929,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_clear_ai_key",
+          "start": 931,
+          "end": 933,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_local_suggestion",
+          "start": 935,
+          "end": 938,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_ask_ai",
+          "start": 940,
+          "end": 960,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_show_suggestion",
+          "start": 962,
+          "end": 972,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_build_organizer_editor",
+          "start": 974,
+          "end": 1001,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_write_database",
+          "start": 1003,
+          "end": 1007,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_save_organizer_path",
+          "start": 1009,
+          "end": 1020,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_add_organizer_rule",
+          "start": 1022,
+          "end": 1030,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_remove_organizer_rule",
+          "start": 1032,
+          "end": 1037,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_save_custom_position",
+          "start": 1039,
+          "end": 1050,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_reset_defaults",
+          "start": 1052,
+          "end": 1064,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_choose_cookie_file",
+          "start": 1066,
+          "end": 1075,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_prompt_save_profile",
+          "start": 1077,
+          "end": 1080,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_setting_menu",
+          "start": 1082,
+          "end": 1093,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_save_setting",
+          "start": 1095,
+          "end": 1106,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_reset_destination",
+          "start": 1108,
+          "end": 1112,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_save_profile",
+          "start": 1114,
+          "end": 1129,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_inspect_media",
+          "start": 1131,
+          "end": 1151,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_matches_page",
+          "start": 1153,
+          "end": 1156,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_render_job",
+          "start": 1158,
+          "end": 1246,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_retry_with_browser",
+          "start": 1248,
+          "end": 1255,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_retry_with_cookie_file",
+          "start": 1257,
+          "end": 1266,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_remove_job",
+          "start": 1268,
+          "end": 1270,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_clear_completed",
+          "start": 1272,
+          "end": 1276,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_create_tray",
+          "start": 1278,
+          "end": 1286,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "toggle_window",
+          "start": 1288,
+          "end": 1289,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "hide_window",
+          "start": 1291,
+          "end": 1294,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "show_window",
+          "start": 1296,
+          "end": 1309,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_read_clipboard",
+          "start": 1311,
+          "end": 1324,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_monitor_clipboard",
+          "start": 1326,
+          "end": 1330,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "choose_folder",
+          "start": 1332,
+          "end": 1346,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_open_path",
+          "start": 1349,
+          "end": 1355,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "open_folder",
+          "start": 1357,
+          "end": 1360,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "reveal_file",
+          "start": 1362,
+          "end": 1369,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "exit_app",
+          "start": 1371,
+          "end": 1372,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_exit_on_ui",
+          "start": 1374,
+          "end": 1387,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_wait_shutdown",
+          "start": 1389,
+          "end": 1397,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "option_group",
+          "start": 208,
+          "end": 213,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "position_icon",
+          "start": 323,
+          "end": 329,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "send",
+          "start": 668,
+          "end": 674,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "save",
+          "start": 916,
+          "end": 926,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "run",
+          "start": 954,
+          "end": 958,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "inspect",
+          "start": 1140,
+          "end": 1149,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "stop",
+          "start": 1382,
+          "end": 1384,
+          "doc": null
+        }
+      ]
+    },
+    "quickclip321/validation.py": {
+      "lines": 60,
+      "symbols": [
+        {
+          "type": "FunctionDef",
+          "name": "validate_clip_range",
+          "start": 12,
+          "end": 23,
+          "doc": "Normalize a requested clip; values are seconds, with an open end allowed."
+        },
+        {
+          "type": "FunctionDef",
+          "name": "validate_media_url",
+          "start": 26,
+          "end": 60,
+          "doc": "Return (valid, normalized_url, friendly_error)."
+        }
+      ]
+    },
+    "quickclip321/worker.py": {
+      "lines": 726,
+      "symbols": [
+        {
+          "type": "ClassDef",
+          "name": "CancelledError",
+          "start": 25,
+          "end": 26,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_auth_options",
+          "start": 33,
+          "end": 47,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_subtitle_options",
+          "start": 50,
+          "end": 67,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_format_notice",
+          "start": 70,
+          "end": 83,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_clip_media",
+          "start": 86,
+          "end": 137,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_subtitle_sidecars",
+          "start": 140,
+          "end": 143,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_trim_subtitle",
+          "start": 146,
+          "end": 191,
+          "doc": "Shift SRT/VTT cue times to match an exact post-download media clip."
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_human_bytes",
+          "start": 194,
+          "end": 202,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_human_eta",
+          "start": 205,
+          "end": 211,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_find_binary",
+          "start": 214,
+          "end": 226,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_quality_selector",
+          "start": 229,
+          "end": 243,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_probe_media",
+          "start": 246,
+          "end": 256,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_unique_mp4_path",
+          "start": 259,
+          "end": 267,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_make_premiere_safe_mp4",
+          "start": 270,
+          "end": 414,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_safe_result_path",
+          "start": 417,
+          "end": 429,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "_verify_media",
+          "start": 432,
+          "end": 446,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "execute_job",
+          "start": 449,
+          "end": 726,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "seconds",
+          "start": 156,
+          "end": 160,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "stamp",
+          "start": 162,
+          "end": 167,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "sink",
+          "start": 452,
+          "end": 462,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "destination_event",
+          "start": 499,
+          "end": 507,
+          "doc": null
+        },
+        {
+          "type": "ClassDef",
+          "name": "CapturePP",
+          "start": 512,
+          "end": 522,
+          "doc": null
+        },
+        {
+          "type": "ClassDef",
+          "name": "MetadataPP",
+          "start": 524,
+          "end": 535,
+          "doc": null
+        },
+        {
+          "type": "ClassDef",
+          "name": "Logger",
+          "start": 537,
+          "end": 546,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "hook",
+          "start": 550,
+          "end": 567,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "pp_hook",
+          "start": 569,
+          "end": 576,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "run",
+          "start": 513,
+          "end": 522,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "run",
+          "start": 525,
+          "end": 535,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "debug",
+          "start": 538,
+          "end": 540,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "warning",
+          "start": 542,
+          "end": 543,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "error",
+          "start": 545,
+          "end": 546,
+          "doc": null
+        }
+      ]
+    },
+    "test_launcher.py": {
+      "lines": 52,
+      "symbols": [
+        {
+          "type": "FunctionDef",
+          "name": "_writable",
+          "start": 13,
+          "end": 20,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "select_data_directory",
+          "start": 23,
+          "end": 32,
+          "doc": "Keep portable state beside the executable when writable; isolate fallback state."
+        }
+      ]
+    },
+    "tests/test_assistant.py": {
+      "lines": 71,
+      "symbols": [
+        {
+          "type": "FunctionDef",
+          "name": "test_local_suggestion_uses_local_rules_and_available_quality",
+          "start": 13,
+          "end": 24,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_remote_request_never_contains_url_cookies_or_local_path",
+          "start": 27,
+          "end": 61,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_api_key_is_encrypted_for_current_user",
+          "start": 65,
+          "end": 71,
+          "doc": null
+        },
+        {
+          "type": "ClassDef",
+          "name": "Response",
+          "start": 30,
+          "end": 31,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "fake_urlopen",
+          "start": 33,
+          "end": 37,
+          "doc": null
+        }
+      ]
+    },
+    "tests/test_destinations.py": {
+      "lines": 108,
+      "symbols": [
+        {
+          "type": "FunctionDef",
+          "name": "test_worker_physically_publishes_selected_destination",
+          "start": 34,
+          "end": 99,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_custom_aliases_and_tv_metadata",
+          "start": 102,
+          "end": 108,
+          "doc": null
+        },
+        {
+          "type": "ClassDef",
+          "name": "FixtureYDL",
+          "start": 57,
+          "end": 75,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "__init__",
+          "start": 58,
+          "end": 61,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "add_post_processor",
+          "start": 63,
+          "end": 64,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "extract_info",
+          "start": 66,
+          "end": 75,
+          "doc": null
+        }
+      ]
+    },
+    "tests/test_engine.py": {
+      "lines": 153,
+      "symbols": [
+        {
+          "type": "FunctionDef",
+          "name": "fake_worker",
+          "start": 14,
+          "end": 33,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "wait_for",
+          "start": 36,
+          "end": 43,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "runner",
+          "start": 47,
+          "end": 53,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "submit",
+          "start": 56,
+          "end": 60,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_fast_exit_completion_drained_and_duplicate_rejected",
+          "start": 63,
+          "end": 70,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_cancel_during_actual_work_never_retries",
+          "start": 73,
+          "end": 81,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_cancel_during_backoff",
+          "start": 84,
+          "end": 91,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_retry_limit",
+          "start": 94,
+          "end": 98,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_crash_classification",
+          "start": 101,
+          "end": 108,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_conversion_not_network_stall",
+          "start": 111,
+          "end": 116,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_pause_pending_and_resume",
+          "start": 119,
+          "end": 128,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_clear_entries_preserves_completed_media",
+          "start": 131,
+          "end": 139,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_partial_delete_only_owns_work_folder",
+          "start": 142,
+          "end": 153,
+          "doc": null
+        }
+      ]
+    },
+    "tests/test_engine_features.py": {
+      "lines": 207,
+      "symbols": [
+        {
+          "type": "FunctionDef",
+          "name": "auth_worker",
+          "start": 19,
+          "end": 25,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_new_job_fields_survive_legacy_and_roundtrip",
+          "start": 28,
+          "end": 34,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_auth_reaches_worker_without_entering_history",
+          "start": 37,
+          "end": 52,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_completion_event_can_arrive_after_worker_exit",
+          "start": 55,
+          "end": 95,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_invalid_clip_ranges",
+          "start": 99,
+          "end": 101,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_precise_ffmpeg_clip_preserves_source",
+          "start": 104,
+          "end": 115,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_subtitle_auth_and_format_notice",
+          "start": 118,
+          "end": 128,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_clip_shifts_subtitle_cues",
+          "start": 132,
+          "end": 142,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_sensitive_diagnostics_redacted_before_persistence",
+          "start": 145,
+          "end": 157,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_worker_publishes_requested_subtitle_and_reports_fallback",
+          "start": 160,
+          "end": 207,
+          "doc": null
+        },
+        {
+          "type": "ClassDef",
+          "name": "DelayedQueue",
+          "start": 59,
+          "end": 64,
+          "doc": null
+        },
+        {
+          "type": "ClassDef",
+          "name": "FakeProcess",
+          "start": 66,
+          "end": 82,
+          "doc": null
+        },
+        {
+          "type": "ClassDef",
+          "name": "FakeContext",
+          "start": 84,
+          "end": 87,
+          "doc": null
+        },
+        {
+          "type": "ClassDef",
+          "name": "Store",
+          "start": 149,
+          "end": 151,
+          "doc": null
+        },
+        {
+          "type": "ClassDef",
+          "name": "FakeYDL",
+          "start": 164,
+          "end": 191,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "close",
+          "start": 60,
+          "end": 61,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "join_thread",
+          "start": 63,
+          "end": 64,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "__init__",
+          "start": 69,
+          "end": 70,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "start",
+          "start": 72,
+          "end": 73,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "is_alive",
+          "start": 75,
+          "end": 76,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "join",
+          "start": 78,
+          "end": 79,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "close",
+          "start": 81,
+          "end": 82,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "save",
+          "start": 150,
+          "end": 151,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "__init__",
+          "start": 165,
+          "end": 168,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "__enter__",
+          "start": 170,
+          "end": 171,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "__exit__",
+          "start": 173,
+          "end": 174,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "add_post_processor",
+          "start": 176,
+          "end": 177,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "extract_info",
+          "start": 179,
+          "end": 191,
+          "doc": null
+        }
+      ]
+    },
+    "tests/test_history_privacy.py": {
+      "lines": 37,
+      "symbols": [
+        {
+          "type": "FunctionDef",
+          "name": "test_auth_selection_never_enters_persisted_job_history",
+          "start": 7,
+          "end": 23,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_retry_session_is_used_without_persisting_cookie_path",
+          "start": 26,
+          "end": 37,
+          "doc": null
+        }
+      ]
+    },
+    "tests/test_instance.py": {
+      "lines": 14,
+      "symbols": [
+        {
+          "type": "FunctionDef",
+          "name": "test_second_instance_cannot_create_another_tray",
+          "start": 5,
+          "end": 14,
+          "doc": null
+        }
+      ]
+    },
+    "tests/test_local_download.py": {
+      "lines": 73,
+      "symbols": [
+        {
+          "type": "FunctionDef",
+          "name": "test_real_engine_local_fixture",
+          "start": 18,
+          "end": 73,
+          "doc": null
+        }
+      ]
+    },
+    "tests/test_media_tools.py": {
+      "lines": 58,
+      "symbols": [
+        {
+          "type": "FunctionDef",
+          "name": "setup",
+          "start": 12,
+          "end": 32,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_install_publishes_only_expected_files_and_reuses_them",
+          "start": 35,
+          "end": 42,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_unverified_download_is_never_installed",
+          "start": 45,
+          "end": 51,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_cancel_before_download",
+          "start": 54,
+          "end": 58,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "open_archive",
+          "start": 25,
+          "end": 27,
+          "doc": null
+        }
+      ]
+    },
+    "tests/test_packaging_reliability.py": {
+      "lines": 82,
+      "symbols": [
+        {
+          "type": "FunctionDef",
+          "name": "test_portable_data_stays_beside_executable_when_writable",
+          "start": 10,
+          "end": 15,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_portable_data_falls_back_to_isolated_user_directory",
+          "start": 18,
+          "end": 27,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_portable_data_reports_both_unwritable_locations",
+          "start": 30,
+          "end": 36,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_log_file_is_rotating_and_redacts_credentials",
+          "start": 39,
+          "end": 62,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_exception_traceback_is_redacted",
+          "start": 65,
+          "end": 71,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_main_reports_log_startup_failure",
+          "start": 74,
+          "end": 82,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "fail",
+          "start": 77,
+          "end": 78,
+          "doc": null
+        }
+      ]
+    },
+    "tests/test_popup.py": {
+      "lines": 47,
+      "symbols": [
+        {
+          "type": "FunctionDef",
+          "name": "test_tray_anchor_monitor_edges_and_scaling",
+          "start": 17,
+          "end": 28,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_oversized_full_view_is_clamped",
+          "start": 31,
+          "end": 34,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_safe_clicks_do_not_dismiss",
+          "start": 38,
+          "end": 40,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_outside_click_and_modal_guard",
+          "start": 43,
+          "end": 47,
+          "doc": null
+        }
+      ]
+    },
+    "tests/test_process_owner.py": {
+      "lines": 28,
+      "symbols": [
+        {
+          "type": "FunctionDef",
+          "name": "test_worker_crash_reaps_owned_child",
+          "start": 12,
+          "end": 28,
+          "doc": null
+        }
+      ]
+    },
+    "tests/test_safety.py": {
+      "lines": 161,
+      "symbols": [
+        {
+          "type": "FunctionDef",
+          "name": "test_playlist_detection",
+          "start": 23,
+          "end": 24,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_single_safety_on_unknown_playlist",
+          "start": 27,
+          "end": 32,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_playlist_duplicates_with_different_watch_urls",
+          "start": 35,
+          "end": 38,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_beats",
+          "start": 42,
+          "end": 46,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_ambiguous_names_and_aliases",
+          "start": 49,
+          "end": 54,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_movies_and_destinations",
+          "start": 57,
+          "end": 66,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_exclusive_publication",
+          "start": 69,
+          "end": 79,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_output_cannot_fall_back_to_unrelated_file",
+          "start": 82,
+          "end": 84,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_settings_migrate_unsafe_defaults",
+          "start": 87,
+          "end": 103,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_error_classification",
+          "start": 116,
+          "end": 118,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_every_destination_handles_publication",
+          "start": 131,
+          "end": 142,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_interrupted_publish_does_not_expose_incomplete_media",
+          "start": 145,
+          "end": 161,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "fail_copy",
+          "start": 151,
+          "end": 153,
+          "doc": null
+        }
+      ]
+    },
+    "tests/test_storage.py": {
+      "lines": 32,
+      "symbols": [
+        {
+          "type": "FunctionDef",
+          "name": "test_job_round_trip",
+          "start": 5,
+          "end": 12,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_interrupted_jobs_recover_for_manual_retry",
+          "start": 15,
+          "end": 21,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_connection_is_closed_after_transaction",
+          "start": 24,
+          "end": 32,
+          "doc": null
+        }
+      ]
+    },
+    "tests/test_support.py": {
+      "lines": 15,
+      "symbols": [
+        {
+          "type": "FunctionDef",
+          "name": "test_support_export_removes_private_urls_paths_and_credentials",
+          "start": 4,
+          "end": 15,
+          "doc": null
+        }
+      ]
+    },
+    "tests/test_ui_features.py": {
+      "lines": 60,
+      "symbols": [
+        {
+          "type": "FunctionDef",
+          "name": "test_batch_urls_validate_atomically_and_deduplicate",
+          "start": 8,
+          "end": 12,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_settings_restore_validated_view_and_position",
+          "start": 15,
+          "end": 31,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_monitor_relative_custom_popup_clamps",
+          "start": 34,
+          "end": 38,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_organizer_rule_and_neutral_default",
+          "start": 41,
+          "end": 49,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_legacy_builtin_paths_migrate_without_overwriting_custom_path",
+          "start": 52,
+          "end": 60,
+          "doc": null
+        }
+      ]
+    },
+    "tests/test_validation.py": {
+      "lines": 31,
+      "symbols": [
+        {
+          "type": "FunctionDef",
+          "name": "test_rejects_random_text",
+          "start": 7,
+          "end": 11,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_accepts_web_urls",
+          "start": 22,
+          "end": 26,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_rejects_credentials_and_ip_addresses",
+          "start": 29,
+          "end": 31,
+          "doc": null
+        }
+      ]
+    },
+    "tests/test_worker.py": {
+      "lines": 166,
+      "symbols": [
+        {
+          "type": "FunctionDef",
+          "name": "media",
+          "start": 14,
+          "end": 44,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_real_premiere_conversion_and_verification",
+          "start": 47,
+          "end": 55,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_failed_conversion_preserves_source",
+          "start": 58,
+          "end": 81,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_already_compatible_source_skips_conversion",
+          "start": 84,
+          "end": 98,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_execute_job_uses_exact_postprocessed_path_and_single_guard",
+          "start": 101,
+          "end": 153,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "test_unavailable_destination_fallback",
+          "start": 156,
+          "end": 166,
+          "doc": null
+        },
+        {
+          "type": "ClassDef",
+          "name": "BrokenProcess",
+          "start": 64,
+          "end": 71,
+          "doc": null
+        },
+        {
+          "type": "ClassDef",
+          "name": "FakeYDL",
+          "start": 106,
+          "end": 132,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "wait",
+          "start": 67,
+          "end": 68,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "poll",
+          "start": 70,
+          "end": 71,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "__init__",
+          "start": 107,
+          "end": 110,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "__enter__",
+          "start": 112,
+          "end": 113,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "__exit__",
+          "start": 115,
+          "end": 116,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "to_console_title",
+          "start": 118,
+          "end": 119,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "add_post_processor",
+          "start": 121,
+          "end": 122,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "extract_info",
+          "start": 124,
+          "end": 132,
+          "doc": null
+        }
+      ]
+    },
+    "tools/capture_ui.py": {
+      "lines": 94,
+      "symbols": [
+        {
+          "type": "FunctionDef",
+          "name": "capture",
+          "start": 14,
+          "end": 50,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "main",
+          "start": 53,
+          "end": 90,
+          "doc": null
+        }
+      ]
+    },
+    "tools/collect_licenses.py": {
+      "lines": 49,
+      "symbols": []
+    },
+    "tools/destination_smoke.py": {
+      "lines": 8,
+      "symbols": []
+    },
+    "tools/diagnose.py": {
+      "lines": 41,
+      "symbols": []
+    },
+    "tools/frozen_network_probe.py": {
+      "lines": 63,
+      "symbols": [
+        {
+          "type": "FunctionDef",
+          "name": "probe",
+          "start": 13,
+          "end": 36,
+          "doc": null
+        },
+        {
+          "type": "ClassDef",
+          "name": "Handler",
+          "start": 42,
+          "end": 49,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "do_GET",
+          "start": 43,
+          "end": 46,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "log_message",
+          "start": 48,
+          "end": 49,
+          "doc": null
+        }
+      ]
+    },
+    "tools/ui_smoke.py": {
+      "lines": 245,
+      "symbols": [
+        {
+          "type": "FunctionDef",
+          "name": "smoke_worker",
+          "start": 9,
+          "end": 15,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "run",
+          "start": 18,
+          "end": 240,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "tick",
+          "start": 40,
+          "end": 44,
+          "doc": null
+        },
+        {
+          "type": "FunctionDef",
+          "name": "screenshot",
+          "start": 154,
+          "end": 190,
+          "doc": null
+        }
+      ]
+    }
+  }
+}

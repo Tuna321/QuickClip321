@@ -1,0 +1,44 @@
+name: Rust V3 Windows CI
+on:
+  push:
+    branches: ['main', 'v3/**']
+    paths: ['v3/**', '.github/workflows/rust-v3.yml']
+  pull_request:
+    paths: ['v3/**', '.github/workflows/rust-v3.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: rust-v3-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rust toolchain
+        run: rustup update stable
+      - name: Frontend syntax
+        run: node --check v3/ui/app.js
+      - name: Core unit tests
+        run: cargo test --locked --manifest-path v3/core/Cargo.toml
+      - name: Build unsigned test executable
+        run: cargo build --release --locked --manifest-path v3/desktop/Cargo.toml
+      - name: Verify UI startup in isolated state
+        shell: pwsh
+        run: |
+          $env:QC_V3_SMOKE_DIR = Join-Path $env:RUNNER_TEMP "quickclip-v3-smoke"
+          New-Item -ItemType Directory -Force $env:QC_V3_SMOKE_DIR | Out-Null
+          $exe = (Resolve-Path "v3/desktop/target/release/quickclip321-v3.exe").Path
+          $p = Start-Process -FilePath $exe -PassThru
+          if (-not $p.WaitForExit(60000)) { Stop-Process -Id $p.Id -Force; throw "UI startup timed out" }
+          if ($p.ExitCode -ne 0) { throw "UI startup failed" }
+          $report = Get-Content (Join-Path $env:QC_V3_SMOKE_DIR "ui-smoke.json") -Raw | ConvertFrom-Json
+          if (-not $report.ui_ready -or -not $report.snapshot) { throw "UI did not initialize" }
+          Get-FileHash $exe -Algorithm SHA256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: QuickClip321-V3-unsigned-test-exe
+          path: v3/desktop/target/release/quickclip321-v3.exe
+          if-no-files-found: error

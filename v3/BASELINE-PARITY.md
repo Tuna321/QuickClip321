@@ -1,0 +1,50 @@
+# Original QuickClip321 baseline contract
+Reference commit ec9e9a1e3ba81b2a14eece66d551bcc15d703de7, Python RC2. See generated BASELINE-SYMBOLS.json for exact source paths, line ranges, test names; original files remain in repo. Status below refers to V3 before this pass, not a claim of parity.
+| Area | Original behavior and reason | V3 gap |
+|---|---|---|
+| Tray/popup | pystray, single instance, hidden mode, no taskbar, borderless, click icon toggles, monitor work area, DPI, icon/corner/custom placement, outside click and Escape, suppress dismiss for own dialogs | taskbar, frame, startup visible, positioning, dismiss, custom |
+| Quick view | 600x365 adaptive, logo/Hide/Advanced, URL/Paste/Download, independent preset/format/resolution, preview title/thumb, destination Change/Auto, playlist controls conditional, stage/progress | partial; separate format, real preview and auto destination missing |
+| Advanced | 930x720, retains quick area, Downloads/Queue/History/Settings/Diagnostics, batch drafts survive nav | partial |
+| Presets | Premiere Ready MP4 1080, Fast Download original best, Audio MP3, Archive original + metadata; custom profiles | partial |
+| Preview | debounce 800ms, bounded separate process, 25s deadline, title/duration/channel/quality/playlist count, optional bounded thumbnail, stale results dropped, never blocks download | missing |
+| Playlist | one item default, recognized URL/preview, explicit full-list confirmation, reset consent on input/restart, no implicit full download | basic only |
+| Clipboard | detect every 2s and on show; never auto-open or auto-download; settings switch; avoid replacing draft | manual paste only |
+| Queue | persistent SQLite; queued/analyzing/downloading/processing/verifying/retrying/paused/completed/failed/cancelled, progress/speed/ETA, max 1-3 concurrent, pause/resume, cancel all/clear pending, retry, dedupe, retain partial by policy | sequential, limited states, no pause |
+| Download | yt-dlp Python API, independent processes, explicit auth, bounded retries/fragments, JS runtimes, job-specific staging, no overwrite, safe path validation, manifest, verify outputs, collision-safe publish, fallback if organizer path unavailable | basic CLI, lacks many safety/resume details |
+| Media | original format, H264/AAC/yuv420p MP4, MP3/M4A/WAV, clip start/end seconds, subtitle language/SRT/VTT/auto, trim subtitle timestamps, archive metadata; local FFprobe inspection | basic format and editor conversion only |
+| Organizer | local deterministic Unicode normalization, custom title rules first, music/movie/TV/rap/beat signals, confidence/reason, per-category paths, manual destination wins, per-job override, no scanning existing files | missing |
+| Auth | Chrome/Edge/Firefox/Brave or cookies.txt explicit per-job only; session credentials not stored; redacted error/support reports | missing |
+| AI | local suggestions and explicit OpenAI/Ollama opt-in, off default, only displayed metadata, secret store | missing |
+| Settings | startup quick/advanced/remember, System/Light/Dark, Purple/Graphite/Ocean, tray/corner/custom XY, clipboard/notifications/organizer, concurrent 1–3, fragments 1–8, partial policy, retries/stall, profiles | mostly missing |
+| History | open/reveal folder, retry, partial folder, remove records only, preserve files, clear completed | partial |
+| Diagnostics | classify errors, raw local log, safe copy/export redacted report, inspect local file | missing |
+| Distribution | portable isolated state, bundled Node, checksum-pinned on-demand FFmpeg, license notices, frozen network/UI/destination smoke | missing |
+| Reliability | single instance, process tree ownership, shutdown, SQLite recovery, safe storage, error taxonomy, no persisted auth | partial |
+No public stable V3 until each row is implemented and verified, including real tray interaction. Keep the original usable.
+
+## Alpha 5 delta (implementation status, not release certification)
+- Tray, appearance and clipboard: carried forward from Alpha 4; native smoke/visual tests required after every build. Physical tray clicks, DPI/multiple monitors remain open.
+- Profiles: named format/resolution/archive list stored in Preferences; named default across restart not implemented.
+- Organizer: ordered normalized title phrases, category folder mapping and manual override implemented. Original classification confidence, per-job override and full database UI remain open.
+- Queue: 1–3 simultaneous jobs (default 1), waiting-job Hold/Resume, cancel and recovery of held state. Active transfer byte-resume, partial recovery workflow, stalled-job policy and durable staging remain open. Parallel media test intermittently failed on local Windows connection abort; bounded pre-output retries added, see iteration log for latest evidence.
+- Diagnostics: redacted counts/tool presence and generic failure hints implemented. Native notifications, auth, raw-log inspection/export, FFprobe file inspection and optional AI not migrated.
+- Dependency detection: installed PATH tools only; verified automatic installation, bundled Node, clean-machine installer testing remain open.
+- Preview: local HTTP/PNG fixture tested; external sources vary, record exact test outcomes. No universal thumbnail promise.
+- English: manual quick/settings/profile/organizer form validation replaces browser-localized validation; OS dialogs remain system language.
+
+## Alpha 6 delta
+- Playlist checkbox shown only for URL clues or confirmed extractor playlist; unchecked by default and reset on input. Real external mix/playlist download still needs dedicated fixture.
+- Optional surface finishes and checkbox transitions; static CSS, reduced-motion/forced-colors fallbacks. Native Liquid Glass not implemented.
+- Catalog expanded from 14/4/5 to 317 hip-hop and related artist entries, 336 film entries, 310 series entries. Normalized contextual matching, custom mappings and optional detailed subfolders. Real-world accuracy remains unmeasured. Original default Audio/Video preserved.
+- True active pause/resume, verified dependency installation, native notifications remain open.
+
+## Alpha 7 delta
+- Simplified tray controls: no quick Hide or Auto-organize; global saved organizer setting, manual destination and contextual Reset. Queue toggles. Native fixture verified.
+- Games category: 171 manually curated entries, context and selected aliases, optional Video/Games folder and custom destinations. Built-in catalog total 1134. Development sample 20/20, not unbiased real-world accuracy.
+- Release blockers remain as listed in README and NEXT-PASS: true active resume, clean-machine verified bootstrap, notifications and full parity/physical interaction coverage.
+
+## Alpha 8 delta
+- Catalog: 2302 entries, including 1485 music artists/groups across hip-hop, pop, rock/metal, electronic and other music; 336 films, 310 series and 171 games. Contextual fixtures passed; representative accuracy not established.
+- Controlled pause and restart for eligible single Original transfers: persistent job-owned stage, positive HTTP Range reuse and byte-identical output verified. Not general crash recovery, playlist, conversion or subtitle resume. Windows Job Object supervision added and tested; attach-after-spawn race remains.
+- Managed dependency setup: real empty-root HTTPS installation of pinned yt-dlp, FFmpeg/FFprobe and Node; repeated integrity reuse, tamper refusal and executable version checks passed. Clean VM, update/uninstall and package distribution remain open.
+- Native Win32 frontend prototype: independent state, real tray and basic controls, three isolated smoke tests, one idle process in three measurements. Not feature-equivalent to Tauri. Full native parity and notifications remain release blockers.

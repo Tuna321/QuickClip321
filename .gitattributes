@@ -1,0 +1,4 @@
+# Auxiliary screenshot and native smoke scripts are development tooling, not the shipped application.
+v3/visual_capture.py linguist-detectable=false
+v3/native/smoke.py linguist-detectable=false
+v3/first_run_test.py linguist-detectable=false
