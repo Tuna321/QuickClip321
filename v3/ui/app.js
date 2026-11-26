@@ -2,6 +2,7 @@
 const $ = id => document.getElementById(id);
 const invoke = (name,args={}) => window.__TAURI__.core.invoke(name,args);
 let current = "home", initialized = false, busy = false, timer;
+let toolsAvailable=false,setupRunning=false;
 let organizerEnabled=true,manualDestination=false,savedDefaultDestination="";
 function notice(text,error=false){const t=$("toast");t.textContent=String(text);t.classList.toggle("error",error);clearTimeout(timer);timer=setTimeout(()=>t.textContent="",7000);}
 function syncQueueButton(){$("quickQueue").setAttribute("aria-expanded",String(expanded&&current==="queue"));}
@@ -10,12 +11,12 @@ document.querySelectorAll(".nav").forEach(b=>b.addEventListener("click",()=>show
 function el(tag,cls,text){const node=document.createElement(tag);if(cls)node.className=cls;if(text!==undefined)node.textContent=text;return node;}
 function action(label,cmd,id){const b=el("button","small",label);b.addEventListener("click",async()=>{b.disabled=true;try{await invoke(cmd,{id});notice(label==="Retry"?"Added to queue":"Done");await refresh();}catch(e){notice(e,true);}finally{b.disabled=false;}});return b;}
 function render(container,jobs,empty){const signature=JSON.stringify(jobs);if(container.dataset.signature===signature)return;if(container.contains(document.activeElement)&&!document.activeElement.disabled){const focused=document.activeElement;focused.onblur=()=>refresh();return;}container.dataset.signature=signature;const frag=document.createDocumentFragment();if(!jobs.length)frag.append(el("div","empty",empty));for(const j of [...jobs].reverse()){const card=el("article","job");const top=el("div","job-top");const info=el("div");let name=j.files.length?j.files[0].split(/[\\/]/).pop():j.url;info.append(el("div","job-title",name),el("div","job-meta",j.preset+" · "+j.quality+" · "+j.message));top.append(info,el("span","job-status",j.status));card.append(top);if(["running","queued","paused"].includes(j.status)){const track=el("progress");track.max=100;track.value=Math.round(j.progress*100);track.setAttribute("aria-label","Download progress");card.append(track);}const buttons=el("div","job-actions");if(["running","queued","paused"].includes(j.status)){buttons.append(action("Cancel","cancel",j.id));if(j.status==="queued")buttons.append(action("Hold","pause_waiting",j.id));if(j.status==="running"&&j.preset==="original"&&!j.playlist&&!j.options?.archive&&j.options?.clip_start==null&&j.options?.clip_end==null&&!j.options?.subtitle_languages?.length&&j.message.startsWith("Downloading"))buttons.append(action("Pause","pause_waiting",j.id));if(j.status==="paused")buttons.append(action("Resume","resume_waiting",j.id));}else{if(j.files.length)buttons.append(action("Open folder","open_folder",j.id));if(["failed","cancelled"].includes(j.status))buttons.append(action("Retry single item","retry",j.id));buttons.append(action("Remove history","remove",j.id));}card.append(buttons);frag.append(card);}container.replaceChildren(frag);}
-async function refresh(){if(busy)return;busy=true;try{const s=await invoke("snapshot");if(!initialized){savedDefaultDestination=s.settings.destination;$("destination").value=savedDefaultDestination;$("defaultDest").value=savedDefaultDestination;$("ytdlp").value=s.settings.yt_dlp;$("ffmpeg").value=s.settings.ffmpeg;applyPreferences(s.settings.prefs);initialized=true;}const active=s.jobs.filter(j=>["running","queued","paused"].includes(j.status));const latest=active.find(j=>j.status==="running")||active[0]||s.jobs[s.jobs.length-1];$("quickStatus").textContent=latest?latest.message:"Ready";$("quickProgress").value=active.length?Math.round(latest.progress*100):0;$("badge").textContent=active.length;$("setupHint").hidden=await invoke("tools_ready");if(current==="queue")render($("queueList"),active,"No active downloads.");if(current==="history")render($("historyList"),s.jobs.filter(j=>!["running","queued","paused"].includes(j.status)),"No download history yet.");}catch(e){notice(e,true);}finally{busy=false;}}
+async function refresh(){if(busy)return;busy=true;try{const s=await invoke("snapshot");if(!initialized){savedDefaultDestination=s.settings.destination;$("destination").value=savedDefaultDestination;$("defaultDest").value=savedDefaultDestination;$("ytdlp").value=s.settings.yt_dlp;$("ffmpeg").value=s.settings.ffmpeg;applyPreferences(s.settings.prefs);initialized=true;}const active=s.jobs.filter(j=>["running","queued","paused"].includes(j.status));const latest=active.find(j=>j.status==="running")||active[0]||s.jobs[s.jobs.length-1];$("quickStatus").textContent=latest?latest.message:"Ready";$("quickProgress").value=active.length?Math.round(latest.progress*100):0;$("badge").textContent=active.length;toolsAvailable=await invoke("tools_ready");$("setupHint").hidden=toolsAvailable||setupRunning;if(current==="queue")render($("queueList"),active,"No active downloads.");if(current==="history")render($("historyList"),s.jobs.filter(j=>!["running","queued","paused"].includes(j.status)),"No download history yet.");}catch(e){notice(e,true);}finally{busy=false;}}
 let dialogOpen=false;async function pick(target,directory){dialogOpen=true;try{const path=await invoke("plugin:dialog|open",{options:{directory,multiple:false,...(!directory?{filters:[{name:"Windows executables",extensions:["exe"]}]}:{})}});if(typeof path==="string")$(target).value=path;}catch(e){notice(e,true);}finally{dialogOpen=false;}}
 $("browse").onclick=async()=>{const before=$("destination").value;await pick("destination",true);if(before!==$("destination").value){manualDestination=true;syncDestination();}};function syncDestination(){$("autoFolder").hidden=!manualDestination;$("destination").title=manualDestination?"Manual destination (organizer bypassed)":organizerEnabled?"Automatic organizer enabled":"Default destination";}
 $("destination").addEventListener("input",()=>{manualDestination=true;syncDestination();});$("autoFolder").onclick=()=>{$("destination").value=savedDefaultDestination;manualDestination=false;syncDestination();};$("defaultBrowse").onclick=()=>pick("defaultDest",true);document.querySelectorAll(".pick").forEach(b=>b.onclick=()=>pick(b.dataset.target,false));
 $("paste").onclick=async()=>{try{const t=await invoke("plugin:clipboard-manager|read_text");if(typeof t==="string"){$("url").value=t.trim();autoFilled="";$("url").dispatchEvent(new Event("input"));}}catch(e){notice(e,true);}};
-$("form").onsubmit=async e=>{e.preventDefault();const b=e.submitter||$("form").querySelector("[type=submit]");if(!$("url").value.trim()){notice("Paste a media link first.",true);$("url").focus();return;}if(!$("destination").value.trim()){notice("Choose a destination folder.",true);return;}const submittedUrl=$("url").value.trim();b.disabled=true;try{await invoke("enqueue",{request:{url:submittedUrl,preset:$("format").value,quality:$("quality").value,playlist:!$("playlistChoice").hidden&&$("playlist").checked,organize:organizerEnabled&&!manualDestination,options:mediaOptions(),destination:$("destination").value}});if($("url").value.trim()===submittedUrl){$("url").value="";autoFilled="";$("url").dispatchEvent(new Event("input"));$("playlist").checked=false;}notice("Added to queue.");if(expanded)show("queue");else await refresh();}catch(err){notice(err,true);}finally{b.disabled=false;}};
+$("form").onsubmit=async e=>{e.preventDefault();if(!toolsAvailable){await prepareTools();return;}const b=e.submitter||$("form").querySelector("[type=submit]");if(!$("url").value.trim()){notice("Paste a media link first.",true);$("url").focus();return;}if(!$("destination").value.trim()){notice("Choose a destination folder.",true);return;}const submittedUrl=$("url").value.trim();b.disabled=true;try{await invoke("enqueue",{request:{url:submittedUrl,preset:$("format").value,quality:$("quality").value,playlist:!$("playlistChoice").hidden&&$("playlist").checked,organize:organizerEnabled&&!manualDestination,options:mediaOptions(),destination:$("destination").value}});if($("url").value.trim()===submittedUrl){$("url").value="";autoFilled="";$("url").dispatchEvent(new Event("input"));$("playlist").checked=false;}notice("Added to queue.");if(expanded)show("queue");else await refresh();}catch(err){notice(err,true);}finally{b.disabled=false;}};
 $("settingsForm").onsubmit=async e=>{e.preventDefault();if(!$("defaultDest").value.trim()){notice("Choose a default destination.",true);return;}try{const {settings}=await invoke("snapshot");const prefs=readPreferences();prefs.rules=settings.prefs.rules;prefs.category_paths=settings.prefs.category_paths;prefs.detailed_folders=settings.prefs.detailed_folders;await savePrefs(prefs);applyTheme();syncPosition();savedDefaultDestination=$("defaultDest").value;organizerEnabled=$("smartOrganizer").checked;if(!manualDestination)$("destination").value=savedDefaultDestination;syncDestination();notice("Settings saved.");await refresh();}catch(err){notice(err,true);}};
 function mediaOptions(){
     return {clip_start:$("clipStart").value===""?null:Number($("clipStart").value),clip_end:$("clipEnd").value===""?null:Number($("clipEnd").value),subtitle_languages:$("subtitleLanguages").value.split(",").map(s=>s.trim()).filter(Boolean),subtitle_format:$("subtitleFormat").value,subtitle_auto:$("subtitleAuto").checked,archive:$("archiveMetadata").checked};
@@ -66,7 +67,7 @@ $("clearLink").onclick=()=>{$("url").value="";autoFilled="";$("url").dispatchEve
 $("quickQueue").onclick=async()=>{try{if(expanded&&current==="queue"){await toggleExpanded(false);return;}if(!expanded)await toggleExpanded(true);show("queue");}catch(e){notice(e,true);}};
 window.addEventListener("focus",()=>{refresh();checkClipboard();if($("url").value.trim()&&$("previewText").textContent==="Loading preview...")fetchPreview();});setInterval(checkClipboard,500);
 document.addEventListener("keydown",e=>{if(e.ctrlKey&&e.key.toLowerCase()==="l"){e.preventDefault();$("url").focus();$("url").select();}});
-$("batchAdd").onclick=async()=>{let b=$("batchAdd");b.disabled=true;try{let urls=await invoke("validate_links",{urls:$("batchUrls").value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean)});let added=0;for(let url of urls){try{await invoke("enqueue",{request:{url,preset:$("format").value,quality:$("quality").value,playlist:false,organize:organizerEnabled&&!manualDestination,options:mediaOptions(),destination:$("destination").value}});added++;}catch(e){notice(e,true);}}if(added===urls.length)$("batchUrls").value="";notice(added+" of "+urls.length+" links added.");show("queue");}catch(e){notice(e,true);}finally{b.disabled=false;}};
+$("batchAdd").onclick=async()=>{if(!toolsAvailable){await prepareTools();return;}let b=$("batchAdd");b.disabled=true;try{let urls=await invoke("validate_links",{urls:$("batchUrls").value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean)});let added=0;for(let url of urls){try{await invoke("enqueue",{request:{url,preset:$("format").value,quality:$("quality").value,playlist:false,organize:organizerEnabled&&!manualDestination,options:mediaOptions(),destination:$("destination").value}});added++;}catch(e){notice(e,true);}}if(added===urls.length)$("batchUrls").value="";notice(added+" of "+urls.length+" links added.");show("queue");}catch(e){notice(e,true);}finally{b.disabled=false;}};
 document.querySelectorAll(".queue-action").forEach(b=>b.onclick=async()=>{try{await invoke("queue_action",{action:b.dataset.action});await refresh();}catch(e){notice(e,true);}});
 let expanded=false;
 let customProfiles=[],savedRules=[],savedPaths={};
@@ -97,15 +98,37 @@ function renderRules(){const list=$("ruleList");list.replaceChildren();savedRule
 function renderPaths(){const list=$("categoryPaths");list.replaceChildren();for(const cat of categories){const label=el("label","",cat[0].toUpperCase()+cat.slice(1));label.htmlFor="path-"+cat;const row=el("div","row");const input=el("input");input.id="path-"+cat;input.value=savedPaths[cat]||"";input.placeholder="Use default folder";const browse=el("button","secondary","Browse");browse.type="button";browse.onclick=()=>pick(input.id,true);row.append(input,browse);list.append(label,row);}}
 $("addRule").onclick=()=>{const term=$("ruleTerm").value.trim();if(!term){notice("Enter a title phrase.",true);return;}if(savedRules.length>=100){notice("Maximum 100 rules.",true);return;}savedRules.push({contains:term,category:$("ruleCategory").value});$("ruleTerm").value="";renderRules();};
 $("organizerForm").onsubmit=async e=>{e.preventDefault();const old=savedPaths;const paths={};for(const cat of categories){const v=$("path-"+cat).value.trim();if(v){if(!/^(?:[A-Za-z]:[\\/]|\\\\)/.test(v)){notice("Choose an absolute folder for "+cat+".",true);return;}paths[cat]=v;}}savedPaths=paths;try{await saveSection({rules:savedRules,category_paths:savedPaths,detailed_folders:$("detailedFolders").checked});notice("Organizer saved.");}catch(e){savedPaths=old;notice(e,true);}};
-async function installManaged(){if(!await confirmSetup())return;
+async function prepareTools(){
+    if(setupRunning)return false;
+    setupRunning=true;dialogOpen=true;const d=$("firstSetup");
+    $("setupTitle").textContent="Getting QuickClip321 ready...";
+    $("setupState").textContent="Downloading and verifying required media tools. Please keep QuickClip321 running.";
+    $("setupProgress").hidden=false;$("setupActions").hidden=true;$("setupHint").hidden=true;
     $("managedSetup").disabled=true;$("quickSetup").disabled=true;
-    notice("Installing media tools. You can keep this window open.");
-    try{const settings=await invoke("setup_managed_tools");$("ytdlp").value=settings.yt_dlp;$("ffmpeg").value=settings.ffmpeg;notice("Managed tools are ready.");await refresh();}
-    catch(e){notice(e,true);}
-    finally{$("managedSetup").disabled=false;$("quickSetup").disabled=false;}
+    d.oncancel=e=>e.preventDefault();
+    if(!d.open)d.showModal();
+    try{
+        const settings=await serializeSettings(()=>invoke("setup_managed_tools"));
+        $("ytdlp").value=settings.yt_dlp;$("ffmpeg").value=settings.ffmpeg;
+        toolsAvailable=await invoke("tools_ready");
+        if(!toolsAvailable)throw Error("Setup did not finish. Please retry.");
+        d.close();dialogOpen=false;notice("QuickClip321 is ready.");
+        return true;
+    }catch(e){
+        $("setupTitle").textContent="Setup needs another try";
+        $("setupState").textContent=String(e);
+        $("setupProgress").hidden=true;$("setupActions").hidden=false;
+        $("setupLater").onclick=()=>{d.close();dialogOpen=false;};
+        return false;
+    }finally{
+        setupRunning=false;$("managedSetup").disabled=false;$("quickSetup").disabled=false;
+        await refresh();
+    }
 }
+$("setupRetry").onclick=prepareTools;
+async function installManaged(){if(await confirmSetup())await prepareTools();}
 function confirmSetup(){return new Promise(resolve=>{const d=$("setupConfirm");dialogOpen=true;const finish=ok=>{d.close();dialogOpen=false;resolve(ok);};$("setupYes").onclick=()=>finish(true);$("setupNo").onclick=()=>finish(false);d.oncancel=e=>{e.preventDefault();finish(false);};d.showModal();});}
-$("managedSetup").onclick=installManaged;$("quickSetup").onclick=installManaged;
+$("managedSetup").onclick=installManaged;$("quickSetup").onclick=prepareTools;
 $("detectTools").onclick=async()=>{try{const [y,f]=await invoke("detect_tools");if(y)$("ytdlp").value=y;if(f)$("ffmpeg").value=f;notice(y&&f?"Both tools detected. Save changes to apply.":"Some tools are missing. Select their executables manually.",!(y&&f));}catch(e){notice(e,true);}};
 async function loadDiagnostics(){try{$("diagReport").textContent=await invoke("diagnostics");}catch(e){notice(e,true);}}
 $("refreshDiag").onclick=loadDiagnostics;
@@ -127,7 +150,7 @@ function setPlaylistVisibility(visible,count){
     $("playlistLabel").textContent=visible&&Number.isInteger(count)&&count>1?"Entire playlist ("+count+" items)":"Entire playlist";
 }
 async function fetchPreview(){
-    if(previewRunning){previewPending=true;return;}
+    if(!toolsAvailable)return;if(previewRunning){previewPending=true;return;}
     const url=$("url").value.trim();if(!document.hasFocus())return;if(!/^(https?:\/\/|www\.)\S+$/i.test(url))return;
     previewRunning=true;previewPending=false;const generation=previewGeneration;
     try{let p=await invoke("media_preview",{url});if($("url").value.trim()!==url||generation!==previewGeneration)return;setPlaylistVisibility(Boolean(p.playlist)||playlistHint(url),p.count);let detail=[p.channel,p.duration?Math.round(p.duration)+"s":"",p.qualities.length?p.qualities.slice(0,4).join("p / ")+"p":"",p.playlist?(p.count||"Unknown")+" items":""].filter(Boolean).join(" | ");$("previewText").textContent=p.title+(detail?" - "+detail:"");if(p.thumbnail&&/^data:image\/(jpeg|png|webp);base64,/.test(p.thumbnail)){showThumbnail(p.thumbnail);}}
@@ -139,7 +162,21 @@ $("url").addEventListener("input",()=>{let url=$("url").value.trim();if(url!==pr
 function contrast(a,b){const l=c=>{let x=c.match(/\d+(?:\.\d+)?/g).slice(0,3).map(v=>Number(v)/255).map(v=>v<=.04045?v/12.92:Math.pow((v+.055)/1.055,2.4));return .2126*x[0]+.7152*x[1]+.0722*x[2];};let x=l(a),y=l(b);return (Math.max(x,y)+.05)/(Math.min(x,y)+.05);}
 function themeSmoke(){const root=document.documentElement,oldTheme=$("theme").value,oldAccent=$("accent").value;const bg=new Set(),accents=new Set();let ok=true;for(let t of ["Dark","Light","Midnight","AMOLED","Forest","Sand"]){$("theme").value=t;for(let a of ["Purple","Graphite","Ocean","Emerald","Rose","Amber"]){$("accent").value=a;applyTheme();let body=getComputedStyle(document.body),button=getComputedStyle(document.querySelector(".primary")),input=getComputedStyle($("url"));bg.add(body.backgroundColor);accents.add(button.backgroundColor);ok=ok&&contrast(body.color,body.backgroundColor)>=4.5&&contrast(button.color,button.backgroundColor)>=4.5&&contrast(input.color,input.backgroundColor)>=4.5;}}$("theme").value=oldTheme;$("accent").value=oldAccent;applyTheme();return ok&&bg.size===6&&accents.size===6;}
 async function smokeChecks(){
-    if(!await invoke("smoke_active")){clipboardAutoReady=true;checkClipboard();return;}
+    const smoke=await invoke("smoke_active");
+    const mode=smoke?await invoke("visual_page"):"";
+    const firstRunFixture=smoke&&mode.startsWith("first-run:");
+    if(!smoke||firstRunFixture){
+        if(!toolsAvailable)await prepareTools();
+        if(firstRunFixture&&toolsAvailable){
+            const url=mode.slice("first-run:".length);
+            if(/^http:\/\/127\.0\.0\.1:\d+\//.test(url)){
+                $("url").value=url;$("url").dispatchEvent(new Event("input"));
+                $("form").requestSubmit();
+            }
+        }
+        if(!smoke){clipboardAutoReady=true;checkClipboard();}
+        return;
+    }
     let persistOk=true;const restartCase=await invoke("visual_page");
     if(restartCase==="persist-read"){persistOk=$("theme").value==="Forest"&&$("accent").value==="Ocean"&&$("material").value==="Carbon"&&$("popupMode").value==="Custom"&&!$("runOnStartup").checked;}
     let clipboardOk=false;

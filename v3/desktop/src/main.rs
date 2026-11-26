@@ -189,6 +189,9 @@ fn snapshot(engine: State<'_, Engine>) -> Snapshot {
 }
 #[tauri::command]
 fn enqueue(engine: State<'_, Engine>, request: Request) -> Result<String, String> {
+    if !configured_tools_ready(&engine.snapshot().settings) {
+        return Err("QuickClip321 is not ready yet. Complete media setup first.".into());
+    }
     engine.enqueue(request)
 }
 #[tauri::command]
@@ -210,12 +213,21 @@ async fn setup_managed_tools(engine: State<'_, Engine>) -> Result<Settings, Stri
         .await
         .map_err(|e| e.to_string())?
 }
-#[tauri::command]
-fn tools_ready(engine: State<'_, Engine>) -> bool {
-    let settings = engine.snapshot().settings;
-    settings.yt_dlp.is_file()
+fn configured_tools_ready(settings: &Settings) -> bool {
+    let managed_node = settings.yt_dlp.parent().is_some_and(|p| {
+        p.file_name().and_then(|v| v.to_str()) == Some("managed-2026.11.23-9.1-24.22.3")
+            && p.join("node.exe").is_file()
+    });
+    settings.yt_dlp.is_absolute()
+        && settings.yt_dlp.is_file()
+        && settings.ffmpeg.is_absolute()
         && settings.ffmpeg.is_file()
         && settings.ffmpeg.with_file_name("ffprobe.exe").is_file()
+        && (managed_node || find_tool("node.exe").is_file())
+}
+#[tauri::command]
+fn tools_ready(engine: State<'_, Engine>) -> bool {
+    configured_tools_ready(&engine.snapshot().settings)
 }
 #[tauri::command]
 fn detect_tools() -> [String; 2] {
@@ -702,6 +714,7 @@ fn main() {
                 },
             )
             .map_err(std::io::Error::other)?;
+            let needs_setup = !configured_tools_ready(&engine.snapshot().settings);
             if let Err(e) = sync_startup(engine.snapshot().settings.prefs.run_on_startup) {
                 eprintln!("{e}");
             }
@@ -768,6 +781,11 @@ fn main() {
                 tray = tray.icon(icon.clone());
             }
             tray.build(app)?;
+            if needs_setup && !isolated_run() {
+                if let Some(w) = app.get_webview_window("main") {
+                    show_popup(&w, None);
+                }
+            }
             if !smoke {
                 watch_notifications(app.handle().clone());
             }

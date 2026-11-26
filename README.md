@@ -38,6 +38,8 @@ Format and resolution are independently adjustable. Save your own presets in the
 
 ## Get started
 
+**Development update:** Beta 3 adds automatic first-launch media setup and has passed an isolated first-download test. The current public download remains Beta 2 until the new release assets are published.
+
 1. **[Download Beta 2 for Windows x64](https://github.com/Tuna321/QuickClip321/releases/download/v3.0.0-beta.2/QuickClip321-3.0.0-beta.2-win-x64.exe).** Save the EXE in a permanent folder and open it. No extraction required.
 2. **Copy a media link.** Click the Q icon in the system tray (look under the hidden icons arrow if necessary).
 3. **Choose and download.** Select your preset, format and resolution. If prompted, select **Set up tools** and confirm the verified media-tool download.

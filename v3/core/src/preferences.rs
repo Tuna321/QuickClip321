@@ -56,7 +56,7 @@ impl Default for Preferences {
             popup_x: 0.5,
             popup_y: 0.5,
             startup_view: "quick".into(),
-            theme: "System".into(),
+            theme: "Dark".into(),
             accent: "Purple".into(),
             clipboard_monitor: true,
             smart_organizer: true,

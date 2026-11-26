@@ -43,3 +43,5 @@
 .preset-row{margin-top:10px;display:grid;grid-template-columns:1.35fr 1fr 1fr;gap:10px;align-items:start}
 
 .setup-dialog{width:min(410px,90%);border:1px solid var(--border);border-radius:14px;background:var(--surface);color:var(--text);padding:20px;box-shadow:0 12px 35px #0006}.setup-dialog::backdrop{background:#0008}.setup-dialog h2{margin:0 0 10px}.setup-dialog p{font-size:13px;line-height:1.5;color:var(--muted)}.setup-dialog .row{justify-content:flex-end;margin-top:16px}
+
+.first-setup progress{width:100%;height:8px;margin:12px 0;accent-color:var(--accent)}.first-setup .sub{font-size:12px}.first-setup [hidden]{display:none!important}

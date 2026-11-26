@@ -1,3 +1,5 @@
-# Next pass: user feedback after public Beta 2
+# Next pass: Beta 3 distribution and feedback
 
-Prioritize reproducible bug reports, download reliability, first-use setup, startup behavior and simple UX. Preserve old versions. Reproduce issues in isolated state before changing code. Review native migration, clean-machine tests, site compatibility, broader resume and accessibility as stable-release gates, not as reasons to postpone feedback. Record actual test evidence and never claim unverified support.
+Prioritize actual first-use reports. Keep automatic verified setup and no global changes. Reproduce failure/retry, clean VM/WebView2 availability, tool update/recovery and real source compatibility. Stable release gates and native migration remain separate. Verify release artifacts and preserve older versions.
+
+Publish verified Beta 3 package and checksums using an authorized release interface, then update public download links. Do not link to nonexistent assets.

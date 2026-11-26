@@ -1,6 +1,6 @@
 # QuickClip321 V3 — Windows tray downloader
 
-Current public preview: 3.0.0-beta.2. This is a public beta, not a stable release.
+Current source candidate: 3.0.0-beta.3. Public download: Beta 2 until Beta 3 assets are uploaded. This is a public beta, not a stable release.
 
 ## What is implemented in the candidate
 - Hidden startup, frameless rounded Windows popup, taskbar exclusion, tray click show/hide, quick/advanced modes, monitor work-area placement (Tray/Corner/Custom), Escape and quick-view blur dismissal.
@@ -8,7 +8,7 @@ Current public preview: 3.0.0-beta.2. This is a public beta, not a stable releas
 - Bounded asynchronous metadata and optional thumbnail preview, explicit playlist choice, batch links, bounded 1-3 simultaneous download queue (default one), waiting-job Hold/Resume, cancellation/retry/history and file-safe publishing.
 - Local artist/movie/TV/game/audio classification with an expanded built-in catalog (default Audio/Video folders; manual selection wins).
 - MP4/H.264/AAC verification and conversion, MP3/M4A/WAV/original, optional post-download clipping and subtitle timestamp adjustment, archive metadata option.
-- Tools detected on PATH, explicitly configured, or installed with consent through verified version-pinned managed setup.
+- Tools detected on PATH, explicitly configured, or installed automatically when missing through verified version-pinned managed setup.
 
 ## Build and test
 ```powershell
@@ -43,3 +43,6 @@ Alpha 7 catalog: 317 hip-hop/related artists, 336 films, 310 series and 171 game
 
 ## Public beta 2
 Windows completion/failure notifications, startup toggle enabled by default, saved appearance and position, separate format/resolution, and clip reset on new URL. Beta 2 passed 25 core tests and isolated restart/appearance UI tests. Full native frontend parity, clean VM, signing and broad source coverage remain open. See the root README and release notes.
+
+## Beta 3 first-launch test
+Run python v3/first_run_test.py v3/desktop/target/release/quickclip321-v3.exe from the repository root with no normal instance running. The runner needs FFmpeg solely to create a synthetic media fixture. The EXE is launched twice with isolated state and a PATH containing no media tools. Real pinned HTTPS setup, first MP4 H.264/AAC download, restart and no-reinstall are checked. This is not a clean VM certification.

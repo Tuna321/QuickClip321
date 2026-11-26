@@ -308,9 +308,18 @@ pub fn selector(preset: &str, quality: &str) -> Result<String> {
     };
     let video = format!("bestvideo*{cap}+bestaudio/best{cap}");
     match preset {
-        "editor" => Ok(format!(
-            "bestvideo{cap}[vcodec^=avc1]+bestaudio[acodec^=mp4a]/{video}"
-        )),
+        "editor" => {
+            // Generic direct media sometimes has no extractor height. Prefer known capped
+            // formats first; verify/limit the actual height during editor conversion.
+            let unknown = if quality == "best" {
+                String::new()
+            } else {
+                format!("/best[height<=?{quality}]")
+            };
+            Ok(format!(
+                "bestvideo{cap}[vcodec^=avc1]+bestaudio[acodec^=mp4a]/{video}{unknown}"
+            ))
+        }
         "original" => Ok(video),
         "mp3" | "wav" | "m4a" => Ok("bestaudio/best".into()),
         _ => Err("Unknown preset.".into()),
@@ -857,7 +866,13 @@ fn publish(src: &Path, dest: &Path) -> Result<PathBuf> {
     }
     Err("Too many conflicting filenames.".into())
 }
-fn ensure_editor(path: &Path, ffmpeg: &Path, cancel: &AtomicBool) -> Result<PathBuf> {
+fn ensure_editor(
+    path: &Path,
+    ffmpeg: &Path,
+    quality: &str,
+    cancel: &AtomicBool,
+) -> Result<PathBuf> {
+    let height_cap = quality.parse::<u64>().ok();
     let probe = ffmpeg.with_file_name(if cfg!(windows) {
         "ffprobe.exe"
     } else {
@@ -879,7 +894,11 @@ fn ensure_editor(path: &Path, ffmpeg: &Path, cancel: &AtomicBool) -> Result<Path
         let streams = info["streams"].as_array().ok_or("No media streams")?;
         Ok(file.extension().and_then(|v| v.to_str()) == Some("mp4")
             && streams.iter().any(|s| {
-                s["codec_type"] == "video" && s["codec_name"] == "h264" && s["pix_fmt"] == "yuv420p"
+                s["codec_type"] == "video"
+                    && s["codec_name"] == "h264"
+                    && s["pix_fmt"] == "yuv420p"
+                    && height_cap
+                        .is_none_or(|cap| s["height"].as_u64().is_some_and(|h| h > 0 && h <= cap))
             })
             && streams
                 .iter()
@@ -893,9 +912,12 @@ fn ensure_editor(path: &Path, ffmpeg: &Path, cancel: &AtomicBool) -> Result<Path
         "{} [editor].mp4",
         path.file_stem().and_then(|v| v.to_str()).unwrap_or("media")
     ));
-    let mut child = command(ffmpeg)
-        .args(["-nostdin", "-v", "error", "-n", "-i"])
-        .arg(path)
+    let mut cmd = command(ffmpeg);
+    cmd.args(["-nostdin", "-v", "error", "-n", "-i"]).arg(path);
+    if let Some(cap) = height_cap {
+        cmd.args(["-vf", &format!("scale=-2:trunc(min(ih\\,{cap})/2)*2")]);
+    }
+    let mut child = cmd
         .args([
             "-map",
             "0:v:0",
@@ -1403,7 +1425,7 @@ fn download_once(
             };
             let ready = if j.preset == "editor" {
                 progress(0.98, "Verifying editor compatibility".into());
-                ensure_editor(&path, &s.ffmpeg, cancel)?
+                ensure_editor(&path, &s.ffmpeg, &j.quality, cancel)?
             } else {
                 path.clone()
             };
