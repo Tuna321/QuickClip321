@@ -111,9 +111,10 @@ pub fn is_playlist(raw: &str) -> bool {
     };
     u.query_pairs()
         .any(|(key, val)| key == "list" && !val.is_empty())
-        || ["/playlist", "/sets/", "/albums/", "/album/"]
-            .iter()
-            .any(|p| u.path().to_lowercase().contains(p))
+        || u.path()
+            .to_ascii_lowercase()
+            .split('/')
+            .any(|p| matches!(p, "playlist" | "playlists" | "sets" | "albums" | "album"))
 }
 pub fn preview(raw: &str, tool: &Path) -> Result<Preview> {
     use std::io::{Read, Seek, SeekFrom};
@@ -192,6 +193,11 @@ pub fn preview(raw: &str, tool: &Path) -> Result<Preview> {
         return Err("Preview too large.".into());
     }
     let info: serde_json::Value = serde_json::from_slice(&bytes).map_err(err)?;
+    if info["title"].as_str().is_none_or(|s| s.trim().is_empty())
+        && info["entries"].as_array().is_none_or(Vec::is_empty)
+    {
+        return Err("No media metadata returned by the source.".into());
+    }
     let mut qualities = info["formats"]
         .as_array()
         .into_iter()

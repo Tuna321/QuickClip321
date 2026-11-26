@@ -1,4 +1,5 @@
 use serde_json::Value;
+use std::sync::OnceLock;
 use unicode_normalization::{char::is_combining_mark, UnicodeNormalization};
 
 fn normalized(s: &str) -> String {
@@ -35,6 +36,17 @@ fn aliases(entry: &Value) -> Vec<String> {
         .filter(|s| !s.is_empty())
         .collect()
 }
+fn database() -> &'static Value {
+    static DB: OnceLock<Value> = OnceLock::new();
+    DB.get_or_init(|| {
+        serde_json::from_str(include_str!("organizer_data.json"))
+            .expect("built-in organizer database")
+    })
+}
+pub fn counts() -> [usize; 3] {
+    let db = database();
+    ["artists", "movies", "tv"].map(|k| db[k].as_array().map_or(0, Vec::len))
+}
 pub fn category(info: &Value, preset: &str) -> (&'static str, &'static str) {
     let title = text(info, &["title"]);
     let n = normalized(title);
@@ -62,8 +74,7 @@ pub fn category(info: &Value, preset: &str) -> (&'static str, &'static str) {
             ("audio", "Audio media")
         };
     }
-    let db: Value = serde_json::from_str(include_str!("organizer_data.json"))
-        .expect("built-in organizer database");
+    let db = database();
     let series = normalized(text(info, &["series", "tv_show"]));
     let movie = normalized(text(info, &["movie", "movie_title"]));
     let clip = any(
@@ -79,8 +90,36 @@ pub fn category(info: &Value, preset: &str) -> (&'static str, &'static str) {
             if (!series.is_empty() && a.contains(&series))
                 || (!movie.is_empty() && a.contains(&movie))
                 || (clip
-                    && a.iter().any(|v| contains(&n, v))
-                    && (!e["ambiguous"].as_bool().unwrap_or(true) || (key == "tv" && tv_context)))
+                    && a.iter().any(|v| {
+                        if !contains(&n, v) {
+                            return false;
+                        }
+                        if !e["ambiguous"].as_bool().unwrap_or(true) {
+                            return true;
+                        }
+                        let contextual = if key == "tv" {
+                            tv_context || any(&n, &["scene", "clip", "sahne"])
+                        } else {
+                            any(&n, &["scene", "trailer", "fragman", "sahne", "film"])
+                        };
+                        if !contextual {
+                            return false;
+                        }
+                        // Short titles such as Dark, Her or Glass need a title boundary and adjacent media context.
+                        if v.split_whitespace().count() == 1 && v.len() <= 6 {
+                            return [
+                                "scene", "trailer", "fragman", "sahne", "episode", "bolum", "film",
+                                "dizi", "clip",
+                            ]
+                            .iter()
+                            .any(|marker| {
+                                n == format!("{v} {marker}")
+                                    || n.starts_with(&format!("{v} {marker} "))
+                                    || n == format!("{marker} {v}")
+                            });
+                        }
+                        true
+                    }))
             {
                 return ("film", "Movie or TV metadata");
             }
@@ -97,6 +136,10 @@ pub fn category(info: &Value, preset: &str) -> (&'static str, &'static str) {
             "resmi klip",
             "official music video",
             "video klip",
+            "official audio",
+            "lyric video",
+            "official visualizer",
+            "official lyrics",
         ],
     );
     let commentary = any(
@@ -129,11 +172,15 @@ pub fn category(info: &Value, preset: &str) -> (&'static str, &'static str) {
         .filter(|v| !matches!(*v, "official" | "topic" | "vevo" | "resmi"))
         .collect::<Vec<_>>()
         .join(" ");
+    let genre = normalized(text(info, &["genre"]));
+    let track = text(info, &["track"]);
+    let music_context =
+        music || !track.is_empty() || any(&genre, &["hip hop", "rap", "trap", "drill"]);
     if !commentary {
         for e in db["artists"].as_array().into_iter().flatten() {
             let a = aliases(e);
             if (!artist.is_empty() && a.contains(&artist))
-                || (music
+                || (music_context
                     && (a.contains(&prefix)
                         || a.contains(&channel)
                         || (!e["ambiguous"].as_bool().unwrap_or(true)
@@ -161,10 +208,19 @@ pub fn configured_destination(
         })
         .map(|r| r.category.as_str())
         .unwrap_or_else(|| category(info, preset).0);
-    p.category_paths
-        .get(category)
-        .cloned()
-        .unwrap_or_else(|| root.join(folder(category)))
+    p.category_paths.get(category).cloned().unwrap_or_else(|| {
+        root.join(if p.detailed_folders {
+            match category {
+                "rap" => "Video/Rap",
+                "film" => "Video/Film and TV",
+                "beats" => "Audio/Beats",
+                "audio" => "Audio/Music",
+                _ => "Video/Other",
+            }
+        } else {
+            folder(category)
+        })
+    })
 }
 pub fn folder(category: &str) -> &'static str {
     match category {
@@ -200,6 +256,74 @@ mod tests {
             configured_destination(&json!({"title":"other"}), "editor", dir.path(), &p),
             dir.path().join("Video")
         );
+    }
+    #[test]
+    fn all_catalog_records_recognized_in_context() {
+        let db = database();
+        for e in db["artists"].as_array().unwrap() {
+            let name = e["name"].as_str().unwrap();
+            assert_eq!(
+                category(
+                    &json!({"artist":name,"title":"Fixture (Official Audio)"}),
+                    "editor"
+                )
+                .0,
+                "rap",
+                "{name}"
+            );
+        }
+        for k in ["movies", "tv"] {
+            for e in db[k].as_array().unwrap() {
+                let name = e["name"].as_str().unwrap();
+                let info = if k == "movies" {
+                    json!({"movie":name})
+                } else {
+                    json!({"series":name})
+                };
+                assert_eq!(category(&info, "editor").0, "film", "{name}");
+            }
+        }
+        let d = tempfile::tempdir().unwrap();
+        let mut p = crate::preferences::Preferences::default();
+        p.detailed_folders = true;
+        assert_eq!(
+            configured_destination(&json!({"artist":"XXXTENTACION"}), "editor", d.path(), &p),
+            d.path().join("Video/Rap")
+        );
+    }
+    #[test]
+    fn expanded_catalog_cases() {
+        let n = counts();
+        assert!(n[0] >= 200 && n[1] >= 200 && n[2] >= 200);
+        for (title, preset, expected) in [
+            (
+                "XXXTENTACION - SAD! (Official Music Video)",
+                "editor",
+                "rap",
+            ),
+            (
+                "Juice WRLD - Lucid Dreams (Official Audio)",
+                "editor",
+                "rap",
+            ),
+            ("Rick and Morty episode 1", "editor", "film"),
+            ("Oppenheimer trailer", "editor", "film"),
+            ("Drake interview", "editor", "video"),
+            ("Drake type beat", "mp3", "beats"),
+            ("How to repair a glass door", "editor", "video"),
+            ("Dark mode tutorial", "editor", "video"),
+            ("Future of computers", "editor", "video"),
+            ("Glass door repair scene", "editor", "video"),
+            ("Dark mode tutorial episode 1", "editor", "video"),
+            ("Dark episode 1", "editor", "film"),
+            ("Random song", "mp3", "audio"),
+        ] {
+            assert_eq!(
+                category(&json!({"title":title}), preset).0,
+                expected,
+                "{title}"
+            );
+        }
     }
     #[test]
     fn categories() {

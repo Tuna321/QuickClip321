@@ -211,6 +211,10 @@ fn detect_tools() -> [String; 2] {
     ]
 }
 #[tauri::command]
+fn organizer_counts() -> [usize; 3] {
+    quickclip_core::organizer::counts()
+}
+#[tauri::command]
 fn diagnostics(engine: State<'_, Engine>) -> String {
     let s = engine.snapshot();
     let mut out = format!("QuickClip321 {}\n", env!("CARGO_PKG_VERSION"));
@@ -637,6 +641,7 @@ fn main() {
             resume_waiting,
             detect_tools,
             diagnostics,
+            organizer_counts,
             remove,
             save_settings,
             preview_position,

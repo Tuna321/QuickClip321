@@ -21,3 +21,19 @@
 .config-row{display:flex;justify-content:space-between;align-items:center;gap:12px;border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-top:8px;background:var(--surface)}.config-row span{overflow-wrap:anywhere;min-width:0}.diagnostic-report{white-space:pre-wrap;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;font:12px/1.65 "Consolas",monospace;color:var(--text);user-select:text}.workspace nav{gap:4px}.nav{min-height:32px}.workspace-content #profiles form{margin-bottom:12px}#categoryPaths{display:grid;gap:6px}#categoryPaths label{margin-top:5px}
 
 :root:is([data-theme="Light"],[data-theme="Sand"]) .brand img{filter:brightness(0)}
+
+/* Optional finishes: static CSS only, no transparency into desktop or heavy blur. */
+.shell{background-color:var(--bg);background-image:none}
+:root[data-material="Glass"] .shell{background-image:linear-gradient(135deg,#ffffff12 0%,transparent 40%,#ffffff08 65%,#0000000c 100%);box-shadow:inset 0 1px 0 #ffffff28}
+:root[data-material="Glass"] :is(.preview,.secondary,.small){box-shadow:inset 0 1px 0 #ffffff15}
+:root[data-material="Carbon"] .shell{background-image:repeating-linear-gradient(45deg,#8080800b 0 2px,transparent 2px 5px),repeating-linear-gradient(-45deg,#00000012 0 2px,transparent 2px 5px)}
+:root[data-material="Sand"] .shell{background-image:radial-gradient(#80808024 .65px,transparent .85px),radial-gradient(#80808018 .65px,transparent .85px);background-size:7px 7px,11px 11px;background-position:0 0,3px 4px}
+:root[data-material]:not([data-material="Flat"]) body{background:var(--bg)}
+.check input[type=checkbox]{appearance:none;display:grid;place-content:center;flex:none;width:17px;height:17px;padding:0;margin:0;border:1px solid var(--border);border-radius:5px;background:var(--input);transition:background-color 130ms ease,border-color 130ms ease}
+.check input[type=checkbox]::before{content:"";width:8px;height:5px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) scale(.3);opacity:0;transition:transform 130ms ease,opacity 100ms ease;margin-top:-2px}
+.check input[type=checkbox]:checked{background:var(--accent);border-color:var(--accent)}
+.check input[type=checkbox]:checked::before{transform:rotate(-45deg) scale(1);opacity:1}
+.check input[type=checkbox]:disabled{opacity:.5}
+@media(prefers-reduced-motion:reduce){.check input[type=checkbox],.check input[type=checkbox]::before{transition:none}}
+@media(forced-colors:active){.check input[type=checkbox]{appearance:auto}.check input[type=checkbox]::before{display:none}.shell{background-image:none!important}}
+.organizer-toolbar{position:sticky;top:0;display:flex;justify-content:flex-end;background:var(--bg);padding:4px 0 8px;z-index:2}

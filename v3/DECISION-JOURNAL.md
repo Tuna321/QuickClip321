@@ -18,3 +18,9 @@
 - Scheduler uses bounded active map and per-job staging; cancellation applies to specific worker. Hold/Resume only for waiting jobs. Existing active-pause semantics would require persistent staging and restart-safe manifest, so not presented as implemented.
 - Custom profiles and title rules stored in backwards-compatible Preferences; separate section commits avoid silently applying unrelated drafts. Manual destination wins. Redacted diagnostics excludes arbitrary URLs and file paths; error classification from stderr is generic.
 - Repeated synthetic concurrent fixture caught intermittent failure after initial pass. Isolate yt-dlp cache and make HTTP fixture concurrent, then repeat. This is a correctness gate, not a performance benchmark.
+
+## Alpha 6 decisions
+- Default remains clean; optional CSS glass-style, carbon, sand finish are separate from color palettes. No real desktop refraction or expensive backdrop sampling. Respect reduced-motion and forced-colors preferences.
+- Contextual playlist visibility uses URL clues and extractor results; stale responses ignored, consent reset per input. Single-item default unchanged.
+- Curated local catalog expanded; counts are entries not verified unique artists globally. Conservative contextual matching and positive/negative fixtures, no real-world accuracy claim. Default Audio/Video routing retained; more specific paths opt-in. User rules and manual path override still win.
+- Three desk-review passes and three repeated core regressions; not three repetitions of every individual engineering operation. Active-transfer resume, dependency bootstrap and notifications remain deferred.

@@ -26,21 +26,19 @@
     },
     {
       "name": "Ezhel",
-      "aliases": [],
+      "aliases": [
+        "Ais Ezhel"
+      ],
       "ambiguous": false
     },
     {
       "name": "Şehinşah",
-      "aliases": [
-        "Sehinsah"
-      ],
+      "aliases": [],
       "ambiguous": false
     },
     {
       "name": "Şanışer",
-      "aliases": [
-        "Saniser"
-      ],
+      "aliases": [],
       "ambiguous": false
     },
     {
@@ -77,6 +75,1540 @@
       "name": "Motive",
       "aliases": [],
       "ambiguous": true
+    },
+    {
+      "name": "XXXTENTACION",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Juice WRLD",
+      "aliases": [
+        "Juice World",
+        "JuiceTheKidd"
+      ],
+      "ambiguous": true
+    },
+    {
+      "name": "Lil Peep",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Trippie Redd",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Ski Mask the Slump God",
+      "aliases": [
+        "Ski Mask"
+      ],
+      "ambiguous": true
+    },
+    {
+      "name": "Lil Uzi Vert",
+      "aliases": [
+        "Lil Uzi"
+      ],
+      "ambiguous": true
+    },
+    {
+      "name": "Playboi Carti",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Travis Scott",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Tyler, the Creator",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Kanye West",
+      "aliases": [
+        "Ye"
+      ],
+      "ambiguous": true
+    },
+    {
+      "name": "Jay-Z",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Nas",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Notorious B.I.G.",
+      "aliases": [
+        "Biggie",
+        "Biggie Smalls"
+      ],
+      "ambiguous": true
+    },
+    {
+      "name": "2Pac",
+      "aliases": [
+        "Tupac",
+        "Tupac Shakur"
+      ],
+      "ambiguous": true
+    },
+    {
+      "name": "Snoop Dogg",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Dr. Dre",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Ice Cube",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Eazy-E",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "50 Cent",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "DMX",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Lil Wayne",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Nicki Minaj",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Cardi B",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Megan Thee Stallion",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Doja Cat",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Missy Elliott",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Lauryn Hill",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "J. Cole",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Drake",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Future",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Young Thug",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Gunna",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Lil Baby",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "DaBaby",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "21 Savage",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Metro Boomin",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Don Toliver",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Ken Carson",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Destroy Lonely",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Yeat",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Lil Tecca",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Lil Yachty",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Kodak Black",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "NBA YoungBoy",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "King Von",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Lil Durk",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Chief Keef",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "G Herbo",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Polo G",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Pop Smoke",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Fivio Foreign",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Central Cee",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Dave",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Stormzy",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Skepta",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "A$AP Rocky",
+      "aliases": [
+        "ASAP Rocky"
+      ],
+      "ambiguous": true
+    },
+    {
+      "name": "A$AP Ferg",
+      "aliases": [
+        "ASAP Ferg"
+      ],
+      "ambiguous": true
+    },
+    {
+      "name": "A Boogie wit da Hoodie",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Roddy Ricch",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Rod Wave",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Lil Tjay",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "NLE Choppa",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "YNW Melly",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Denzel Curry",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Joey Bada$$",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Logic",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Mac Miller",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Schoolboy Q",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Ab-Soul",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Jay Rock",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Vince Staples",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Earl Sweatshirt",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "MF DOOM",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Mos Def",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Talib Kweli",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Common",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Busta Rhymes",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Method Man",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Redman",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Raekwon",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Ghostface Killah",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "RZA",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "GZA",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Ol Dirty Bastard",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Wu-Tang Clan",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Outkast",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Andre 3000",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Big Boi",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Killer Mike",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "El-P",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Run the Jewels",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Public Enemy",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "A Tribe Called Quest",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "De La Soul",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Mobb Deep",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Roots",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Big Pun",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Big L",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Big Sean",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Wiz Khalifa",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Kid Cudi",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Chance the Rapper",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Lupe Fiasco",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Rick Ross",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "T.I.",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Gucci Mane",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Waka Flocka Flame",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Jeezy",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "2 Chainz",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Pusha T",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Meek Mill",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "French Montana",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Tyga",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Soulja Boy",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Lil Pump",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Smokepurpp",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "6ix9ine",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Lil Xan",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Lil Skies",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Fetty Wap",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Rich the Kid",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "MadeinTYO",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Swae Lee",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Rae Sremmurd",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Migos",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Quavo",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Offset",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Takeoff",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Jack Harlow",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Cordae",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "JID",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "EarthGang",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Baby Keem",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Vory",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Sheck Wes",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Famous Dex",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "YBN Nahmir",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Tay-K",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Comethazine",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Cochise",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "SoFaygo",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Homixide Gang",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Lucki",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Summrs",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Autumn!",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Lancey Foux",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Hardrock",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Ian",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Luh Tyler",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "BossMan Dlow",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Cash Cobain",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Sexyy Red",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "GloRilla",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Latto",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Ice Spice",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Flo Milli",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Rico Nasty",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Little Simz",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Rapsody",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Doechii",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Saba",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Noname",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "JPEGMAFIA",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Danny Brown",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Freddie Gibbs",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Benny the Butcher",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Westside Gunn",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Conway the Machine",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Action Bronson",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "E-40",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Too Short",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Three 6 Mafia",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Juicy J",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Project Pat",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "D12",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Proof",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Obie Trice",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Yelawolf",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Tech N9ne",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "NF",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Hopsin",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Immortal Technique",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Atmosphere",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Aesop Rock",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Canibus",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "KRS-One",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Rakim",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Big Daddy Kane",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "LL Cool J",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Kool G Rap",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Macklemore",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "B.o.B",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Dizzee Rascal",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Slowthai",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "AJ Tracey",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Headie One",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Digga D",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Unknown T",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Little Brother",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Mick Jenkins",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Smino",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Isaiah Rashad",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Bas",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Kool Keith",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Fabolous",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Jadakiss",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Cam'ron",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Game",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Chamillionaire",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Paul Wall",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Bun B",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Pimp C",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "UGK",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Nate Dogg",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Warren G",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Xzibit",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Kurupt",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Daz Dillinger",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "N.W.A.",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Killa Hakan",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Fuat",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Cartel",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Dr. Fuchs",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Sansar Salvo",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Hidra",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Hayki",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Joker",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Defkhan",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "No.1",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Contra",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Patron",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Sokrat St",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Beta Berk Bayındır",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Saian",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Karaçalı",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Aga B",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Kamufle",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Anıl Piyancı",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Red",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Keişan",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Tankurt Manas",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Aspova",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Burry Soprano",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Murda",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Reckol",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Çakal",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Lvbel C5",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Heijan",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Muti",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Sefo",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "BLOK3",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Era7capone",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Batuflex",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Ati242",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Critical",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Ceg",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Massaka",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Yener Çevik",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Pit10",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Server Uraz",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Mode XL",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Ayben",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Kolera",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Medusa",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Rota",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Savai",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Farazi",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Kayra",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Da Poet",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Kodes",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Sayedar",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Psycho",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Güneş",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Lia Shine",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Mavi",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Mero",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Eno",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Apache 207",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Capital Bra",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Luciano",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Ufo361",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Bonez MC",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Gzuz",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "RAF Camora",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Haftbefehl",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Ninho",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Booba",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "PNL",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "SCH",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Jul",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Orelsan",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "MC Solaar",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Bad Bunny",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Residente",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Canserbero",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "C. Tangana",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Santa Fe Klan",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Alemán",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Nathy Peluso",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Wos",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Duki",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Trueno",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Bizarrap",
+      "aliases": [],
+      "ambiguous": true
     }
   ],
   "movies": [
@@ -107,6 +1639,1672 @@
         "Kara Şövalye"
       ],
       "ambiguous": false
+    },
+    {
+      "name": "The Shawshank Redemption",
+      "aliases": [
+        "Esaretin Bedeli"
+      ],
+      "ambiguous": true
+    },
+    {
+      "name": "The Godfather Part II",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Pulp Fiction",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Forrest Gump",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Matrix",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Matrix Reloaded",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Inception",
+      "aliases": [
+        "Başlangıç"
+      ],
+      "ambiguous": true
+    },
+    {
+      "name": "The Lord of the Rings",
+      "aliases": [
+        "Yüzüklerin Efendisi"
+      ],
+      "ambiguous": true
+    },
+    {
+      "name": "The Fellowship of the Ring",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Two Towers",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Return of the King",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Hobbit",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Star Wars",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Empire Strikes Back",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Return of the Jedi",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Revenge of the Sith",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Force Awakens",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Dark Knight Rises",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Batman Begins",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Batman",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Joker",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Joker Folie à Deux",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Gladiator",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Gladiator II",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Saving Private Ryan",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Schindler's List",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Goodfellas",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Scarface",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Departed",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Casino",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Irishman",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Taxi Driver",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Raging Bull",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Wolf of Wall Street",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Shutter Island",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Django Unchained",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Kill Bill",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Inglourious Basterds",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Once Upon a Time in Hollywood",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Reservoir Dogs",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Hateful Eight",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Oppenheimer",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Dunkirk",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Tenet",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Memento",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Prestige",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Following",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Insomnia",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Dune",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Dune Part Two",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Blade Runner",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Blade Runner 2049",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Arrival",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Sicario",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Prisoners",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Enemy",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Whiplash",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "La La Land",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Babylon",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Black Swan",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Requiem for a Dream",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Wrestler",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Social Network",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Gone Girl",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Se7en",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Zodiac",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Curious Case of Benjamin Button",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Alien",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Aliens",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Prometheus",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Alien Covenant",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Alien Romulus",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Predator",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Prey",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Terminator",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Terminator 2",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Titanic",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Avatar",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Avatar The Way of Water",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Jurassic Park",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Jurassic World",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Jaws",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "E.T.",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Back to the Future",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Indiana Jones",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Raiders of the Lost Ark",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Catch Me If You Can",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Terminal",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Truman Show",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Eternal Sunshine of the Spotless Mind",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Green Mile",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Silence of the Lambs",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Hannibal",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "American Psycho",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Usual Suspects",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Heat",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Collateral",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "No Country for Old Men",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "There Will Be Blood",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Fargo",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Big Lebowski",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Grand Budapest Hotel",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Fantastic Mr. Fox",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Moonrise Kingdom",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Royal Tenenbaums",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The French Dispatch",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Asteroid City",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Parasite",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Oldboy",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Memories of Murder",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Train to Busan",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Handmaiden",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Burning",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Wailing",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Spirited Away",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Princess Mononoke",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "My Neighbor Totoro",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Howl's Moving Castle",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Akira",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Your Name",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "A Silent Voice",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Perfect Blue",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Paprika",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Grave of the Fireflies",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Toy Story",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Finding Nemo",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Monsters Inc",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Ratatouille",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "WALL-E",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Inside Out",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Coco",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Up",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Incredibles",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Shrek",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Kung Fu Panda",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "How to Train Your Dragon",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Spider-Man",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Spider-Man Into the Spider-Verse",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Across the Spider-Verse",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Avengers Endgame",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Avengers Infinity War",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Iron Man",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Captain America",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Black Panther",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Doctor Strange",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Guardians of the Galaxy",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Deadpool",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Logan",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "X-Men",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Mad Max Fury Road",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Furiosa",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "John Wick",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Mission Impossible",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Top Gun",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Top Gun Maverick",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Fast and the Furious",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Drive",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Baby Driver",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Nightcrawler",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Nice Guys",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Big Short",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Moneyball",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Imitation Game",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Theory of Everything",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "A Beautiful Mind",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Pianist",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Life Is Beautiful",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Intouchables",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Amélie",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Cinema Paradiso",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Lives of Others",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Hunt",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Another Round",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Lighthouse",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Witch",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Hereditary",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Midsommar",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Get Out",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Us",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Nope",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "A Quiet Place",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Conjuring",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Insidious",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Exorcist",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Shining",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Doctor Sleep",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Psycho",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Vertigo",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Rear Window",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "North by Northwest",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "2001 A Space Odyssey",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "A Clockwork Orange",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Full Metal Jacket",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Barry Lyndon",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Eyes Wide Shut",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Thing",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Halloween",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Scream",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Saw",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Final Destination",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Ring",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Grudge",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Blair Witch Project",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Sixth Sense",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Split",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Unbreakable",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Glass",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Village",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Others",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Babadook",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "It Follows",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Menu",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Everything Everywhere All at Once",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Whale",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Poor Things",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Substance",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Anora",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Civil War",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Challengers",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Holdovers",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Past Lives",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Aftersun",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Zone of Interest",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "All Quiet on the Western Front",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "1917",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Hacksaw Ridge",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Hurt Locker",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Black Hawk Down",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Apocalypse Now",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Platoon",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Braveheart",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Troy",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Kingdom of Heaven",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Revenant",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Last Samurai",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Last of the Mohicans",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Patriot",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Count of Monte Cristo",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The King's Speech",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Slumdog Millionaire",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Pursuit of Happyness",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Cast Away",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Martian",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Gravity",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Moon",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Ex Machina",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Her",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "District 9",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Children of Men",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Edge of Tomorrow",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Pacific Rim",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Godzilla Minus One",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Godzilla",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "King Kong",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Planet of the Apes",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Rise of the Planet of the Apes",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "War for the Planet of the Apes",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Hunger Games",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Harry Potter",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Pirates of the Caribbean",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Chronicles of Narnia",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Twilight",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Maze Runner",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Divergent",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Ready Player One",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Free Guy",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Lego Movie",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Super Mario Bros Movie",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Sonic the Hedgehog",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Barbie",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Wonka",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Paddington",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Paddington 2",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Home Alone",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Mrs Doubtfire",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Mask",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Ace Ventura",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Dumb and Dumber",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Bruce Almighty",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Hangover",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Superbad",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "21 Jump Street",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Mean Girls",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Clueless",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Devil Wears Prada",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Notting Hill",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Love Actually",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "About Time",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Before Sunrise",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Before Sunset",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Before Midnight",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "500 Days of Summer",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Notebook",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Pride and Prejudice",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Aşk Tesadüfleri Sever",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Babam ve Oğlum",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Issız Adam",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Vizontele",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "G.O.R.A.",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "A.R.O.G.",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Yahşi Batı",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Organize İşler",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Eşkıya",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Kabadayı",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Kelebeğin Rüyası",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Mucize",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "7. Koğuştaki Mucize",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Ayla",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Müslüm",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Bergen",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Hababam Sınıfı",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Süt Kardeşler",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Tosun Paşa",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Şaban Oğlu Şaban",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Kibar Feyzo",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Çöpçüler Kralı",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Selvi Boylum Al Yazmalım",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Yol",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Uzak",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Kış Uykusu",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Bir Zamanlar Anadolu'da",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Ahlat Ağacı",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Kuru Otlar Üstüne",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Masumiyet",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Kader",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Gönül Yarası",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Gemide",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Sarmaşık",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Barda",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Dağ",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Dağ II",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Recep İvedik",
+      "aliases": [],
+      "ambiguous": true
     }
   ],
   "tv": [
@@ -124,9 +3322,7 @@
     },
     {
       "name": "Behzat Ç",
-      "aliases": [
-        "Behzat C"
-      ],
+      "aliases": [],
       "ambiguous": false
     },
     {
@@ -140,6 +3336,1537 @@
         "Sopranos"
       ],
       "ambiguous": false
+    },
+    {
+      "name": "Rick and Morty",
+      "aliases": [
+        "Rick & Morty"
+      ],
+      "ambiguous": true
+    },
+    {
+      "name": "Better Call Saul",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Game of Thrones",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "House of the Dragon",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Walking Dead",
+      "aliases": [
+        "Yürüyen Ölüler"
+      ],
+      "ambiguous": true
+    },
+    {
+      "name": "Fear the Walking Dead",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Last of Us",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Stranger Things",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Dark",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Black Mirror",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Mr. Robot",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Severance",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Succession",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Wire",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "True Detective",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Fargo",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Mindhunter",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Hannibal",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Dexter",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Dexter New Blood",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Prison Break",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Lost",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Heroes",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The X-Files",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Twin Peaks",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Sherlock",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Doctor Who",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Peaky Blinders",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Boardwalk Empire",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Sons of Anarchy",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Mayans M.C.",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Boys",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Gen V",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Invincible",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Umbrella Academy",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Daredevil",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Jessica Jones",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Punisher",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Loki",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "WandaVision",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Moon Knight",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Mandalorian",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Andor",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Ahsoka",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Obi-Wan Kenobi",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Book of Boba Fett",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Westworld",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Foundation",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Silo",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "For All Mankind",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Expanse",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Battlestar Galactica",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Star Trek",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Orville",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Firefly",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The 100",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Witcher",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Vikings",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Vikings Valhalla",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Last Kingdom",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Rome",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Spartacus",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Tudors",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Crown",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Downton Abbey",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Bridgerton",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Queen Charlotte",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Queen's Gambit",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Chernobyl",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Band of Brothers",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Pacific",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Masters of the Air",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Narcos",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Narcos Mexico",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Ozark",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Money Heist",
+      "aliases": [
+        "La Casa de Papel"
+      ],
+      "ambiguous": true
+    },
+    {
+      "name": "Berlin",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Lupin",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Squid Game",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Alice in Borderland",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Kingdom",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "All of Us Are Dead",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Sweet Home",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Moving",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Glory",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Crash Landing on You",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Itaewon Class",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Extraordinary Attorney Woo",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Bear",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Shameless",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Euphoria",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Sex Education",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Skins",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Skam",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Heartstopper",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Wednesday",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Addams Family",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "You",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Gossip Girl",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Pretty Little Liars",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Riverdale",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Vampire Diaries",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Originals",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Teen Wolf",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Supernatural",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Buffy the Vampire Slayer",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Angel",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Charmed",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Smallville",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Arrow",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Flash",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Supergirl",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Legends of Tomorrow",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Gotham",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Titans",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Doom Patrol",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Peacemaker",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Penguin",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Watchmen",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Sandman",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Lucifer",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Good Omens",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "American Gods",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Bates Motel",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "American Horror Story",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Haunting of Hill House",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Haunting of Bly Manor",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Midnight Mass",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Fall of the House of Usher",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Yellowjackets",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "From",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Leftovers",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Station Eleven",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The OA",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Sense8",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Good Place",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Office",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Parks and Recreation",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Brooklyn Nine-Nine",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Community",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Modern Family",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Friends",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "How I Met Your Mother",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Big Bang Theory",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Young Sheldon",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Seinfeld",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Curb Your Enthusiasm",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "It's Always Sunny in Philadelphia",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Arrested Development",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Ted Lasso",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Silicon Valley",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Veep",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Barry",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Atlanta",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Fleabag",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The IT Crowd",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Inbetweeners",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Top Boy",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Gangs of London",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Snowfall",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Power",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "BMF",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Chi",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Empire",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Get Down",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Wu-Tang An American Saga",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Reservation Dogs",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Ramy",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Abbott Elementary",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "BoJack Horseman",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Simpsons",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Family Guy",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "South Park",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "American Dad",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Futurama",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Adventure Time",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Regular Show",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Gravity Falls",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Steven Universe",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Over the Garden Wall",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Avatar The Last Airbender",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Legend of Korra",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Arcane",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Cyberpunk Edgerunners",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Castlevania",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Blue Eye Samurai",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Samurai Jack",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Primal",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Attack on Titan",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Death Note",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "One Piece",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Naruto",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Naruto Shippuden",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Bleach",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Dragon Ball",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Dragon Ball Z",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Hunter x Hunter",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Fullmetal Alchemist Brotherhood",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Demon Slayer",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Jujutsu Kaisen",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Chainsaw Man",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "My Hero Academia",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "One Punch Man",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Mob Psycho 100",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Cowboy Bebop",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Neon Genesis Evangelion",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Steins Gate",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Vinland Saga",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Monster",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Berserk",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Code Geass",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Tokyo Ghoul",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Parasyte",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Psycho Pass",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Erased",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Black Clover",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "JoJo's Bizarre Adventure",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Dragon Ball Super",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Sailor Moon",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Pokémon",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Digimon",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Yu-Gi-Oh",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Baki",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Kengan Ashura",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Blue Lock",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Haikyuu",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Slam Dunk",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Initial D",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Trigun",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Samurai Champloo",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Devilman Crybaby",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Made in Abyss",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Frieren",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "The Apothecary Diaries",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Solo Leveling",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Leyla ile Mecnun",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Avrupa Yakası",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Yalan Dünya",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Kardeş Payı",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "İşler Güçler",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Gibi",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Prens",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Ayak İşleri",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Var Bunlar",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Bir Başkadır",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Şahsiyet",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Masum",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Alef",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Bozkır",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Saygı",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Çukur",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "İçerde",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Üç Kuruş",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Yargı",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Aile",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Kara Sevda",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Aşk-ı Memnu",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Yaprak Dökümü",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Fatmagül'ün Suçu Ne",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Medcezir",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Adını Feriha Koydum",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Kuzey Güney",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Muhteşem Yüzyıl",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Diriliş Ertuğrul",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Kuruluş Osman",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Payitaht Abdülhamid",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Teşkilat",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Söz",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Savaşçı",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Arka Sokaklar",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Seksenler",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Çocuklar Duymasın",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "En Son Babalar Duyar",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Tatlı Hayat",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Yedi Numara",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Ekmek Teknesi",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "İkinci Bahar",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Asmalı Konak",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Süper Baba",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Kavak Yelleri",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Poyraz Karayel",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Suskunlar",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Ulan İstanbul",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Karadayı",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Eşkıya Dünyaya Hükümdar Olmaz",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Kuzgun",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Mucize Doktor",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Hekimoğlu",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Sadakatsiz",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Kızılcık Şerbeti",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Kızıl Goncalar",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Yalı Çapkını",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Bahar",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "İnci Taneleri",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Kuş Uçuşu",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Zeytin Ağacı",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Kulüp",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Aşk 101",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Hakan Muhafız",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Atiye",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Mezarlık",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Fatma",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "50M2",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Darmaduman",
+      "aliases": [],
+      "ambiguous": true
+    },
+    {
+      "name": "Tozluyaka",
+      "aliases": [],
+      "ambiguous": true
     }
   ]
 }

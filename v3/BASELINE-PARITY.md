@@ -31,3 +31,9 @@ No public stable V3 until each row is implemented and verified, including real t
 - Dependency detection: installed PATH tools only; verified automatic installation, bundled Node, clean-machine installer testing remain open.
 - Preview: local HTTP/PNG fixture tested; external sources vary, record exact test outcomes. No universal thumbnail promise.
 - English: manual quick/settings/profile/organizer form validation replaces browser-localized validation; OS dialogs remain system language.
+
+## Alpha 6 delta
+- Playlist checkbox shown only for URL clues or confirmed extractor playlist; unchecked by default and reset on input. Real external mix/playlist download still needs dedicated fixture.
+- Optional surface finishes and checkbox transitions; static CSS, reduced-motion/forced-colors fallbacks. Native Liquid Glass not implemented.
+- Catalog expanded from 14/4/5 to 317 hip-hop and related artist entries, 336 film entries, 310 series entries. Normalized contextual matching, custom mappings and optional detailed subfolders. Real-world accuracy remains unmeasured. Original default Audio/Video preserved.
+- True active pause/resume, verified dependency installation, native notifications remain open.

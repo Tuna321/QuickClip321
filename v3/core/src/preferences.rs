@@ -29,6 +29,8 @@ pub struct Preferences {
     pub default_format: String,
     pub default_quality: String,
     pub fragment_concurrency: u8,
+    pub material: String,
+    pub detailed_folders: bool,
     pub concurrent_downloads: u8,
     pub profiles: Vec<Profile>,
     pub rules: Vec<Rule>,
@@ -49,6 +51,8 @@ impl Default for Preferences {
             default_format: "editor".into(),
             default_quality: "1080".into(),
             fragment_concurrency: 4,
+            material: "Flat".into(),
+            detailed_folders: false,
             concurrent_downloads: 1,
             profiles: vec![],
             rules: vec![],
@@ -107,6 +111,9 @@ impl Preferences {
             self.default_quality = d.default_quality;
         }
         self.fragment_concurrency = self.fragment_concurrency.clamp(1, 8);
+        if !matches!(self.material.as_str(), "Flat" | "Glass" | "Carbon" | "Sand") {
+            self.material = "Flat".into();
+        }
         self.concurrent_downloads = self.concurrent_downloads.clamp(1, 3);
         let mut names = std::collections::HashSet::new();
         self.profiles.retain(|p| {
@@ -222,6 +229,23 @@ mod tests {
             serde_json::from_str::<Preferences>(&serde_json::to_string(&p).unwrap()).unwrap(),
             p
         );
+    }
+    #[test]
+    fn materials_roundtrip() {
+        for finish in ["Flat", "Glass", "Carbon", "Sand"] {
+            let mut p = Preferences {
+                material: finish.into(),
+                detailed_folders: true,
+                ..Default::default()
+            };
+            p.normalize();
+            assert_eq!(p.material, finish);
+            assert!(p.detailed_folders);
+            assert_eq!(
+                serde_json::from_str::<Preferences>(&serde_json::to_string(&p).unwrap()).unwrap(),
+                p
+            );
+        }
     }
     #[test]
     fn popup_placement() {
