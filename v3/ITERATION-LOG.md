@@ -67,3 +67,8 @@ Final updated core suite: 25/25 passed; isolated native UI smoke: all checks tru
 Final updated core suite: 25/25 passed; isolated native UI smoke: all checks true. Normal Beta 3 launched. Verified EXE and ZIP hashes; original Beta 2 retained.
 
 Beta 3 public prerelease published at tag v3.0.0-beta.3 after authorization and retry of a transient DNS failure. All five release assets verified against local file hashes. Public download links updated to Beta 3. Beta 2 remains available.
+
+## Beta 4 setup visibility
+External Beta 3 tester reported a frozen-looking setup screen and later confirmed setup completed. Added actual per-file bytes and stage messages, sanitized errors and a no-progress watchdog. Diagnostic build passed cold installation and two real local MP4 downloads, with no reinstall on restart. Slow network and independent Windows machine validation remain open.
+
+Final Beta 4 cold setup, restart and download tests passed; core 25/25, UI smoke all true. Release package validated. Existing download engine unchanged.

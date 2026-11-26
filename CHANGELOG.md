@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.0.0-beta.4 - 2026-11-26
+
+- Live first-launch setup stage and per-file byte progress.
+- Longer allowance for slow downloads, with a 90-second no-progress watchdog and clearer retry errors.
+- Keep automatic verified setup and existing tool configuration unchanged.
+
 ## 3.0.0-beta.3 - 2026-11-26
 
 - Automatically download, verify and configure missing yt-dlp, FFmpeg, FFprobe and Node.js on first launch. Existing complete configurations are retained.

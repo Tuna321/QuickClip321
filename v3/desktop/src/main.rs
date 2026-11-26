@@ -213,6 +213,10 @@ async fn setup_managed_tools(engine: State<'_, Engine>) -> Result<Settings, Stri
         .await
         .map_err(|e| e.to_string())?
 }
+#[tauri::command]
+fn setup_progress(engine: State<'_, Engine>) -> quickclip_core::SetupProgress {
+    engine.setup_progress()
+}
 fn configured_tools_ready(settings: &Settings) -> bool {
     let managed_node = settings.yt_dlp.parent().is_some_and(|p| {
         p.file_name().and_then(|v| v.to_str()) == Some("managed-2026.11.23-9.1-24.22.3")
@@ -850,6 +854,7 @@ fn main() {
             detect_tools,
             tools_ready,
             setup_managed_tools,
+            setup_progress,
             diagnostics,
             organizer_counts,
             remove,

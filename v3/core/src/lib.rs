@@ -340,9 +340,25 @@ struct Inner {
     pause_requests: std::collections::HashSet<String>,
     notices: std::collections::VecDeque<bool>,
 }
+#[derive(Clone, Debug, Serialize)]
+pub struct SetupProgress {
+    pub stage: String,
+    pub received: u64,
+    pub total: u64,
+}
+impl Default for SetupProgress {
+    fn default() -> Self {
+        Self {
+            stage: "Preparing media tools".into(),
+            received: 0,
+            total: 0,
+        }
+    }
+}
 #[derive(Clone)]
 pub struct Engine {
     inner: Arc<Mutex<Inner>>,
+    setup_progress: Arc<Mutex<SetupProgress>>,
     file: PathBuf,
 }
 impl Engine {
@@ -377,8 +393,12 @@ impl Engine {
                 pause_requests: Default::default(),
                 notices: Default::default(),
             })),
+            setup_progress: Arc::new(Mutex::new(SetupProgress::default())),
             file,
         })
+    }
+    pub fn setup_progress(&self) -> SetupProgress {
+        self.setup_progress.lock().unwrap().clone()
     }
     /// Install version-pinned tools in the app-owned directory, not on PATH.
     #[cfg(windows)]
@@ -387,6 +407,7 @@ impl Engine {
         let _lock = INSTALL
             .try_lock()
             .map_err(|_| "Tool setup is already running.")?;
+        *self.setup_progress.lock().unwrap() = SetupProgress::default();
         if self
             .snapshot()
             .jobs
@@ -423,18 +444,63 @@ impl Engine {
         ])
         .env("QC_MANAGED_ROOT", &root)
         .stdin(Stdio::null())
-        .stdout(Stdio::null())
+        .stdout(Stdio::piped())
         .stderr(Stdio::null());
         let mut child = c.spawn().map_err(err)?;
         let _owner = ProcessTree::attach(&mut child)?;
+        let stdout = child.stdout.take().ok_or("Missing setup output")?;
+        let progress = self.setup_progress.clone();
+        let heartbeat = Arc::new(Mutex::new(Instant::now()));
+        let beat = heartbeat.clone();
+        let reader = thread::spawn(move || {
+            for line in BufReader::new(stdout)
+                .lines()
+                .map_while(std::result::Result::ok)
+            {
+                let Some(message) = line.strip_prefix("QC_SETUP|") else {
+                    continue;
+                };
+                let parts = message.split('|').collect::<Vec<_>>();
+                if parts.len() != 3 || parts[0].len() > 100 {
+                    continue;
+                }
+                if let (Ok(received), Ok(total)) = (parts[1].parse(), parts[2].parse()) {
+                    *progress.lock().unwrap() = SetupProgress {
+                        stage: parts[0].to_owned(),
+                        received,
+                        total,
+                    };
+                    *beat.lock().unwrap() = Instant::now();
+                }
+            }
+        });
         let start = Instant::now();
-        loop {
-            match child.try_wait(){Ok(Some(status)) if status.success()=>break,Ok(Some(_))=>return Err("Tool setup failed. Check connectivity or an existing managed-tool integrity problem, then retry.".into()),Ok(None)=>{},Err(e)=>{terminate(&mut child);return Err(err(e));}}
-            if start.elapsed() > Duration::from_secs(780) {
+        let status = loop {
+            match child.try_wait() {
+                Ok(Some(status)) => break Ok(status.success()),
+                Ok(None) => {}
+                Err(e) => {
+                    terminate(&mut child);
+                    break Err(err(e));
+                }
+            }
+            if heartbeat.lock().unwrap().elapsed() > Duration::from_secs(90) {
                 terminate(&mut child);
-                return Err("Tool setup timed out.".into());
+                break Err(format!(
+                    "Setup stopped responding at: {}. Check your connection and retry.",
+                    self.setup_progress().stage
+                ));
+            }
+            if start.elapsed() > Duration::from_secs(1800) {
+                terminate(&mut child);
+                break Err("Tool setup timed out. Retry on a stable connection.".into());
             }
             thread::sleep(Duration::from_millis(200));
+        };
+        drop(_owner);
+        let _ = reader.join();
+        if !status? {
+            return Err(format!("Setup failed at: {}. Check your connection, disk space or tool integrity and retry.",self.setup_progress().stage));
         }
         let dir = root.join("managed-2026.11.23-9.1-24.22.3");
         let y = dir.join("yt-dlp.exe");

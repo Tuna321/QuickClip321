@@ -11,7 +11,7 @@ document.querySelectorAll(".nav").forEach(b=>b.addEventListener("click",()=>show
 function el(tag,cls,text){const node=document.createElement(tag);if(cls)node.className=cls;if(text!==undefined)node.textContent=text;return node;}
 function action(label,cmd,id){const b=el("button","small",label);b.addEventListener("click",async()=>{b.disabled=true;try{await invoke(cmd,{id});notice(label==="Retry"?"Added to queue":"Done");await refresh();}catch(e){notice(e,true);}finally{b.disabled=false;}});return b;}
 function render(container,jobs,empty){const signature=JSON.stringify(jobs);if(container.dataset.signature===signature)return;if(container.contains(document.activeElement)&&!document.activeElement.disabled){const focused=document.activeElement;focused.onblur=()=>refresh();return;}container.dataset.signature=signature;const frag=document.createDocumentFragment();if(!jobs.length)frag.append(el("div","empty",empty));for(const j of [...jobs].reverse()){const card=el("article","job");const top=el("div","job-top");const info=el("div");let name=j.files.length?j.files[0].split(/[\\/]/).pop():j.url;info.append(el("div","job-title",name),el("div","job-meta",j.preset+" · "+j.quality+" · "+j.message));top.append(info,el("span","job-status",j.status));card.append(top);if(["running","queued","paused"].includes(j.status)){const track=el("progress");track.max=100;track.value=Math.round(j.progress*100);track.setAttribute("aria-label","Download progress");card.append(track);}const buttons=el("div","job-actions");if(["running","queued","paused"].includes(j.status)){buttons.append(action("Cancel","cancel",j.id));if(j.status==="queued")buttons.append(action("Hold","pause_waiting",j.id));if(j.status==="running"&&j.preset==="original"&&!j.playlist&&!j.options?.archive&&j.options?.clip_start==null&&j.options?.clip_end==null&&!j.options?.subtitle_languages?.length&&j.message.startsWith("Downloading"))buttons.append(action("Pause","pause_waiting",j.id));if(j.status==="paused")buttons.append(action("Resume","resume_waiting",j.id));}else{if(j.files.length)buttons.append(action("Open folder","open_folder",j.id));if(["failed","cancelled"].includes(j.status))buttons.append(action("Retry single item","retry",j.id));buttons.append(action("Remove history","remove",j.id));}card.append(buttons);frag.append(card);}container.replaceChildren(frag);}
-async function refresh(){if(busy)return;busy=true;try{const s=await invoke("snapshot");if(!initialized){savedDefaultDestination=s.settings.destination;$("destination").value=savedDefaultDestination;$("defaultDest").value=savedDefaultDestination;$("ytdlp").value=s.settings.yt_dlp;$("ffmpeg").value=s.settings.ffmpeg;applyPreferences(s.settings.prefs);initialized=true;}const active=s.jobs.filter(j=>["running","queued","paused"].includes(j.status));const latest=active.find(j=>j.status==="running")||active[0]||s.jobs[s.jobs.length-1];$("quickStatus").textContent=latest?latest.message:"Ready";$("quickProgress").value=active.length?Math.round(latest.progress*100):0;$("badge").textContent=active.length;toolsAvailable=await invoke("tools_ready");$("setupHint").hidden=toolsAvailable||setupRunning;if(current==="queue")render($("queueList"),active,"No active downloads.");if(current==="history")render($("historyList"),s.jobs.filter(j=>!["running","queued","paused"].includes(j.status)),"No download history yet.");}catch(e){notice(e,true);}finally{busy=false;}}
+async function refresh(){if(busy)return;busy=true;try{const s=await invoke("snapshot");if(!initialized){savedDefaultDestination=s.settings.destination;$("destination").value=savedDefaultDestination;$("defaultDest").value=savedDefaultDestination;$("ytdlp").value=s.settings.yt_dlp;$("ffmpeg").value=s.settings.ffmpeg;applyPreferences(s.settings.prefs);initialized=true;}const active=s.jobs.filter(j=>["running","queued","paused"].includes(j.status));const latest=active.find(j=>j.status==="running")||active[0]||s.jobs[s.jobs.length-1];$("quickStatus").textContent=latest?latest.message:"Ready";$("quickProgress").value=active.length?Math.round(latest.progress*100):0;$("badge").textContent=active.length;toolsAvailable=await invoke("tools_ready");$("setupHint").hidden=toolsAvailable||setupRunning;if(!toolsAvailable)$("quickStatus").textContent=setupRunning?"Preparing media tools":"Setup required";if(current==="queue")render($("queueList"),active,"No active downloads.");if(current==="history")render($("historyList"),s.jobs.filter(j=>!["running","queued","paused"].includes(j.status)),"No download history yet.");}catch(e){notice(e,true);}finally{busy=false;}}
 let dialogOpen=false;async function pick(target,directory){dialogOpen=true;try{const path=await invoke("plugin:dialog|open",{options:{directory,multiple:false,...(!directory?{filters:[{name:"Windows executables",extensions:["exe"]}]}:{})}});if(typeof path==="string")$(target).value=path;}catch(e){notice(e,true);}finally{dialogOpen=false;}}
 $("browse").onclick=async()=>{const before=$("destination").value;await pick("destination",true);if(before!==$("destination").value){manualDestination=true;syncDestination();}};function syncDestination(){$("autoFolder").hidden=!manualDestination;$("destination").title=manualDestination?"Manual destination (organizer bypassed)":organizerEnabled?"Automatic organizer enabled":"Default destination";}
 $("destination").addEventListener("input",()=>{manualDestination=true;syncDestination();});$("autoFolder").onclick=()=>{$("destination").value=savedDefaultDestination;manualDestination=false;syncDestination();};$("defaultBrowse").onclick=()=>pick("defaultDest",true);document.querySelectorAll(".pick").forEach(b=>b.onclick=()=>pick(b.dataset.target,false));
@@ -107,6 +107,17 @@ async function prepareTools(){
     $("managedSetup").disabled=true;$("quickSetup").disabled=true;
     d.oncancel=e=>e.preventDefault();
     if(!d.open)d.showModal();
+    $("setupProgress").removeAttribute("value");
+    const progressTimer=setInterval(async()=>{
+        try {
+            const s=await invoke("setup_progress");
+            if(!setupRunning)return;
+            const mb=n=>(n/1048576).toFixed(1)+" MB";
+            $("setupState").textContent=s.stage+(s.received?" - "+mb(s.received)+(s.total?" / "+mb(s.total):""):"");
+            if(s.total>0){$("setupProgress").max=s.total;$("setupProgress").value=Math.min(s.received,s.total);}
+            else $("setupProgress").removeAttribute("value");
+        } catch(_) {}
+    },400);
     try{
         const settings=await serializeSettings(()=>invoke("setup_managed_tools"));
         $("ytdlp").value=settings.yt_dlp;$("ffmpeg").value=settings.ffmpeg;
@@ -121,7 +132,7 @@ async function prepareTools(){
         $("setupLater").onclick=()=>{d.close();dialogOpen=false;};
         return false;
     }finally{
-        setupRunning=false;$("managedSetup").disabled=false;$("quickSetup").disabled=false;
+        clearInterval(progressTimer);setupRunning=false;$("managedSetup").disabled=false;$("quickSetup").disabled=false;
         await refresh();
     }
 }
