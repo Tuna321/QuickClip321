@@ -277,14 +277,86 @@ fn retry(engine: State<'_, Engine>, id: String) -> Result<String, String> {
 fn remove(engine: State<'_, Engine>, id: String) -> Result<(), String> {
     engine.remove(&id)
 }
+fn isolated_run() -> bool {
+    std::env::var_os("QC_V3_SMOKE_DIR").is_some() || std::env::var_os("QC_V3_BENCH_DIR").is_some()
+}
+#[cfg(windows)]
+fn sync_startup(enabled: bool) -> Result<(), String> {
+    use windows_sys::Win32::{Foundation::ERROR_SUCCESS, System::Registry::*};
+    if isolated_run() {
+        return Ok(());
+    }
+    let wide = |s: &str| s.encode_utf16().chain(Some(0)).collect::<Vec<u16>>();
+    let key = wide(r"Software\Microsoft\Windows\CurrentVersion\Run");
+    let name = wide("QuickClip321V3");
+    let mut h = std::ptr::null_mut();
+    unsafe {
+        let result = RegCreateKeyExW(
+            HKEY_CURRENT_USER,
+            key.as_ptr(),
+            0,
+            std::ptr::null_mut(),
+            REG_OPTION_NON_VOLATILE,
+            KEY_SET_VALUE,
+            std::ptr::null(),
+            &mut h,
+            std::ptr::null_mut(),
+        );
+        if result != ERROR_SUCCESS {
+            return Err(format!("Windows startup settings unavailable ({result})."));
+        }
+        let result = if enabled {
+            let exe = std::env::current_exe().map_err(|e| {
+                RegCloseKey(h);
+                e.to_string()
+            })?;
+            let value = wide(&format!("\"{}\"", exe.display()));
+            RegSetValueExW(
+                h,
+                name.as_ptr(),
+                0,
+                REG_SZ,
+                value.as_ptr().cast(),
+                (value.len() * 2) as u32,
+            )
+        } else {
+            RegDeleteValueW(h, name.as_ptr())
+        };
+        RegCloseKey(h);
+        if result == ERROR_SUCCESS || (!enabled && result == 2) {
+            Ok(())
+        } else {
+            Err(format!("Could not update Windows startup ({result})."))
+        }
+    }
+}
+#[cfg(not(windows))]
+fn sync_startup(_: bool) -> Result<(), String> {
+    Ok(())
+}
 #[tauri::command]
 fn save_settings(
     window: tauri::WebviewWindow,
     engine: State<'_, Engine>,
     settings: Settings,
 ) -> Result<(), String> {
-    engine.settings(settings)?;
-    position_popup(&window, None);
+    let before = engine.snapshot().settings.prefs;
+    let startup_changed = before.run_on_startup != settings.prefs.run_on_startup;
+    let position_changed = before.popup_mode != settings.prefs.popup_mode
+        || before.popup_x != settings.prefs.popup_x
+        || before.popup_y != settings.prefs.popup_y;
+    if startup_changed {
+        sync_startup(settings.prefs.run_on_startup)?;
+    }
+    if let Err(e) = engine.settings(settings) {
+        if startup_changed {
+            let _ = sync_startup(before.run_on_startup);
+        }
+        return Err(e);
+    }
+    if position_changed {
+        position_popup(&window, None);
+    }
     Ok(())
 }
 #[tauri::command]
@@ -531,6 +603,71 @@ fn set_mode(
 fn hide_window(window: tauri::WebviewWindow) -> Result<(), String> {
     window.hide().map_err(|e| e.to_string())
 }
+#[cfg(windows)]
+fn send_notification(app: &tauri::AppHandle, success: bool, test: bool) -> Result<(), String> {
+    use windows_sys::Win32::UI::Shell::*;
+    let tray = app
+        .tray_by_id("quickclip321-tray")
+        .ok_or("Tray unavailable")?;
+    let delivered = tray
+        .with_inner_tray_icon(move |icon| unsafe {
+            let mut n: NOTIFYICONDATAW = std::mem::zeroed();
+            n.cbSize = std::mem::size_of::<NOTIFYICONDATAW>() as u32;
+            n.hWnd = icon.window_handle() as _;
+            n.uFlags = NIF_INFO;
+            n.dwInfoFlags = if success { NIIF_INFO } else { NIIF_ERROR };
+            let title = if test {
+                "QuickClip321 test"
+            } else if success {
+                "Download completed"
+            } else {
+                "Download failed"
+            };
+            let body = if test {
+                "Windows notifications are enabled."
+            } else if success {
+                "Your media is ready. Open QuickClip321 to view it."
+            } else {
+                "Open QuickClip321 to see the error and retry."
+            };
+            for (dst, src) in n.szInfoTitle.iter_mut().zip(title.encode_utf16()) {
+                *dst = src;
+            }
+            for (dst, src) in n.szInfo.iter_mut().zip(body.encode_utf16()) {
+                *dst = src;
+            }
+            // tray-icon 0.25 uses process-local sequential numeric IDs. The HWND is our own
+            // tray's HWND, never another app's. NIM_MODIFY rejects non-existent IDs.
+            (1..=16).any(|id| {
+                n.uID = id;
+                Shell_NotifyIconW(NIM_MODIFY, &n) != 0
+            })
+        })
+        .map_err(|e| e.to_string())?;
+    if delivered {
+        Ok(())
+    } else {
+        Err("Windows rejected the tray notification.".into())
+    }
+}
+#[cfg(not(windows))]
+fn send_notification(_: &tauri::AppHandle, _: bool, _: bool) -> Result<(), String> {
+    Err("Notifications require Windows.".into())
+}
+fn watch_notifications(app: tauri::AppHandle) {
+    std::thread::spawn(move || loop {
+        for success in app.state::<Engine>().take_notifications() {
+            let result = send_notification(&app, success, false);
+            if let Some(dir) = std::env::var_os("QC_V3_BENCH_DIR") {
+                let _ = std::fs::write(
+                    PathBuf::from(dir).join("notification-result.txt"),
+                    format!("success={success};shell_accepted={}", result.is_ok()),
+                );
+            }
+        }
+        std::thread::sleep(std::time::Duration::from_millis(350));
+    });
+}
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, _, _| {
@@ -565,6 +702,9 @@ fn main() {
                 },
             )
             .map_err(std::io::Error::other)?;
+            if let Err(e) = sync_startup(engine.snapshot().settings.prefs.run_on_startup) {
+                eprintln!("{e}");
+            }
             app.manage(engine);
             let smoke = std::env::var_os("QC_V3_SMOKE_DIR").is_some();
             app.manage(ClipboardInbox(Mutex::new(if smoke {
@@ -628,6 +768,28 @@ fn main() {
                 tray = tray.icon(icon.clone());
             }
             tray.build(app)?;
+            if !smoke {
+                watch_notifications(app.handle().clone());
+            }
+            // Explicit isolated fixture only; normal users never auto-enqueue.
+            if let (Some(_), Ok(url)) = (
+                std::env::var_os("QC_V3_BENCH_DIR"),
+                std::env::var("QC_NOTIFICATION_FIXTURE"),
+            ) {
+                let engine = app.state::<Engine>();
+                let settings = engine.snapshot().settings;
+                engine
+                    .enqueue(Request {
+                        url,
+                        preset: "original".into(),
+                        quality: "best".into(),
+                        playlist: false,
+                        organize: false,
+                        options: Default::default(),
+                        destination: settings.destination,
+                    })
+                    .map_err(std::io::Error::other)?;
+            }
             if let Some(dir) = std::env::var_os("QC_V3_SMOKE_DIR") {
                 if let Some(w) = app.get_webview_window("main") {
                     let hidden = !w.is_visible().unwrap_or(true);

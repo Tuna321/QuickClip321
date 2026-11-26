@@ -1,6 +1,6 @@
 [package]
 name = "quickclip321-v3"
-version = "3.0.0-alpha.8"
+version = "3.0.0-beta.2"
 edition = "2021"
 
 [build-dependencies]
@@ -12,3 +12,6 @@ quickclip-core = { path = "../core" }
 tauri-plugin-dialog = "2"
 tauri-plugin-clipboard-manager = "2"
 tauri-plugin-single-instance = "2"
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61.2", features = ["Win32_Foundation", "Win32_UI_Shell", "Win32_System_Registry", "Win32_Security", "Win32_UI_WindowsAndMessaging"] }

@@ -1,7 +1,3 @@
-# Next pass: mandatory public release gates
-Read RELEASE-GATES.md and current audit evidence first. Preserve Alpha7 and original RC2. No public release or default-branch changes until gates pass.
-1. Port full Tauri UX and engine integration to a polished native frontend: tray, clipboard, metadata/thumbnail, queue, themes, organizer, profiles, advanced settings, keyboard/accessibility, placement and DPI. Repeat one-process idle measurement after parity; verify physical interactions.
-2. Complete safe crash recovery, broader pause/resume, notifications, auth, baseline diagnostics and all remaining parity gaps. Test actual resumed bytes, output publication, cancellation, playlist/subtitle/archive paths, and repeated recovery; do not treat scoped Original resume as universal.
-3. Run clean Windows VM install, launch, dependency bootstrap, upgrade/rollback/uninstall; validate license notices and checksums, audit dependencies, package reproducibly and document signing status.
-4. Authorized real-site compatibility matrix and representative held-out organizer samples. Repeat tests and foreground visual checks, document failures.
-5. Finalize RELEASE-README-DRAFT.md with actual final screenshots, true release URL, version, requirements and limitations. Follow the readme-design skill. Publish only once every mandatory gate is independently verified.
+# Next pass: user feedback after public Beta 2
+
+Prioritize reproducible bug reports, download reliability, first-use setup, startup behavior and simple UX. Preserve old versions. Reproduce issues in isolated state before changing code. Review native migration, clean-machine tests, site compatibility, broader resume and accessibility as stable-release gates, not as reasons to postpone feedback. Record actual test evidence and never claim unverified support.

@@ -35,3 +35,5 @@ Local Codex skill read: readme-design/SKILL.md. Apply its product landing struct
 - Managed setup: actual new isolated root installed and executed four verified binaries. Clean VM and install/upgrade/uninstall not verified.
 - Real-source preview: YouTube title+thumbnail passed, Wikimedia title only, Vimeo unavailable. No general compatibility certification.
 - Native full UI parity, notifications, broad resume/recovery, clean-machine package, signing/license/dependency audit and physical DPI/accessibility/monitor checks remain OPEN. Public release blocked.
+## Beta 2 release scope
+The owner explicitly requested public beta feedback without waiting for all stable gates. The current Tauri UI, not the separate native prototype, is the released artifact. Stable gates above remain open; unsigned ZIP and WebView2 dependency disclosed. Core, UI, package extraction, SHA-256 and actual launch checks passed. Previous V2 releases retained.

@@ -1,6 +1,6 @@
 # QuickClip321 V3 — tray-first experimental migration
 
-Current candidate: 3.0.0-alpha.8. This is not a replacement for the published Python RC2 until baseline parity and release gates pass.
+Current public preview: 3.0.0-beta.2. The Python RC2 remains available. This beta is not certified as a stable replacement.
 
 ## What is implemented in the candidate
 - Hidden startup, frameless rounded Windows popup, taskbar exclusion, tray click show/hide, quick/advanced modes, monitor work-area placement (Tray/Corner/Custom), Escape and quick-view blur dismissal.
@@ -20,8 +20,8 @@ cargo build --release --locked --manifest-path desktop/Cargo.toml
 ```
 Run the EXE and use the notification area icon (possibly under the overflow arrow). The app has separate V3 state. Smoke tests use a separate directory.
 
-## Release blockers / known gaps
-- Feature parity is incomplete: general active-transfer pause/resume (eligible single Original transfers now supported), named default profile, notification, authenticated sessions, diagnostics/export, local and remote optional AI, clean-machine dependency setup, full recovery and privacy/lifecycle verification.
+## Stable release blockers / known gaps (historical Alpha 8 notes)
+- Feature parity is incomplete: general active-transfer pause/resume (eligible single Original transfers now supported), named default profile, authenticated sessions, diagnostics/export, local and remote optional AI, clean-machine dependency setup, full recovery and privacy/lifecycle verification.
 - Actual external-site thumbnail and physical tray click, outside click, keyboard, DPI and multi-monitor interactive checks are not replaced by geometry/native-window tests.
 - Clip and subtitle handling are implemented, but subtitle extraction on real sites and archive output still need fixtures. Original-format video clips are converted to MP4; audio clips retain supported audio format.
 - Idle measurements exist for the non-equivalent Tauri and Win32 prototypes; no equal-feature performance comparison or public signed installer. No claim of universal site support or complete parity.
@@ -40,3 +40,6 @@ Alpha 7 catalog: 317 hip-hop/related artists, 336 films, 310 series and 171 game
 
 ## Alpha 8 development evidence
 2302 curated catalog entries; 1485 music artists/groups, 336 films, 310 series, 171 games. Conditional format controls, verified managed dependency setup, supervised processes and scoped byte-resume. Separate native prototype in native/ is a feasibility experiment, not the complete application. See RELEASE-GATES.md, research-alpha8.md and RELEASE-README-DRAFT.md.
+
+## Public beta 2
+Windows completion/failure notifications, startup toggle enabled by default, saved appearance and position, separate format/resolution, and clip reset on new URL. Beta 2 passed 25 core tests and isolated restart/appearance UI tests. Full native frontend parity, clean VM, signing and broad source coverage remain open. See the root README and release notes.

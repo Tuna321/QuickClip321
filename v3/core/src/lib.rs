@@ -329,6 +329,7 @@ struct Inner {
     state: Snapshot,
     active: std::collections::HashMap<String, Arc<AtomicBool>>,
     pause_requests: std::collections::HashSet<String>,
+    notices: std::collections::VecDeque<bool>,
 }
 #[derive(Clone)]
 pub struct Engine {
@@ -365,6 +366,7 @@ impl Engine {
                 state,
                 active: Default::default(),
                 pause_requests: Default::default(),
+                notices: Default::default(),
             })),
             file,
         })
@@ -448,6 +450,9 @@ impl Engine {
         persist(&self.file, &next)?;
         x.state = next;
         Ok(x.state.settings.clone())
+    }
+    pub fn take_notifications(&self) -> Vec<bool> {
+        self.inner.lock().unwrap().notices.drain(..).collect()
     }
     pub fn clipboard_enabled(&self) -> bool {
         self.inner
@@ -697,7 +702,7 @@ impl Engine {
                         job.files = files;
                         job.status = Status::Completed;
                         job.progress = 1.;
-                        job.message = "Ready".into();
+                        job.message = "Download completed".into();
                     }
                     Err(e) => {
                         if pause_requested && safe_partial(job) {
@@ -723,6 +728,24 @@ impl Engine {
             if let Err(e) = persist(&engine.file, &x.state) {
                 if let Some(job) = x.state.jobs.iter_mut().find(|job| job.id == j.id) {
                     job.message = format!("Result not saved: {e}");
+                }
+            }
+            if x.state.settings.prefs.notifications {
+                let completed = x
+                    .state
+                    .jobs
+                    .iter()
+                    .find(|job| job.id == j.id)
+                    .and_then(|job| match job.status {
+                        Status::Completed => Some(true),
+                        Status::Failed => Some(false),
+                        _ => None,
+                    });
+                if let Some(success) = completed {
+                    if x.notices.len() >= 64 {
+                        x.notices.pop_front();
+                    }
+                    x.notices.push_back(success);
                 }
             }
             x.active.remove(&j.id);
