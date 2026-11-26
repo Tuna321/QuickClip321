@@ -28,7 +28,7 @@ Format and resolution are independently adjustable. Save your own presets in the
 **Requirements:** Windows x64 with the Microsoft Edge WebView2 Runtime. The portable ZIP is approximately 3.5 MiB. First-use setup may download approximately 170-200 MB of media tools. No admin rights or global PATH modifications are required by the managed setup.
 
 > [!IMPORTANT]
-> This is a public beta, not a stable release. V3 uses separate settings and history from V2. The executable is unsigned; Windows may warn or block it. Verify the ZIP against the release's SHA-256 checksum and keep Windows security enabled. Run on startup is enabled by default and can be disabled in Settings.
+> This is a public beta, not a stable release. The executable is unsigned; Windows may warn or block it. Verify the ZIP against the release's SHA-256 checksum and keep Windows security enabled. Run on startup is enabled by default and can be disabled in Settings.
 
 ## Small on the outside. Powerful underneath.
 
@@ -56,7 +56,7 @@ Music, rap, pop, rock/metal, electronic, film, TV, games and more. The organizer
 
 ## Help shape V3
 
-This is the first public Rust-based beta. Try it in your everyday workflow and tell us what feels slow, confusing or missing.
+QuickClip321 V3 is in public beta. Try it in your everyday workflow and tell us what feels slow, confusing or missing.
 
 - [Report a bug or request a feature](https://github.com/Tuna321/QuickClip321/issues/new/choose).
 - Include the version, Windows version, steps to reproduce and a reviewed error message. Do not share private links, cookies or credentials.
@@ -88,6 +88,6 @@ This is the first public Rust-based beta. Try it in your everyday workflow and t
 
 ## Developers
 
-The V3 application uses Rust, Tauri and WebView2, with separately installed yt-dlp, FFmpeg/FFprobe and Node.js media tools. Source, lockfiles and build commands are available in [V3 development documentation](v3/README.md). See [V3 licensing and dependencies](docs/V3-THIRD-PARTY.md), [release notes](https://github.com/Tuna321/QuickClip321/releases/tag/v3.0.0-beta.2) and the [legacy Python release](https://github.com/Tuna321/QuickClip321/releases/tag/v2.1.0-rc.2).
+The V3 application uses Rust, Tauri and WebView2, with separately installed yt-dlp, FFmpeg/FFprobe and Node.js media tools. Source, lockfiles and build commands are available in [V3 development documentation](v3/README.md). See [V3 licensing and dependencies](docs/V3-THIRD-PARTY.md) and [release notes](https://github.com/Tuna321/QuickClip321/releases/tag/v3.0.0-beta.2).
 
 <p align="center"><strong>Made by 321. Built to stay out of your way.</strong><br><a href="LICENSE">MIT License</a> | <a href="https://github.com/Tuna321/QuickClip321/issues">Community</a></p>

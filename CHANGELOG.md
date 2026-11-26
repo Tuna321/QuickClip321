@@ -1,20 +1,12 @@
 # Changelog
 
-## 2.1.0-rc.3 — development candidate (unreleased)
+## 3.0.0-beta.2 - 2026-11-26
 
-- Preserve chosen resolution and presets while the metadata preview loads or fails.
-- Avoid replacing an existing link with new clipboard content.
-- Validate malformed URL ports and safely handle incomplete URLs during typing.
-- Deduplicate authorized downloads using session-only authorization data.
-- Restrict partial cleanup to the owned job directory and reject redirected paths.
-- Preserve important worker phase transitions; avoid redundant media verification.
-- Recover valid settings individually when other settings are malformed.
-- Add regression tests, Windows CI, issue templates and product documentation.
-- Add a static product website preview under docs/; hosting is not enabled by this change.
+- Public Windows x64 beta built with Rust, Tauri and WebView2.
+- Tray-first interface, clipboard capture, independent preset, format and resolution controls.
+- Queue, batch and playlist downloads, optional clipping, subtitles and metadata.
+- Contextual organizer with 2,302 curated records, custom rules and destinations.
+- Windows notifications, persistent appearance and popup position, startup preference.
+- Version-pinned verified media tool setup and scoped single Original transfer resume.
 
-This is source code for a candidate, not a signed or verified binary release. Windows CI, a clean-machine packaged smoke test, and license verification are required before publishing.
-
-## 2.1.0-rc.2 — published preview
-
-- Portable Windows EXE with on-demand, checksum-verified FFmpeg setup.
-- Tray quick view, advanced queue/history/settings, clipping, subtitles, presets and local organizer.
+See the [release notes](https://github.com/Tuna321/QuickClip321/releases/tag/v3.0.0-beta.2) for requirements and known limitations.

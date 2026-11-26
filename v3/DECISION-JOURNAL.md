@@ -37,3 +37,6 @@
 - Use version-pinned HTTPS artifacts with archive/binary SHA-256, scoped installation and explicit consent. Never execute an unverified download; no global PATH changes.
 - Restrict true pause/resume to jobs that can safely reuse partial bytes. Resume result requires actual Range and exact-byte evidence rather than UI labels.
 - Use real sanitized screenshots and existing branding in release README draft; no invented metrics, download URL or stable status. Release only after every mandatory gate.
+
+## Public repository cleanup
+Keep the previous implementation and its notices in legacy/python and backup/pre-v3-cleanup, with historical release tags intact. Remove obsolete source, tests, build scripts, CI and public links from the active tree. Keep V3 application sources and historical engineering audit records. Exclude only the two auxiliary Python screenshot/smoke scripts from language statistics; do not relabel code. No binary or release change.

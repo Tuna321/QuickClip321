@@ -7,5 +7,3 @@ The ZIP does not distribute yt-dlp, FFmpeg, FFprobe or Node.js. Managed setup do
 - [yt-dlp](https://github.com/yt-dlp/yt-dlp/releases/tag/2026.11.23) ? upstream release and licensing.
 - [FFmpeg Windows build](https://github.com/GyanD/codexffmpeg/releases/tag/9.1) ? publisher, licensing and source information.
 - [Node.js](https://nodejs.org/dist/v24.22.3/) ? runtime distribution; license extracted by managed setup.
-
-For older Python release notices, see [V2 licensing](THIRD-PARTY.md).

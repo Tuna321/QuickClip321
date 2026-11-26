@@ -1,7 +1,7 @@
 name: Rust V3 Windows CI
 on:
   push:
-    branches: ['v3/**']
+    branches: ['main', 'v3/**']
     paths: ['v3/**', '.github/workflows/rust-v3.yml']
   pull_request:
     paths: ['v3/**', '.github/workflows/rust-v3.yml']
