@@ -127,7 +127,13 @@ fn valid_version(version: &str, channel: &str) -> bool {
         v.to_string() == version
             && v.build.is_empty()
             && match channel {
-                "stable" => v.pre.is_empty(),
+                "stable" => {
+                    v.pre.is_empty()
+                        || v.pre
+                            .as_str()
+                            .strip_prefix("beta.")
+                            .is_some_and(|n| !n.is_empty() && n.bytes().all(|b| b.is_ascii_digit()))
+                }
                 "nightly" => v.pre.as_str().split('.').any(|p| p == "nightly"),
                 _ => false,
             }
@@ -291,8 +297,27 @@ pub fn report_health() -> Result<(), String> {
 mod tests {
     use super::*;
     #[test]
+    #[ignore = "Requires published signed GitHub release assets"]
+    fn published_channel_assets() {
+        for (channel, key) in [
+            ("stable", "QC_TEST_STABLE_VERSION"),
+            ("nightly", "QC_TEST_NIGHTLY_VERSION"),
+        ] {
+            let version = std::env::var(key).expect("explicit expected release version");
+            let found = crate::update_check::check(channel).expect("live GitHub discovery");
+            assert_eq!(found.latest_in_channel.as_deref(), Some(version.as_str()));
+            let ready = stage(&version, channel).expect("actual signed GitHub artifact download");
+            let info = ready.info();
+            assert_eq!(info.version, version);
+            assert_eq!(info.channel, channel);
+            println!("Live signed release verified: {channel} {}", info.version);
+        }
+    }
+    #[test]
     fn update_identity() {
         assert!(valid_version("3.0.0", "stable"));
+        assert!(valid_version("3.0.0-beta.6", "stable"));
+        assert!(!valid_version("3.0.0-beta.6.nightly.3", "stable"));
         assert!(valid_version("3.1.0-nightly.2", "nightly"));
         assert!(!valid_version("3.1.0-nightly.2", "stable"));
         assert!(!valid_version("../evil", "nightly"));

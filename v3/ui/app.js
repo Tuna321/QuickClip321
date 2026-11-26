@@ -7,7 +7,7 @@ let toolsAvailable=false,setupRunning=false;
 let organizerEnabled=true,manualDestination=false,savedDefaultDestination="";
 function notice(text,error=false){const toast=$("toast");toast.textContent=t(text);toast.classList.toggle("error",error);clearTimeout(timer);timer=setTimeout(()=>toast.textContent="",7000);}
 function syncQueueButton(){$("quickQueue").setAttribute("aria-expanded",String(expanded&&current==="queue"));}
-function show(page){current=page;syncQueueButton();document.querySelectorAll(".page").forEach(p=>p.hidden=p.id!==page);document.querySelectorAll(".nav").forEach(b=>{const active=b.dataset.page===page;b.classList.toggle("active",active);b.setAttribute("aria-current",active?"page":"false")});if(page==="diagnostics")loadDiagnostics();if(page==="updates")refreshUpdateStatus();if(page==="shortcuts")renderShortcuts();else {if(recordingShortcut)stopRecording();if(testingShortcuts)stopShortcutTest();}$("title").textContent=t({home:"New download",queue:"Queue",history:"History",settings:"Settings",updates:"Updates",shortcuts:"Shortcuts",profiles:"Profiles",organizer:"Organizer",diagnostics:"Diagnostics"}[page]);refresh();}
+function show(page){current=page;syncQueueButton();document.querySelectorAll(".page").forEach(p=>p.hidden=p.id!==page);document.querySelectorAll(".nav").forEach(b=>{const active=b.dataset.page===page;b.classList.toggle("active",active);b.setAttribute("aria-current",active?"page":"false")});if(page==="diagnostics")loadDiagnostics();if(page==="updates"){refreshUpdateStatus();if(initialized)checkSelectedChannel();}if(page==="shortcuts")renderShortcuts();else {if(recordingShortcut)stopRecording();if(testingShortcuts)stopShortcutTest();}$("title").textContent=t({home:"New download",queue:"Queue",history:"History",settings:"Settings",updates:"Updates",shortcuts:"Shortcuts",profiles:"Profiles",organizer:"Organizer",diagnostics:"Diagnostics"}[page]);refresh();}
 document.querySelectorAll(".nav").forEach(b=>b.addEventListener("click",()=>show(b.dataset.page)));
 function el(tag,cls,text){const node=document.createElement(tag);if(cls)node.className=cls;if(text!==undefined)node.textContent=tag==="button"||cls==="empty"||cls==="job-status"?t(text):text;return node;}
 function action(label,cmd,id){const b=el("button","small",label);b.addEventListener("click",async()=>{b.disabled=true;try{await invoke(cmd,{id});notice(label==="Retry"?"Added to queue":"Done");await refresh();}catch(e){notice(e,true);}finally{b.disabled=false;}});return b;}
@@ -291,18 +291,55 @@ async function changeYtdlp(rollback){
 $("updateYtdlp").onclick=()=>changeYtdlp(false);$("rollbackYtdlp").onclick=()=>changeYtdlp(true);
 $("speedLimit").onchange=async()=>{const n=Math.max(0,Math.min(1048576,Math.floor(Number($("speedLimit").value)||0)));$("speedLimit").value=n;try{await saveSection({limit_kib_per_second:n});}catch(e){notice(e,true);}};
 $("updateMode").onchange=async()=>{try{await saveSection({update_mode:$("updateMode").value});}catch(e){notice(e,true);}};
-$("updateChannel").onchange=async()=>{try{await saveSection({update_channel:$("updateChannel").value});$("checkUpdates").click();}catch(e){notice(e,true);}};
-$("downloadPublicBeta").onclick=async()=>{const b=$("downloadPublicBeta");b.disabled=true;$("updateResult").textContent=t("Downloading verified public beta...");try{$("updateResult").textContent=t(await invoke("download_public_beta"));}catch(e){$("updateResult").textContent=t(String(e));}finally{b.disabled=false;}};
-let signedAvailable=false;
-async function refreshUpdateStatus(){
-    try{const s=await invoke("update_status");$("signedStatus").textContent=t(s.message)+(s.ready?" | "+s.ready.version:"");$("stageSigned").hidden=!signedAvailable||!!s.ready&&s.ready.channel===$("updateChannel").value;$("stageSigned").disabled=s.busy;$("installSigned").hidden=!s.ready||s.ready.channel!==$("updateChannel").value;$("installSigned").disabled=s.busy;}catch(_){}
+let signedAvailable=false, checkedChannel=null, updateCheckGeneration=0, switchAvailable=false;
+function invalidateUpdateCheck(){
+    ++updateCheckGeneration; signedAvailable=false; switchAvailable=false; checkedChannel=null;
+    $("stageSigned").hidden=true; $("installSigned").hidden=true; $("downloadPublicBeta").hidden=true;
+    $("checkUpdates").disabled=false;
 }
-$("stageSigned").onclick=async()=>{const b=$("stageSigned");b.disabled=true;try{await invoke("stage_signed_update",{channel:$("updateChannel").value});await refreshUpdateStatus();}catch(e){$("signedStatus").textContent=t(String(e));}finally{b.disabled=false;}};
-$("installSigned").onclick=async()=>{if(!confirm(t("Install verified update and restart QuickClip321?")))return;try{await invoke("install_signed_update");}catch(e){$("signedStatus").textContent=t(String(e));}};
-$("checkUpdates").onclick=async()=>{
-    const b=$("checkUpdates");b.disabled=true;$("updateResult").textContent=t("Checking for updates...");
-    try{const info=await invoke("check_app_updates",{channel:$("updateChannel").value});signedAvailable=info.signed_available;await refreshUpdateStatus();$("updateResult").textContent=info.installed+" | "+t(info.state)+(info.latest_in_channel?" ("+info.latest_in_channel+")":"")+(info.public_beta?" | "+t("Current public beta")+": "+info.public_beta:"");}catch(e){$("updateResult").textContent=t(String(e));}finally{b.disabled=false;}
+$("updateChannel").onchange=async()=>{
+    const channel=$("updateChannel").value;invalidateUpdateCheck();
+    $("updateResult").textContent=t("Checking for updates...");
+    try{await saveSection({update_channel:channel});if(channel===$("updateChannel").value)await checkSelectedChannel();}
+    catch(e){if(channel===$("updateChannel").value){$("updateResult").textContent=t(String(e));const p=(await invoke("snapshot")).settings.prefs;$("updateChannel").value=p.update_channel;invalidateUpdateCheck();}}
 };
+$("downloadPublicBeta").onclick=async()=>{const b=$("downloadPublicBeta");b.disabled=true;const generation=updateCheckGeneration;$("updateResult").textContent=t("Downloading verified public beta...");try{const result=await invoke("download_public_beta");if(generation===updateCheckGeneration)$("updateResult").textContent=t(result);}catch(e){if(generation===updateCheckGeneration)$("updateResult").textContent=t(String(e));}finally{b.disabled=false;}};
+async function refreshUpdateStatus(){
+    const generation=updateCheckGeneration,channel=$("updateChannel").value;
+    try{
+        const s=await invoke("update_status");
+        if(generation!==updateCheckGeneration||channel!==$("updateChannel").value)return;
+        const ready=s.ready&&s.ready.channel===channel;
+        $("signedStatus").textContent=ready?t(s.message)+" | "+s.ready.version:s.ready&&!s.busy?"":t(s.message);
+        $("stageSigned").hidden=!signedAvailable||checkedChannel!==channel||!!ready;
+        $("stageSigned").disabled=s.busy;
+        $("installSigned").hidden=!ready;
+        $("installSigned").disabled=s.busy;
+    }catch(_){}
+}
+$("stageSigned").onclick=async()=>{
+    const b=$("stageSigned"),channel=$("updateChannel").value,generation=updateCheckGeneration;
+    if(checkedChannel!==channel||!signedAvailable)return;
+    const switching=switchAvailable;
+    if(switching&&!confirm(t("Switch release channel and restart QuickClip321 after verification?")))return;
+    b.disabled=true;
+    try{
+        await invoke("stage_signed_update",{channel});
+        if(switching&&generation===updateCheckGeneration&&channel===$("updateChannel").value)await invoke("install_signed_update");
+    }catch(e){if(channel===$("updateChannel").value)$("updateResult").textContent=t(String(e));}
+    finally{await refreshUpdateStatus();}
+};
+$("installSigned").onclick=async()=>{if(!confirm(t("Install verified update and restart QuickClip321?")))return;try{await invoke("install_signed_update");}catch(e){$("signedStatus").textContent=t(String(e));}};
+async function checkSelectedChannel(){
+    invalidateUpdateCheck();
+    const generation=updateCheckGeneration,channel=$("updateChannel").value,b=$("checkUpdates");
+    b.disabled=true;$("updateResult").textContent=t("Checking for updates...");
+    const current=()=>generation===updateCheckGeneration&&channel===$("updateChannel").value;
+    try{const info=await invoke("check_app_updates",{channel});if(!current())return;signedAvailable=info.signed_available;switchAvailable=info.switch_available;checkedChannel=channel;$("downloadPublicBeta").hidden=channel!=="stable"||info.public_beta!=="3.0.0-beta.5"||info.signed_available;$("stageSigned").textContent=t(channel==="stable"?"Download Stable":"Download Nightly");$("updateResult").textContent=info.installed+" | "+t(info.state)+(info.latest_in_channel?" ("+info.latest_in_channel+")":"")+(info.public_beta?" | "+t("Current public beta")+": "+info.public_beta:"");await refreshUpdateStatus();}
+    catch(e){if(current()){$("updateResult").textContent=t(String(e));await refreshUpdateStatus();}}
+    finally{if(current())b.disabled=false;}
+}
+$("checkUpdates").onclick=checkSelectedChannel;
 $("exportPrefs").onclick=async()=>{try{$("prefsBackup").value=await invoke("export_preferences");$("prefsBackup").select();}catch(e){notice(e,true);}};
 $("importPrefs").onclick=async()=>{
     if(!confirm(t("Replace compatible preferences with this backup?")))return;

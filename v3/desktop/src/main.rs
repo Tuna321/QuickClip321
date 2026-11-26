@@ -198,12 +198,18 @@ fn run_shortcut(app: &tauri::AppHandle, action: &str) {
                 } else {
                     "Finish setup first"
                 }
-            } else if let Some(url) = app
-                .clipboard()
-                .read_text()
-                .ok()
-                .and_then(|v| quickclip_core::validate_url(v.trim()).ok())
-            {
+            } else if let Some(url) = if isolated_run() {
+                // Only a loopback fixture is allowed; do not read the real clipboard.
+                std::env::var("QC_SHORTCUT_DOWNLOAD_FIXTURE")
+                    .ok()
+                    .filter(|v| v.starts_with("http://127.0.0.1:"))
+                    .and_then(|v| quickclip_core::validate_url(v.trim()).ok())
+            } else {
+                app.clipboard()
+                    .read_text()
+                    .ok()
+                    .and_then(|v| quickclip_core::validate_url(v.trim()).ok())
+            } {
                 let preset = match action {
                     "mp3" => "mp3".into(),
                     "mp4" => "editor".into(),
@@ -224,7 +230,11 @@ fn run_shortcut(app: &tauri::AppHandle, action: &str) {
                 } else {
                     s.prefs.smart_organizer
                 };
-                let seq = matching_clipboard_sequence(app, &url);
+                let seq = if isolated_run() {
+                    None
+                } else {
+                    matching_clipboard_sequence(app, &url)
+                };
                 let request = Request {
                     url: url.clone(),
                     preset,
@@ -1502,6 +1512,16 @@ fn stage_for_channel(
         return Err("Update operation already running".into());
     }
     let result = (|| {
+        if app
+            .state::<Engine>()
+            .snapshot()
+            .settings
+            .prefs
+            .update_channel
+            != channel
+        {
+            return Err("Selected channel changed; check again".into());
+        }
         let i = update_check::check(channel)?;
         if !i.signed_available || (!explicit_switch && i.switch_available) {
             return Err("No eligible signed update".into());
@@ -1511,6 +1531,16 @@ fn stage_for_channel(
             .ok_or("No release on selected channel")?;
         *r.notice.lock().unwrap() = "Downloading and verifying signed update".into();
         let staged = signed_update::stage(&target, channel)?;
+        if app
+            .state::<Engine>()
+            .snapshot()
+            .settings
+            .prefs
+            .update_channel
+            != channel
+        {
+            return Err("Selected channel changed; check again".into());
+        }
         let info = staged.info();
         *r.ready.lock().unwrap() = Some(staged);
         let handle = app.clone();
@@ -1614,24 +1644,29 @@ fn watch_updates(app: tauri::AppHandle) {
         std::thread::sleep(std::time::Duration::from_secs(15));
         let mut last_check = None::<std::time::Instant>;
         let mut last_channel = String::new();
+        let mut interval = std::time::Duration::from_secs(86400);
         loop {
             let engine = app.state::<Engine>();
             let prefs = engine.snapshot().settings.prefs;
             let (a, q, p, _, _, _) = engine.tray_summary();
             let idle = a == 0 && q == 0 && p == 0;
             let due = last_channel != prefs.update_channel
-                || last_check.is_none_or(|v| v.elapsed() >= std::time::Duration::from_secs(86400));
+                || last_check.is_none_or(|v| v.elapsed() >= interval);
             if idle && due {
                 last_channel = prefs.update_channel.clone();
                 last_check = Some(std::time::Instant::now());
+                interval = std::time::Duration::from_secs(300);
                 if let Ok(i) = update_check::check(&prefs.update_channel) {
+                    interval = std::time::Duration::from_secs(86400);
                     if i.signed_available && !i.switch_available && i.available.is_some() {
                         let handle = app.clone();
                         let _ = app.run_on_main_thread(move || {
                             show_shortcut_toast(&handle, "Update available")
                         });
                         if prefs.update_mode != "manual" {
-                            let _ = stage_for_channel(&app, &prefs.update_channel, false);
+                            if stage_for_channel(&app, &prefs.update_channel, false).is_err() {
+                                interval = std::time::Duration::from_secs(300);
+                            }
                         }
                     }
                 }
@@ -1751,13 +1786,27 @@ fn import_preferences(
     save_settings(window, engine, p)
 }
 fn main() {
-    tauri::Builder::default()
-        .plugin(tauri_plugin_single_instance::init(|app, _, _| {
+    let builder = tauri::Builder::default();
+    let builder = if isolated_run() {
+        // Test copies must not hand off to the user's running app or use its
+        // WebView profile. Normal launches retain the single-instance guard.
+        if let Some(root) =
+            std::env::var_os("QC_V3_SMOKE_DIR").or_else(|| std::env::var_os("QC_V3_BENCH_DIR"))
+        {
+            let root = PathBuf::from(root);
+            if root.is_absolute() && root.is_dir() {
+                std::env::set_var("WEBVIEW2_USER_DATA_FOLDER", root.join("webview-profile"));
+            }
+        }
+        builder
+    } else {
+        builder.plugin(tauri_plugin_single_instance::init(|app, _, _| {
             if let Some(w) = app.get_webview_window("main") {
                 show_popup(&w, None);
             }
         }))
-        .plugin(tauri_plugin_dialog::init())
+    };
+    builder.plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_clipboard_manager::init())
         .setup(|app| {
             let (data, destination) = if let Some(dir) =
@@ -1904,6 +1953,8 @@ fn main() {
                 watch_popup(app.handle().clone());
                 watch_tray_progress(app.handle().clone());
                 if !isolated_run(){watch_updates(app.handle().clone());}
+            }
+            if !smoke || std::env::var_os("QC_COMPLETION_SMOKE").is_some() {
                 watch_notifications(app.handle().clone());
             }
             // Explicit isolated fixture only; normal users never auto-enqueue.
@@ -1924,6 +1975,9 @@ fn main() {
                         destination: settings.destination,
                     })
                     .map_err(std::io::Error::other)?;
+            }
+            if isolated_run() && std::env::var_os("QC_SHORTCUT_DOWNLOAD_FIXTURE").is_some() {
+                run_shortcut(app.handle(), "download");
             }
             if let Some(dir) = std::env::var_os("QC_V3_SMOKE_DIR") {
                 if let Some(w) = app.get_webview_window("main") {

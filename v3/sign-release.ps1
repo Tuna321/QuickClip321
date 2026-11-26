@@ -2,7 +2,7 @@
 param([Parameter(Mandatory=$true)][string]$Artifact,[Parameter(Mandatory=$true)][string]$Version,[Parameter(Mandatory=$true)][ValidateSet('stable','nightly')][string]$Channel,[Parameter(Mandatory=$true)][string]$OutputDir)
 $ErrorActionPreference='Stop'
 if($Version -notmatch '^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$'){throw 'Invalid version'}
-if(($Channel -eq 'stable' -and $Version.Contains('-')) -or ($Channel -eq 'nightly' -and $Version -notmatch '(?:-|\.)nightly(?:\.|$)')){throw 'Version/channel mismatch'}
+if(($Channel -eq 'stable' -and $Version.Contains('-') -and $Version -notmatch '^\d+\.\d+\.\d+-beta\.\d+$') -or ($Channel -eq 'nightly' -and $Version -notmatch '(?:-|\.)nightly(?:\.|$)')){throw 'Version/channel mismatch'}
 $item=Get-Item -LiteralPath $Artifact
 $filename="QuickClip321-$Version-win-x64.exe"
 if($item.Name -cne $filename -or $item.Length -lt 1 -or $item.Length -gt 100000000){throw 'Invalid release artifact'}

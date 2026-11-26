@@ -69,7 +69,15 @@ impl Default for Preferences {
             startup_view: "quick".into(),
             theme: "Dark".into(),
             language: "en".into(),
-            update_channel: "stable".into(),
+            update_channel: if env!("CARGO_PKG_VERSION")
+                .split_once('-')
+                .is_some_and(|(_, p)| p.split('.').any(|x| x == "nightly"))
+            {
+                "nightly"
+            } else {
+                "stable"
+            }
+            .into(),
             update_mode: "semi".into(),
             open_hotkey: "Ctrl+Alt+Space".into(),
             shortcuts: BTreeMap::new(),

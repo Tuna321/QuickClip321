@@ -23,12 +23,14 @@ def seed(name,cap=0):
     data={"settings":{"destination":str(out),"yt_dlp":str(tools/"yt-dlp.exe"),"ffmpeg":str(tools/"ffmpeg.exe"),"prefs":{"default_preset":"original","default_format":"original","default_quality":"best","limit_kib_per_second":cap,"notifications":True,"run_on_startup":False}},"jobs":[]}
     state.write_text(json.dumps(data),encoding="utf-8")
     return d,state,data
-def launch(d,mode=None,bench=False):
+def launch(d,mode=None,bench=False,shortcut=False):
     env=os.environ.copy()
-    for k in ("QC_V3_SMOKE_DIR","QC_V3_BENCH_DIR","QC_V3_VISUAL","QC_NOTIFICATION_FIXTURE","QC_COMPLETION_SMOKE","QC_SHORTCUT_SMOKE"):env.pop(k,None)
+    for k in ("QC_V3_SMOKE_DIR","QC_V3_BENCH_DIR","QC_V3_VISUAL","QC_NOTIFICATION_FIXTURE","QC_COMPLETION_SMOKE","QC_SHORTCUT_SMOKE","QC_SHORTCUT_DOWNLOAD_FIXTURE"):env.pop(k,None)
     env["QC_V3_BENCH_DIR" if bench else "QC_V3_SMOKE_DIR"]=str(d)
     if mode:env["QC_V3_VISUAL"]=mode
-    if bench:env["QC_NOTIFICATION_FIXTURE"]=url;env["QC_COMPLETION_SMOKE"]="1"
+    env["QC_COMPLETION_SMOKE"]="1"
+    if shortcut:env["QC_SHORTCUT_DOWNLOAD_FIXTURE"]=url
+    elif bench:env["QC_NOTIFICATION_FIXTURE"]=url
     return subprocess.Popen([str(exe)],env=env)
 def stop(p):
     if p.poll() is None:p.terminate();p.wait(timeout=15)
@@ -58,6 +60,7 @@ try:
             j,elapsed=wait_job(state,p)
             assert Path(j["files"][0]).read_bytes()==source.read_bytes()
             assert j["preset"]=="original"
+            assert wait_file(d/"notice-message.txt")=="Download completed"
             times.append(elapsed)
             print(f"Actual app rate {cap}: {source.stat().st_size} bytes, {elapsed:.2f}s",flush=True)
         finally:stop(p)
@@ -73,6 +76,21 @@ try:
         assert wait_file(d/"notice-destroyed.txt")=="destroyed"
         print("PASS actual download -> native completion notification -> destroyed",flush=True)
         results["completion"]=True
+    finally:stop(p)
+    d,state,data=seed("shortcut")
+    p=launch(d,bench=True,shortcut=True)
+    try:
+        j,_=wait_job(state,p)
+        assert Path(j["files"][0]).read_bytes()==source.read_bytes()
+        # Started/queued and completed notices may overwrite the same marker.
+        start=time.monotonic()
+        while time.monotonic()-start<8:
+            if (d/"notice-message.txt").is_file() and (d/"notice-message.txt").read_text(encoding="utf-8")=="Download completed":
+                break
+            time.sleep(.1)
+        else:raise AssertionError("Shortcut completion notice missing")
+        print("PASS actual shortcut dispatcher -> download -> completion notification",flush=True)
+        results["shortcut_completion"]=True
     finally:stop(p)
     d,state,data=seed("duplicate")
     folder=d/"media"/"Video"/"Games with spaces";folder.mkdir(parents=True)

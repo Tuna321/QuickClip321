@@ -19,6 +19,9 @@ pub fn select(
     current: &str,
     channel: &str,
 ) -> Result<UpdateInfo, String> {
+    if !matches!(channel, "stable" | "nightly") {
+        return Err("Invalid update channel".into());
+    }
     let installed = Version::parse(current).map_err(|_| "Invalid local version")?;
     let list = data.as_array().ok_or("Invalid release metadata")?;
     let mut versions = Vec::new();
@@ -35,15 +38,22 @@ pub fn select(
             continue;
         };
         let Ok(v) = Version::parse(tag) else { continue };
+        if !v.build.is_empty() {
+            continue;
+        }
         let pre = v.pre.as_str();
         let nightly = pre.split('.').any(|p| p == "nightly");
-        // Stable never selects nightly or other prereleases. Nightly can select
-        // a final stable release, but only if strictly newer than the installed build.
+        // Each channel only selects its own releases. Cross-channel downgrades
+        // require an explicit switch.
+        let public_beta = pre
+            .strip_prefix("beta.")
+            .is_some_and(|n| !n.is_empty() && n.bytes().all(|b| b.is_ascii_digit()))
+            && release["prerelease"].as_bool() == Some(true);
+        // The stable *track* accepts explicitly signed public betas until GA.
+        // Legacy unsigned beta assets remain manual-only.
         let allowed =
             channel == "stable" && pre.is_empty() && release["prerelease"].as_bool() == Some(false)
                 || channel == "nightly" && nightly && release["prerelease"].as_bool() == Some(true);
-        let public_beta =
-            pre.starts_with("beta.") && !nightly && release["prerelease"].as_bool() == Some(true);
         let expected = format!("QuickClip321-{v}-win-x64.exe");
         if !release["assets"].as_array().is_some_and(|a| {
             a.iter().any(|x| {
@@ -65,14 +75,19 @@ pub fn select(
         }) {
             signed.insert(v.to_string());
         }
-        if allowed {
+        if allowed || (channel == "stable" && public_beta && signed.contains(&v.to_string())) {
             versions.push(v.clone());
         }
         if public_beta {
             betas.push(v);
         }
     }
-    let latest = versions.into_iter().max();
+    let latest = versions
+        .iter()
+        .filter(|v| signed.contains(&v.to_string()))
+        .max()
+        .cloned()
+        .or_else(|| versions.into_iter().max());
     let installed_nightly = installed.pre.as_str().split('.').any(|p| p == "nightly");
     let switching = if channel == "stable" {
         installed_nightly
@@ -208,6 +223,58 @@ mod tests {
         .unwrap();
         assert!(i.latest_in_channel.is_none());
         assert_eq!(i.public_beta.as_deref(), Some("3.0.0-beta.5"));
+    }
+    fn signed_release(v: &str, pre: bool) -> serde_json::Value {
+        let mut r = release(v, pre, false);
+        let a = r["assets"].as_array_mut().unwrap();
+        for name in ["update-manifest.json", "update-manifest.sig"] {
+            a.push(serde_json::json!({"name":name,"state":"uploaded"}));
+        }
+        r
+    }
+    #[test]
+    fn signed_channels_switch_both_directions() {
+        let data = serde_json::json!([
+            signed_release("3.0.0", false),
+            signed_release("3.1.0-nightly.2", true),
+            release("9.0.0", false, false),
+            release("9.0.0-nightly.1", true, false)
+        ]);
+        let a = select(&data, "3.1.0-nightly.2", "stable").unwrap();
+        assert!(a.switch_available && a.signed_available);
+        assert_eq!(a.latest_in_channel.as_deref(), Some("3.0.0"));
+        let b = select(&data, "3.0.0", "nightly").unwrap();
+        assert!(b.switch_available && b.signed_available);
+        assert_eq!(b.latest_in_channel.as_deref(), Some("3.1.0-nightly.2"));
+        let c = select(&data, "3.0.0", "stable").unwrap();
+        assert!(!c.signed_available && !c.switch_available);
+        assert!(select(&data, "3.0.0", "invalid").is_err());
+    }
+    #[test]
+    fn signed_beta_is_stable_track_not_legacy_beta() {
+        let data = serde_json::json!([
+            release("3.0.0-beta.5", true, false),
+            signed_release("3.0.0-beta.6", true),
+            signed_release("3.0.0-beta.6.nightly.3", true)
+        ]);
+        let a = select(&data, "3.0.0-beta.6.nightly.3", "stable").unwrap();
+        assert!(a.signed_available && a.switch_available);
+        assert_eq!(a.latest_in_channel.as_deref(), Some("3.0.0-beta.6"));
+        let b = select(&data, "3.0.0-beta.6", "nightly").unwrap();
+        assert!(b.signed_available && b.switch_available);
+        assert_eq!(
+            b.latest_in_channel.as_deref(),
+            Some("3.0.0-beta.6.nightly.3")
+        );
+    }
+    #[test]
+    fn same_channel_update_and_downgrade() {
+        let data = serde_json::json!([signed_release("3.0.1", false)]);
+        let a = select(&data, "3.0.0", "stable").unwrap();
+        assert!(a.signed_available && !a.switch_available);
+        assert_eq!(a.available.as_deref(), Some("3.0.1"));
+        let b = select(&data, "3.0.2", "stable").unwrap();
+        assert!(!b.signed_available && b.available.is_none());
     }
     #[test]
     fn rejects_wrong_asset() {
