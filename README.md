@@ -6,11 +6,11 @@
 <h1 align="center">QuickClip321</h1>
 <p align="center"><strong>Copy. Click. Download.</strong><br>The free, open-source video and audio downloader that lives in your Windows system tray.</p>
 <p align="center">
-<a href="https://github.com/Tuna321/QuickClip321/releases/download/v3.0.0-beta.3/QuickClip321-3.0.0-beta.3-win-x64.exe"><img src="v3/assets/beta2-download-graphite.png" width="288" alt="Download for Windows x64 - EXE"></a>
+<a href="https://github.com/Tuna321/QuickClip321/releases/download/v3.0.0-beta.4/QuickClip321-3.0.0-beta.4-win-x64.exe"><img src="v3/assets/beta2-download-graphite.png" width="288" alt="Download for Windows x64 - EXE"></a>
 </p>
-<p align="center"><sub>Windows x64 &nbsp; / &nbsp; Portable EXE &nbsp; / &nbsp; Beta 3</sub></p>
+<p align="center"><sub>Windows x64 &nbsp; / &nbsp; Portable EXE &nbsp; / &nbsp; Beta 4</sub></p>
 <p align="center"><strong>FREE &nbsp; / &nbsp; MIT LICENSE &nbsp; / &nbsp; RUST</strong></p>
-<p align="center"><a href="https://github.com/Tuna321/QuickClip321/releases/download/v3.0.0-beta.3/QuickClip321-3.0.0-beta.3-win-x64.exe"><strong>Download EXE (11.1 MiB)</strong></a> | <a href="https://github.com/Tuna321/QuickClip321/releases/download/v3.0.0-beta.3/QuickClip321-3.0.0-beta.3-win-x64-portable.zip">ZIP (3.5 MiB)</a> | <a href="https://github.com/Tuna321/QuickClip321/releases/tag/v3.0.0-beta.3">Release notes</a> | <a href="#get-started">Get started</a> | <a href="https://github.com/Tuna321/QuickClip321/issues/new/choose">Give feedback</a></p>
+<p align="center"><a href="https://github.com/Tuna321/QuickClip321/releases/download/v3.0.0-beta.4/QuickClip321-3.0.0-beta.4-win-x64.exe"><strong>Download EXE (11.1 MiB)</strong></a> | <a href="https://github.com/Tuna321/QuickClip321/releases/download/v3.0.0-beta.4/QuickClip321-3.0.0-beta.4-win-x64-portable.zip">ZIP (3.5 MiB)</a> | <a href="https://github.com/Tuna321/QuickClip321/releases/tag/v3.0.0-beta.4">Release notes</a> | <a href="#get-started">Get started</a> | <a href="https://github.com/Tuna321/QuickClip321/issues/new/choose">Give feedback</a></p>
 
 <p align="center"><img src="v3/assets/beta2-system-tray.jpg" width="900" alt="One click away: click the QuickClip321 Q icon in the Windows system tray to open the compact downloader popup"></p>
 
@@ -27,7 +27,7 @@ QuickClip321 is designed around the Windows system tray, not a full-size downloa
 After setup, there is no need to open the Start menu, switch to a large application window or manually paste every link. No account, subscription or browser extension required.
 
 <p align="center"><img src="v3/assets/beta2-hero.jpg" width="900" alt="Copy, Click, Download: actual QuickClip321 beta 2 dark quick view"></p>
-<p align="center"><sub>Quick view shown in Beta 2; Beta 3 keeps the interface and improves first launch.</sub></p>
+<p align="center"><sub>Quick view shown in Beta 2; Beta 4 keeps the interface and shows live first-launch progress.</sub></p>
 
 ### Ready for your workflow
 
@@ -39,7 +39,7 @@ Format and resolution are independently adjustable. Save your own presets in the
 
 ## Get started
 
-1. **[Download Beta 3 for Windows x64](https://github.com/Tuna321/QuickClip321/releases/download/v3.0.0-beta.3/QuickClip321-3.0.0-beta.3-win-x64.exe).** Save the EXE in a permanent folder and open it. No extraction required. Let the one-time setup finish if needed.
+1. **[Download Beta 4 for Windows x64](https://github.com/Tuna321/QuickClip321/releases/download/v3.0.0-beta.4/QuickClip321-3.0.0-beta.4-win-x64.exe).** Save the EXE in a permanent folder and open it. No extraction required. The one-time setup shows live download progress if needed.
 2. **Copy a media link.** Click the Q icon in the system tray (look under the hidden icons arrow if necessary).
 3. **Choose and download.** Select your preset, format and resolution. On first launch, missing media tools are automatically downloaded, verified and configured. No manual FFmpeg setup.
 
@@ -85,7 +85,7 @@ QuickClip321 V3 is in public beta. Try it in your everyday workflow and tell us 
 
 <details>
 <summary>How do I verify the download?</summary>
-<br>Download <a href="https://github.com/Tuna321/QuickClip321/releases/download/v3.0.0-beta.3/SHA256-EXE.txt">SHA256-EXE.txt</a> from the release. In PowerShell run <code>Get-FileHash .\QuickClip321-3.0.0-beta.3-win-x64.exe -Algorithm SHA256</code> and compare the hash. For the ZIP, use SHA256SUMS.txt. A matching hash confirms the download matches the published artifact, not that it is digitally signed.
+<br>Download <a href="https://github.com/Tuna321/QuickClip321/releases/download/v3.0.0-beta.4/SHA256-EXE.txt">SHA256-EXE.txt</a> from the release. In PowerShell run <code>Get-FileHash .\QuickClip321-3.0.0-beta.4-win-x64.exe -Algorithm SHA256</code> and compare the hash. For the ZIP, use SHA256SUMS.txt. A matching hash confirms the download matches the published artifact, not that it is digitally signed.
 </details>
 
 <details>
@@ -107,6 +107,6 @@ QuickClip321 V3 is in public beta. Try it in your everyday workflow and tell us 
 
 ## Developers
 
-The V3 application uses Rust, Tauri and WebView2, with separately installed yt-dlp, FFmpeg/FFprobe and Node.js media tools. Source, lockfiles and build commands are available in [V3 development documentation](v3/README.md). See [V3 licensing and dependencies](docs/V3-THIRD-PARTY.md), [license and notices for the EXE](https://github.com/Tuna321/QuickClip321/releases/download/v3.0.0-beta.3/LICENSE-AND-NOTICES.txt) and [release notes](https://github.com/Tuna321/QuickClip321/releases/tag/v3.0.0-beta.3).
+The V3 application uses Rust, Tauri and WebView2, with separately installed yt-dlp, FFmpeg/FFprobe and Node.js media tools. Source, lockfiles and build commands are available in [V3 development documentation](v3/README.md). See [V3 licensing and dependencies](docs/V3-THIRD-PARTY.md), [license and notices for the EXE](https://github.com/Tuna321/QuickClip321/releases/download/v3.0.0-beta.4/LICENSE-AND-NOTICES.txt) and [release notes](https://github.com/Tuna321/QuickClip321/releases/tag/v3.0.0-beta.4).
 
 <p align="center"><strong>Made by 321. Built to stay out of your way.</strong><br><a href="LICENSE">MIT License</a> | <a href="https://github.com/Tuna321/QuickClip321/issues">Community</a></p>
