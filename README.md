@@ -1,16 +1,10 @@
-<p align="center"><img src="resources/QuickClip321Logo.png" width="104" alt="QuickClip321 logo"></p>
+<p align="center"><img src="v3/assets/beta2-logo-tile.png" width="104" alt="QuickClip321 logo"></p>
 <h1 align="center">QuickClip321</h1>
 <p align="center"><strong>Copy. Click. Download.</strong><br>Free, open-source video and audio downloader for Windows. Built for creators, made for everyone.</p>
 <p align="center">
-<a href="https://github.com/Tuna321/QuickClip321/releases/download/v3.0.0-beta.2/QuickClip321-3.0.0-beta.2-win-x64-portable.zip"><img src="https://img.shields.io/badge/DOWNLOAD-WINDOWS%20x64-7652DE?style=for-the-badge&logo=windows&logoColor=white" alt="Download QuickClip321 for Windows x64"></a>
-<a href="https://github.com/Tuna321/QuickClip321/releases/tag/v3.0.0-beta.2"><img src="https://img.shields.io/badge/V3-BETA%202-252139?style=for-the-badge" alt="V3 Beta 2 release notes"></a>
+<a href="https://github.com/Tuna321/QuickClip321/releases/download/v3.0.0-beta.2/QuickClip321-3.0.0-beta.2-win-x64-portable.zip"><img src="v3/assets/beta2-download.png" width="340" alt="Download for Windows x64 - portable ZIP - Beta 2"></a>
 </p>
-<p align="center">
-<a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-8B5CF6?style=flat-square" alt="MIT license"></a>
-<img src="https://img.shields.io/badge/Built%20with-Rust-252139?style=flat-square&logo=rust" alt="Built with Rust">
-<a href="https://github.com/Tuna321/QuickClip321/stargazers"><img src="https://img.shields.io/github/stars/Tuna321/QuickClip321?style=flat-square&color=8B5CF6" alt="GitHub stars"></a>
-<a href="https://github.com/Tuna321/QuickClip321/issues"><img src="https://img.shields.io/badge/Feedback-welcome-8B5CF6?style=flat-square" alt="Feedback welcome"></a>
-</p>
+<p align="center"><strong>FREE &nbsp; / &nbsp; MIT LICENSE &nbsp; / &nbsp; RUST</strong></p>
 <p align="center"><a href="https://github.com/Tuna321/QuickClip321/releases/download/v3.0.0-beta.2/QuickClip321-3.0.0-beta.2-win-x64-portable.zip"><strong>Download ZIP (3.5 MiB)</strong></a> | <a href="https://github.com/Tuna321/QuickClip321/releases/tag/v3.0.0-beta.2">Release notes</a> | <a href="#get-started">Get started</a> | <a href="https://github.com/Tuna321/QuickClip321/issues/new/choose">Give feedback</a></p>
 
 <p align="center"><img src="v3/assets/beta2-hero.jpg" width="900" alt="Copy, Click, Download: actual QuickClip321 beta 2 dark quick view"></p>
