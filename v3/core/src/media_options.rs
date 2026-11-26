@@ -79,6 +79,16 @@ fn duration(path: &Path, ffprobe: &Path) -> Result<f64> {
     }
     Ok(d)
 }
+pub fn inspect_duration(path: &Path, ffmpeg: &Path) -> Result<f64> {
+    duration(
+        path,
+        &ffmpeg.with_file_name(if cfg!(windows) {
+            "ffprobe.exe"
+        } else {
+            "ffprobe"
+        }),
+    )
+}
 pub fn clip(
     source: &Path,
     ffmpeg: &Path,

@@ -5,6 +5,349 @@ use std::sync::Mutex;
 use tauri_plugin_clipboard_manager::ClipboardExt;
 #[derive(Default)]
 struct ClipboardInbox(Mutex<Option<String>>);
+#[derive(Default)]
+struct ClipboardConsumption {
+    sequence: Mutex<Option<u32>>,
+    submitted: Mutex<Vec<(String, String)>>,
+}
+#[cfg(windows)]
+fn matching_clipboard_sequence(app: &tauri::AppHandle, url: &str) -> Option<u32> {
+    let seq = clipboard_sequence();
+    let text = app.clipboard().read_text().ok()?;
+    (clipboard_sequence() == seq
+        && quickclip_core::validate_url(text.trim()).ok().as_deref() == Some(url))
+    .then_some(seq)
+}
+#[cfg(not(windows))]
+fn matching_clipboard_sequence(_: &tauri::AppHandle, _: &str) -> Option<u32> {
+    None
+}
+fn consume_link(app: &tauri::AppHandle, url: &str, sequence: Option<u32>, job: Option<String>) {
+    let state = app.state::<ClipboardConsumption>();
+    let mut consumed = state.sequence.lock().unwrap();
+    #[cfg(windows)]
+    if sequence.is_some_and(|seq| seq == clipboard_sequence()) {
+        *consumed = sequence;
+    }
+    let inbox = app.state::<ClipboardInbox>();
+    let mut pending = inbox.0.lock().unwrap();
+    if pending.as_deref() == Some(url) {
+        *pending = None;
+    }
+    if let Some(id) = job {
+        let mut events = state.submitted.lock().unwrap();
+        events.push((id, url.to_owned()));
+        if events.len() > 64 {
+            events.remove(0);
+        }
+    }
+}
+#[tauri::command]
+fn take_submitted_links(state: State<'_, ClipboardConsumption>) -> Vec<(String, String)> {
+    std::mem::take(&mut *state.submitted.lock().unwrap())
+}
+#[derive(Clone, Default, serde::Serialize)]
+struct ShortcutState {
+    status: String,
+    hits: u64,
+}
+#[derive(Default)]
+struct HotkeyStatus(Mutex<std::collections::BTreeMap<String, ShortcutState>>);
+#[derive(Default)]
+struct CaptureUntil(Mutex<Option<std::time::Instant>>);
+#[derive(Default)]
+struct TestUntil(Mutex<Option<std::time::Instant>>);
+#[tauri::command]
+fn shortcut_test(test: State<'_, TestUntil>, active: bool) {
+    *test.0.lock().unwrap() = if active {
+        Some(std::time::Instant::now() + std::time::Duration::from_secs(30))
+    } else {
+        None
+    };
+}
+#[tauri::command]
+fn shortcut_capture(capture: State<'_, CaptureUntil>, active: bool) {
+    *capture.0.lock().unwrap() = if active {
+        Some(std::time::Instant::now() + std::time::Duration::from_secs(15))
+    } else {
+        None
+    };
+}
+#[tauri::command]
+fn hotkey_status(
+    status: State<'_, HotkeyStatus>,
+) -> std::collections::BTreeMap<String, ShortcutState> {
+    status.0.lock().unwrap().clone()
+}
+#[tauri::command]
+fn shortcut_hit(status: State<'_, HotkeyStatus>, action: String) {
+    if matches!(action.as_str(), "submit" | "link" | "hide") {
+        status.0.lock().unwrap().entry(action).or_default().hits += 1;
+    }
+}
+#[tauri::command]
+fn remember_download(
+    engine: State<'_, Engine>,
+    preset: String,
+    quality: String,
+    destination: PathBuf,
+    organize: bool,
+) -> Result<(), String> {
+    quickclip_core::selector(&preset, &quality)?;
+    if !destination.is_absolute() {
+        return Err("Choose an absolute destination folder.".into());
+    }
+    let mut s = engine.snapshot().settings;
+    if s.prefs.default_format == preset
+        && s.prefs.default_quality == quality
+        && s.prefs.last_destination.as_ref() == Some(&destination)
+        && s.prefs.last_organize == organize
+    {
+        return Ok(());
+    }
+    s.prefs.default_preset = "custom".into();
+    s.prefs.default_format = preset;
+    if matches!(s.prefs.default_format.as_str(), "editor" | "original") {
+        s.prefs.last_video_quality = quality.clone();
+    }
+    s.prefs.default_quality = quality;
+    s.prefs.last_destination = Some(destination);
+    s.prefs.last_organize = organize;
+    engine.settings(s)
+}
+#[cfg(windows)]
+mod native_notice;
+fn show_shortcut_toast(app: &tauri::AppHandle, message: &str) {
+    #[cfg(windows)]
+    if let Some(w) = app.get_webview_window("main") {
+        if let Ok(Some(m)) = w.primary_monitor() {
+            let area = m.work_area();
+            let dpi = m.scale_factor();
+            let width = (340. * dpi).round() as i32;
+            let height = (48. * dpi).round() as i32;
+            native_notice::show(
+                message,
+                area.position.x + (area.size.width as i32 - width) / 2,
+                area.position.y + (24. * dpi) as i32,
+                width,
+                height,
+                dpi,
+            );
+        }
+    }
+}
+fn run_shortcut(app: &tauri::AppHandle, action: &str) {
+    let engine = app.state::<Engine>();
+    let s = engine.snapshot().settings;
+    let tr = s.prefs.language == "tr";
+    if (isolated_run() && std::env::var_os("QC_SHORTCUT_SMOKE").is_some())
+        || app
+            .state::<TestUntil>()
+            .0
+            .lock()
+            .unwrap()
+            .is_some_and(|until| std::time::Instant::now() < until)
+    {
+        show_shortcut_toast(
+            app,
+            if tr {
+                "K\u{0131}sayol alg\u{0131}land\u{0131}"
+            } else {
+                "Shortcut recognized"
+            },
+        );
+        return;
+    }
+    let message = match action {
+        "open" => {
+            if let Some(w) = app.get_webview_window("main") {
+                toggle_popup(&w, None);
+            }
+            return;
+        }
+        "folder" => {
+            let path = s.prefs.last_destination.as_ref().unwrap_or(&s.destination);
+            if std::fs::create_dir_all(path).is_ok()
+                && std::process::Command::new("explorer.exe")
+                    .arg(path)
+                    .spawn()
+                    .is_ok()
+            {
+                return;
+            }
+            if tr {
+                "Klas\u{00f6}r a\u{00e7}\u{0131}lamad\u{0131}"
+            } else {
+                "Could not open folder"
+            }
+        }
+        "download" | "mp3" | "mp4" => {
+            if !configured_tools_ready(&s) {
+                if tr {
+                    "\u{00d6}nce kurulumu tamamla"
+                } else {
+                    "Finish setup first"
+                }
+            } else if let Some(url) = app
+                .clipboard()
+                .read_text()
+                .ok()
+                .and_then(|v| quickclip_core::validate_url(v.trim()).ok())
+            {
+                let preset = match action {
+                    "mp3" => "mp3".into(),
+                    "mp4" => "editor".into(),
+                    _ => s.prefs.default_format.clone(),
+                };
+                let quality = if matches!(preset.as_str(), "mp3" | "m4a" | "wav") {
+                    "best".into()
+                } else {
+                    if action == "mp4" {
+                        s.prefs.last_video_quality.clone()
+                    } else {
+                        s.prefs.default_quality.clone()
+                    }
+                };
+                let destination = s.prefs.last_destination.clone().unwrap_or(s.destination);
+                let organize = if s.prefs.last_destination.is_some() {
+                    s.prefs.last_organize
+                } else {
+                    s.prefs.smart_organizer
+                };
+                let seq = matching_clipboard_sequence(app, &url);
+                match engine.enqueue(Request {
+                    url: url.clone(),
+                    preset,
+                    quality,
+                    playlist: false,
+                    organize,
+                    options: Default::default(),
+                    destination,
+                }) {
+                    Ok(id) => {
+                        consume_link(app, &url, seq, Some(id.clone()));
+                        let running = engine
+                            .snapshot()
+                            .jobs
+                            .iter()
+                            .any(|j| j.id == id && j.status == quickclip_core::Status::Running);
+                        match (tr, running) {
+                            (true, true) => "\u{0130}ndirme ba\u{015f}lat\u{0131}ld\u{0131}",
+                            (true, false) => "S\u{0131}raya eklendi",
+                            (false, true) => "Download started",
+                            _ => "Added to queue",
+                        }
+                    }
+                    Err(_) => {
+                        if tr {
+                            "\u{0130}ndirme eklenemedi"
+                        } else {
+                            "Download not added"
+                        }
+                    }
+                }
+            } else if tr {
+                "Ge\u{00e7}erli bir ba\u{011f}lant\u{0131} kopyala"
+            } else {
+                "Copy a valid media link"
+            }
+        }
+        _ => return,
+    };
+    show_shortcut_toast(app, message);
+}
+#[cfg(windows)]
+fn watch_hotkey(app: tauri::AppHandle) {
+    use windows_sys::Win32::UI::{Input::KeyboardAndMouse::*, WindowsAndMessaging::*};
+    std::thread::spawn(move || {
+        let mut current = std::collections::BTreeMap::new();
+        let mut suspended = false;
+        let mut registered = std::collections::HashMap::<i32, String>::new();
+        loop {
+            let wanted = app.state::<Engine>().shortcut_config();
+            let recording = app
+                .state::<CaptureUntil>()
+                .0
+                .lock()
+                .unwrap()
+                .is_some_and(|until| std::time::Instant::now() < until);
+            if current != wanted || recording != suspended {
+                for id in registered.keys() {
+                    unsafe {
+                        UnregisterHotKey(std::ptr::null_mut(), *id);
+                    }
+                }
+                registered.clear();
+                current = wanted;
+                suspended = recording;
+                let status = app.state::<HotkeyStatus>();
+                let mut status = status.0.lock().unwrap();
+                let mut used = std::collections::HashSet::new();
+                for (i, (action, _, global)) in
+                    quickclip_core::preferences::SHORTCUTS.iter().enumerate()
+                {
+                    let key = &current[*action];
+                    let id = 321 + i as i32;
+                    let code = quickclip_core::preferences::parse_shortcut(key, *global);
+                    let value = if recording {
+                        "Recording"
+                    } else if key == "Off" {
+                        "Off"
+                    } else if let Some((mods, vk)) = code {
+                        if !used.insert((mods, vk)) {
+                            "Duplicate shortcut"
+                        } else if !global {
+                            "In app"
+                        } else if unsafe {
+                            RegisterHotKey(std::ptr::null_mut(), id, mods | MOD_NOREPEAT, vk)
+                        } != 0
+                        {
+                            registered.insert(id, action.to_string());
+                            "Active"
+                        } else {
+                            "Unavailable (shortcut in use)"
+                        }
+                    } else {
+                        "Invalid shortcut"
+                    };
+                    status.entry(action.to_string()).or_default().status = value.into();
+                }
+            }
+            unsafe {
+                let mut msg: MSG = std::mem::zeroed();
+                while PeekMessageW(
+                    &mut msg,
+                    std::ptr::null_mut(),
+                    WM_HOTKEY,
+                    WM_HOTKEY,
+                    PM_REMOVE,
+                ) != 0
+                {
+                    if let Some(action) = registered.get(&(msg.wParam as i32)).cloned() {
+                        app.state::<HotkeyStatus>()
+                            .0
+                            .lock()
+                            .unwrap()
+                            .entry(action.clone())
+                            .or_default()
+                            .hits += 1;
+                        if let Some(dir) = std::env::var_os("QC_V3_SMOKE_DIR") {
+                            if std::env::var_os("QC_SHORTCUT_SMOKE").is_some() {
+                                let _ = std::fs::write(
+                                    PathBuf::from(dir).join("hotkey-fired.txt"),
+                                    &action,
+                                );
+                            }
+                        }
+                        let handle = app.clone();
+                        let _ = app.run_on_main_thread(move || run_shortcut(&handle, &action));
+                    }
+                }
+            }
+            std::thread::sleep(std::time::Duration::from_millis(70));
+        }
+    });
+}
 #[tauri::command]
 fn visual_page() -> String {
     std::env::var("QC_V3_VISUAL").unwrap_or_default()
@@ -49,8 +392,12 @@ fn watch_clipboard(app: tauri::AppHandle) {
                         last = Some(seq);
                         let link = quickclip_core::validate_url(text.trim()).ok();
                         if let Some(link) = link {
-                            if let Ok(mut pending) = app.state::<ClipboardInbox>().0.lock() {
-                                *pending = Some(link);
+                            let consumption = app.state::<ClipboardConsumption>();
+                            let consumed = consumption.sequence.lock().unwrap();
+                            if *consumed != Some(seq) && clipboard_sequence() == seq {
+                                if let Ok(mut pending) = app.state::<ClipboardInbox>().0.lock() {
+                                    *pending = Some(link);
+                                }
                             }
                         }
                     }
@@ -162,6 +509,23 @@ async fn media_preview(
         .map_err(|e| e.to_string())?
 }
 #[tauri::command]
+async fn live_preview_frame(app: tauri::AppHandle, id: String, seconds: f64) -> Option<String> {
+    let s = app.state::<Engine>().snapshot();
+    if !s
+        .jobs
+        .iter()
+        .any(|j| j.id == id && j.status == quickclip_core::Status::Running)
+    {
+        return None;
+    }
+    tauri::async_runtime::spawn_blocking(move || {
+        quickclip_core::live_frame(&id, &s.settings.ffmpeg, seconds)
+    })
+    .await
+    .ok()
+    .flatten()
+}
+#[tauri::command]
 fn validate_links(urls: Vec<String>) -> Result<Vec<String>, String> {
     if urls.len() > 100 {
         return Err("Add at most 100 links at once.".into());
@@ -188,11 +552,23 @@ fn snapshot(engine: State<'_, Engine>) -> Snapshot {
     engine.snapshot()
 }
 #[tauri::command]
-fn enqueue(engine: State<'_, Engine>, request: Request) -> Result<String, String> {
+fn enqueue(
+    app: tauri::AppHandle,
+    engine: State<'_, Engine>,
+    request: Request,
+) -> Result<String, String> {
     if !configured_tools_ready(&engine.snapshot().settings) {
         return Err("QuickClip321 is not ready yet. Complete media setup first.".into());
     }
-    engine.enqueue(request)
+    let url = quickclip_core::validate_url(request.url.trim())?;
+    let seq = if engine.clipboard_enabled() && !isolated_run() {
+        matching_clipboard_sequence(&app, &url)
+    } else {
+        None
+    };
+    let id = engine.enqueue(request)?;
+    consume_link(&app, &url, seq, None);
+    Ok(id)
 }
 #[tauri::command]
 fn cancel(engine: State<'_, Engine>, id: String) -> Result<(), String> {
@@ -357,6 +733,7 @@ fn save_settings(
     settings: Settings,
 ) -> Result<(), String> {
     let before = engine.snapshot().settings.prefs;
+    let top = settings.prefs.always_on_top;
     let startup_changed = before.run_on_startup != settings.prefs.run_on_startup;
     let position_changed = before.popup_mode != settings.prefs.popup_mode
         || before.popup_x != settings.prefs.popup_x
@@ -370,9 +747,23 @@ fn save_settings(
         }
         return Err(e);
     }
+    let _ = apply_topmost(&window, top);
     if position_changed {
         position_popup(&window, None);
     }
+    Ok(())
+}
+#[tauri::command]
+fn open_downloads(engine: State<'_, Engine>) -> Result<(), String> {
+    let folder = engine.snapshot().settings.destination;
+    if !folder.is_absolute() {
+        return Err("Invalid download folder.".into());
+    }
+    std::fs::create_dir_all(&folder).map_err(|e| e.to_string())?;
+    std::process::Command::new("explorer.exe")
+        .arg(folder)
+        .spawn()
+        .map_err(|e| e.to_string())?;
     Ok(())
 }
 #[tauri::command]
@@ -398,6 +789,17 @@ fn open_folder(engine: State<'_, Engine>, id: String) -> Result<(), String> {
         .arg(folder)
         .spawn()
         .map_err(|e| e.to_string())?;
+    Ok(())
+}
+#[tauri::command]
+fn persist_fixture_report(app: tauri::AppHandle, passed: bool) -> Result<(), String> {
+    let root = std::env::var_os("QC_V3_SMOKE_DIR").ok_or("Not a smoke test")?;
+    std::fs::write(
+        PathBuf::from(root).join("persist-fixture.txt"),
+        if passed { "true" } else { "false" },
+    )
+    .map_err(|e| e.to_string())?;
+    app.exit(if passed { 0 } else { 1 });
     Ok(())
 }
 #[tauri::command]
@@ -585,8 +987,56 @@ fn enforce_tray_style(window: &tauri::WebviewWindow) {
 }
 #[cfg(not(windows))]
 fn enforce_tray_style(_: &tauri::WebviewWindow) {}
+#[cfg(windows)]
+fn apply_topmost(window: &tauri::WebviewWindow, top: bool) -> Result<(), String> {
+    use windows_sys::Win32::UI::WindowsAndMessaging::*;
+    let hwnd = window.hwnd().map_err(|e| e.to_string())?.0 as windows_sys::Win32::Foundation::HWND;
+    let ok = unsafe {
+        SetWindowPos(
+            hwnd,
+            if top { HWND_TOPMOST } else { HWND_NOTOPMOST },
+            0,
+            0,
+            0,
+            0,
+            SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE,
+        )
+    };
+    enforce_tray_style(window);
+    if ok == 0 {
+        Err("Cannot change window z-order.".into())
+    } else {
+        Ok(())
+    }
+}
+#[cfg(not(windows))]
+fn apply_topmost(window: &tauri::WebviewWindow, top: bool) -> Result<(), String> {
+    window.set_always_on_top(top).map_err(|e| e.to_string())
+}
+fn toggle_popup(window: &tauri::WebviewWindow, point: Option<(f64, f64)>) {
+    let top = window
+        .state::<Engine>()
+        .snapshot()
+        .settings
+        .prefs
+        .always_on_top;
+    if window.is_visible().unwrap_or(false) && (top || window.is_focused().unwrap_or(false)) {
+        let _ = window.hide();
+    } else {
+        show_popup(window, point);
+    }
+}
 fn show_popup(window: &tauri::WebviewWindow, point: Option<(f64, f64)>) {
     let _ = window.set_shadow(false);
+    let _ = apply_topmost(
+        window,
+        window
+            .state::<Engine>()
+            .snapshot()
+            .settings
+            .prefs
+            .always_on_top,
+    );
     enforce_tray_style(window);
     position_popup(window, point);
     let _ = window.show();
@@ -610,7 +1060,15 @@ fn set_mode(
     window
         .set_size(tauri::LogicalSize::new(w, h))
         .map_err(|e| e.to_string())?;
-    window.set_always_on_top(true).map_err(|e| e.to_string())?;
+    apply_topmost(
+        &window,
+        window
+            .state::<Engine>()
+            .snapshot()
+            .settings
+            .prefs
+            .always_on_top,
+    )?;
     position_popup(&window, None);
     let _ = round_window(&window);
     Ok(())
@@ -723,7 +1181,11 @@ fn main() {
                 eprintln!("{e}");
             }
             app.manage(engine);
+            app.manage(HotkeyStatus::default());
+            app.manage(CaptureUntil::default());
+            app.manage(TestUntil::default());
             let smoke = std::env::var_os("QC_V3_SMOKE_DIR").is_some();
+            app.manage(ClipboardConsumption::default());
             app.manage(ClipboardInbox(Mutex::new(if smoke {
                 Some("https://example.com/fixture".into())
             } else {
@@ -773,11 +1235,7 @@ fn main() {
                     } = event
                     {
                         if let Some(w) = tray.app_handle().get_webview_window("main") {
-                            if w.is_visible().unwrap_or(false) {
-                                let _ = w.hide();
-                            } else {
-                                show_popup(&w, Some((position.x, position.y)));
-                            }
+                            toggle_popup(&w, Some((position.x, position.y)));
                         }
                     }
                 });
@@ -785,6 +1243,20 @@ fn main() {
                 tray = tray.icon(icon.clone());
             }
             tray.build(app)?;
+            #[cfg(windows)]
+            if !isolated_run() || std::env::var_os("QC_SHORTCUT_SMOKE").is_some() {
+                watch_hotkey(app.handle().clone());
+            }
+            if let Some(w) = app.get_webview_window("main") {
+                let _ = apply_topmost(
+                    &w,
+                    app.state::<Engine>()
+                        .snapshot()
+                        .settings
+                        .prefs
+                        .always_on_top,
+                );
+            }
             if needs_setup && !isolated_run() {
                 if let Some(w) = app.get_webview_window("main") {
                     show_popup(&w, None);
@@ -842,7 +1314,9 @@ fn main() {
             visual_page,
             smoke_active,
             take_clipboard_link,
+            take_submitted_links,
             media_preview,
+            live_preview_frame,
             validate_links,
             queue_action,
             snapshot,
@@ -861,8 +1335,15 @@ fn main() {
             save_settings,
             preview_position,
             open_folder,
+            open_downloads,
+            hotkey_status,
+            shortcut_capture,
+            shortcut_test,
+            shortcut_hit,
+            remember_download,
             set_mode,
             hide_window,
+            persist_fixture_report,
             ui_ready
         ])
         .run(tauri::generate_context!())

@@ -43,6 +43,32 @@ fn database() -> &'static Value {
             .expect("built-in organizer database")
     })
 }
+fn extended() -> &'static std::collections::HashMap<String, std::collections::HashSet<String>> {
+    static EXT: OnceLock<std::collections::HashMap<String, std::collections::HashSet<String>>> =
+        OnceLock::new();
+    EXT.get_or_init(|| {
+        let data: std::collections::HashMap<String, Vec<String>> =
+            serde_json::from_str(include_str!("organizer_extended.json"))
+                .expect("extended catalog");
+        data.into_iter()
+            .map(|(k, v)| (k, v.into_iter().map(|s| normalized(&s)).collect()))
+            .collect()
+    })
+}
+fn extended_has(category: &str, name: &str) -> bool {
+    extended().get(category).is_some_and(|s| s.contains(name))
+}
+fn contextual_prefix(n: &str, category: &str, markers: &[&str]) -> bool {
+    // Imported titles need an exact leading name and explicit media marker.
+    markers.iter().any(|marker| {
+        n.split_once(&format!(" {marker}"))
+            .is_some_and(|(title, tail)| {
+                (tail.is_empty() || tail.starts_with(' '))
+                    && title.split_whitespace().count() >= 2
+                    && extended_has(category, title)
+            })
+    })
+}
 pub fn counts() -> [usize; 8] {
     let db = database();
     [
@@ -55,7 +81,7 @@ pub fn counts() -> [usize; 8] {
         "electronic",
         "other_music",
     ]
-    .map(|k| db[k].as_array().map_or(0, Vec::len))
+    .map(|k| db[k].as_array().map_or(0, Vec::len) + extended().get(k).map_or(0, |x| x.len()))
 }
 pub fn category(info: &Value, preset: &str) -> (&'static str, &'static str) {
     let title = text(info, &["title"]);
@@ -85,6 +111,9 @@ pub fn category(info: &Value, preset: &str) -> (&'static str, &'static str) {
         };
     }
     let db = database();
+    if !text(info, &["series", "tv_show", "movie", "movie_title"]).is_empty() {
+        return ("film", "Explicit movie or TV metadata");
+    }
     let game = normalized(text(info, &["game", "game_title"]));
     let explicit_screen = !text(info, &["series", "tv_show", "movie", "movie_title"]).is_empty();
     let game_context = any(
@@ -100,6 +129,18 @@ pub fn category(info: &Value, preset: &str) -> (&'static str, &'static str) {
             "oynanis",
             "oyun",
             "let s play",
+            "gaming",
+            "game",
+            "games",
+            "game review",
+            "full game",
+            "game footage",
+            "no commentary",
+            "all endings",
+            "all bosses",
+            "mod showcase",
+            "oyun inceleme",
+            "oyun videosu",
         ],
     );
     // Title-prefix numbered trailers for known games; require gaming evidence for ambiguous cross-media names.
@@ -110,7 +151,23 @@ pub fn category(info: &Value, preset: &str) -> (&'static str, &'static str) {
                 if !contains(&n, v) {
                     return false;
                 }
-                if game_context && !explicit_screen {
+                if game_context
+                    && !explicit_screen
+                    && !any(
+                        &n,
+                        &[
+                            "programming",
+                            "coding",
+                            "game development",
+                            "game engine",
+                            "installation",
+                            "door installation",
+                        ],
+                    )
+                {
+                    return true;
+                }
+                if e["standalone_title"].as_bool().unwrap_or(false) && !explicit_screen {
                     return true;
                 }
                 let distinctive = v.split_whitespace().count() >= 3
@@ -135,6 +192,24 @@ pub fn category(info: &Value, preset: &str) -> (&'static str, &'static str) {
         {
             return ("games", "Game title and gaming context");
         }
+    }
+    if !game.is_empty() && !explicit_screen {
+        return ("games", "Game metadata");
+    }
+    if game_context
+        && contextual_prefix(
+            &n,
+            "games",
+            &[
+                "gameplay",
+                "walkthrough",
+                "playthrough",
+                "speedrun",
+                "game trailer",
+            ],
+        )
+    {
+        return ("games", "Extended game title and context");
     }
     let series = normalized(text(info, &["series", "tv_show"]));
     let movie = normalized(text(info, &["movie", "movie_title"]));
@@ -188,6 +263,15 @@ pub fn category(info: &Value, preset: &str) -> (&'static str, &'static str) {
     }
     if !series.is_empty() {
         return ("film", "Series metadata");
+    }
+    if clip
+        && (contextual_prefix(
+            &n,
+            "movies",
+            &["scene", "trailer", "film", "sahne", "fragman"],
+        ) || contextual_prefix(&n, "tv", &["episode", "season", "bolum", "sezon", "scene"]))
+    {
+        return ("film", "Extended title and screen context");
     }
     let music = any(
         &n,
@@ -258,6 +342,13 @@ pub fn category(info: &Value, preset: &str) -> (&'static str, &'static str) {
                     return (category, "Music artist and contextual metadata");
                 }
             }
+        }
+        if (!artist.is_empty() && extended_has("other_music", &artist))
+            || (music_context
+                && extended_has("other_music", &prefix)
+                && (!channel.is_empty() && channel == prefix))
+        {
+            return ("music", "Extended music group and contextual metadata");
         }
         // Unknown artists can still be classified from explicit track/artist metadata.
         if !artist.is_empty() && !track.is_empty() {
@@ -333,7 +424,7 @@ mod tests {
         );
         assert_eq!(
             configured_destination(&json!({"title":"other"}), "editor", dir.path(), &p),
-            dir.path().join("Video")
+            dir.path().join("Video/Other")
         );
     }
     #[test]
@@ -422,6 +513,10 @@ mod tests {
         for (title, expected) in [
             ("Grand Theft Auto VI Trailer 2", "games"),
             ("GTA 6 gameplay", "games"),
+            ("POSTAL 2 funny moments", "games"),
+            ("Postal II - an old classic", "games"),
+            ("Postal delivery service", "video"),
+            ("Rust programming tutorial", "video"),
             ("Roblox gameplay", "games"),
             ("Rust programming tutorial", "video"),
             ("Portal door installation", "video"),

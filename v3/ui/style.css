@@ -45,3 +45,7 @@
 .setup-dialog{width:min(410px,90%);border:1px solid var(--border);border-radius:14px;background:var(--surface);color:var(--text);padding:20px;box-shadow:0 12px 35px #0006}.setup-dialog::backdrop{background:#0008}.setup-dialog h2{margin:0 0 10px}.setup-dialog p{font-size:13px;line-height:1.5;color:var(--muted)}.setup-dialog .row{justify-content:flex-end;margin-top:16px}
 
 .first-setup progress{width:100%;height:8px;margin:12px 0;accent-color:var(--accent)}.first-setup .sub{font-size:12px}.first-setup [hidden]{display:none!important}
+
+.preview-copy{min-width:0;flex:1}.preview-copy #sizeEstimate{display:block;font-size:11px;color:var(--accent-text);margin-top:2px}#openDownloads{min-width:32px;display:grid;place-items:center;padding:5px 7px}#quickTrim{min-width:44px}.preview-copy #previewText{-webkit-line-clamp:2}.preview-copy:has(#sizeEstimate:not([hidden])) #previewText{-webkit-line-clamp:1}
+
+.shortcut-row{display:grid;grid-template-columns:minmax(0,1fr) 160px 48px;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:var(--surface);margin:7px 0}.shortcut-name{display:grid;gap:2px}.shortcut-name small{color:var(--muted);font-size:11px}.shortcut-state[data-active=true]{color:var(--accent-text)}.shortcut-key{font-family:Consolas,monospace;font-size:12px}.shortcut-toolbar{margin:8px 0}.shortcut-toolbar #shortcutCaptureHint{font-size:12px}

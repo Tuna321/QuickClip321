@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.0.0-beta.5 - 2026-11-26
+
+- Custom global and in-app shortcuts, native localized fade notices and last-used download settings.
+- English/Turkish interface, size estimates, folder shortcut and always-on-top toggle.
+- Expanded organizer: 25,693 records, contextual imported titles and automatic custom rule persistence.
+- Fast clip download with full-download fallback, and bounded local partial-frame previews.
+- Clear submitted links, reset finished preview, fix reopening unfocused popup and verify settings across restarts.
+
 ## 3.0.0-beta.4 - 2026-11-26
 
 - Live first-launch setup stage and per-file byte progress.

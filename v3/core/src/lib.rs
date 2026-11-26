@@ -104,6 +104,126 @@ pub struct Preview {
     pub playlist: bool,
     pub count: Option<u64>,
     pub thumbnail: Option<String>,
+    pub sizes: Vec<PreviewSize>,
+}
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct PreviewSize {
+    pub preset: String,
+    pub quality: String,
+    pub bytes: u64,
+}
+#[cfg(test)]
+#[test]
+fn preview_size_metadata_only() {
+    let info = serde_json::json!({"formats":[
+        {"vcodec":"none","acodec":"mp4a.40.2","filesize_approx":100},
+        {"vcodec":"avc1.64001f","acodec":"none","height":720,"filesize":1000},
+        {"vcodec":"avc1.640028","acodec":"none","height":1080,"filesize":2000}
+    ]});
+    let estimates = preview_sizes(&info);
+    assert_eq!(
+        estimates
+            .iter()
+            .find(|s| s.preset == "editor" && s.quality == "720")
+            .unwrap()
+            .bytes,
+        1100
+    );
+    assert_eq!(
+        estimates
+            .iter()
+            .find(|s| s.preset == "editor" && s.quality == "1080")
+            .unwrap()
+            .bytes,
+        2100
+    );
+    assert_eq!(
+        estimates.iter().find(|s| s.preset == "mp3").unwrap().bytes,
+        100
+    );
+    assert!(preview_sizes(&serde_json::json!({"formats":[]})).is_empty());
+}
+fn preview_sizes(info: &serde_json::Value) -> Vec<PreviewSize> {
+    // Metadata-only estimate; no HEAD requests, no changes to yt-dlp download selection.
+    let Some(formats) = info["formats"].as_array() else {
+        return vec![];
+    };
+    let mut result = vec![];
+    let is_video = |f: &serde_json::Value| f["vcodec"].as_str().is_some_and(|s| s != "none");
+    let is_audio = |f: &serde_json::Value| f["acodec"].as_str().is_some_and(|s| s != "none");
+    let size = |f: &serde_json::Value| {
+        f["filesize"]
+            .as_u64()
+            .or_else(|| f["filesize_approx"].as_u64())
+            .filter(|n| *n > 0)
+    };
+    let audio = formats.iter().rev().find(|f| is_audio(f) && !is_video(f));
+    for q in ["best", "2160", "1440", "1080", "720", "480", "360"] {
+        let cap = q.parse::<u64>().ok();
+        let fits = |f: &serde_json::Value| {
+            cap.is_none_or(|h| f["height"].as_u64().is_some_and(|v| v <= h))
+        };
+        for preset in ["editor", "original"] {
+            let preferred = if preset == "editor" {
+                formats
+                    .iter()
+                    .rev()
+                    .find(|f| {
+                        fits(f)
+                            && is_video(f)
+                            && !is_audio(f)
+                            && f["vcodec"].as_str().is_some_and(|s| s.starts_with("avc1"))
+                    })
+                    .zip(formats.iter().rev().find(|f| {
+                        is_audio(f)
+                            && !is_video(f)
+                            && f["acodec"].as_str().is_some_and(|s| s.starts_with("mp4a"))
+                    }))
+            } else {
+                None
+            };
+            let selected = preferred.or_else(|| {
+                formats
+                    .iter()
+                    .rev()
+                    .find(|f| fits(f) && is_video(f))
+                    .and_then(|v| {
+                        if is_audio(v) {
+                            Some((v, v))
+                        } else {
+                            audio.map(|a| (v, a))
+                        }
+                    })
+            });
+            let bytes = selected.and_then(|(v, a)| {
+                if std::ptr::eq(v, a) {
+                    size(v)
+                } else {
+                    size(v)?.checked_add(size(a)?)
+                }
+            });
+            if let Some(bytes) = bytes {
+                result.push(PreviewSize {
+                    preset: preset.into(),
+                    quality: q.into(),
+                    bytes,
+                });
+            }
+        }
+    }
+    if let Some(bytes) = audio
+        .or_else(|| formats.iter().rev().find(|f| is_audio(f)))
+        .and_then(size)
+    {
+        for preset in ["mp3", "m4a", "wav"] {
+            result.push(PreviewSize {
+                preset: preset.into(),
+                quality: "best".into(),
+                bytes,
+            });
+        }
+    }
+    result
 }
 pub fn is_playlist(raw: &str) -> bool {
     let Ok(u) = url::Url::parse(raw) else {
@@ -236,6 +356,13 @@ pub fn preview(raw: &str, tool: &Path) -> Result<Preview> {
             .collect(),
         qualities,
         thumbnail: read_thumbnail(thumbs.path()),
+        sizes: if is_playlist(&url)
+            || matches!(info["_type"].as_str(), Some("playlist" | "multi_video"))
+        {
+            vec![]
+        } else {
+            preview_sizes(&info)
+        },
         playlist: matches!(info["_type"].as_str(), Some("playlist" | "multi_video"))
             || is_playlist(&url),
         count: info["playlist_count"]
@@ -537,6 +664,25 @@ impl Engine {
             .settings
             .prefs
             .clipboard_monitor
+    }
+    pub fn shortcut_config(&self) -> std::collections::BTreeMap<String, String> {
+        self.inner
+            .lock()
+            .unwrap()
+            .state
+            .settings
+            .prefs
+            .effective_shortcuts()
+    }
+    pub fn open_hotkey(&self) -> String {
+        self.inner
+            .lock()
+            .unwrap()
+            .state
+            .settings
+            .prefs
+            .open_hotkey
+            .clone()
     }
     pub fn snapshot(&self) -> Snapshot {
         self.inner.lock().unwrap().state.clone()
@@ -1065,8 +1211,19 @@ fn download(
     cancel: &AtomicBool,
     mut progress: impl FnMut(f64, String),
 ) -> Result<Vec<PathBuf>> {
+    // Only explicitly requested short video clips use the experimental section path.
+    // All ordinary downloads, audio, playlists and sidecars retain the original path.
+    if fast_section(j) {
+        progress(0., "Trying fast clip download".into());
+        match download_once(j, s, cancel, &mut progress, true) {
+            Err(e) if e.starts_with("Section unavailable: ") && !cancel.load(Ordering::SeqCst) => {
+                progress(0., "Source needs full download; trimming afterward".into());
+            }
+            result => return result,
+        }
+    }
     for attempt in 0..=2 {
-        match download_once(j, s, cancel, &mut progress) {
+        match download_once(j, s, cancel, &mut progress, false) {
             Err(e)
                 if e.starts_with("Retryable network error: ")
                     && attempt < 2
@@ -1093,6 +1250,16 @@ fn download(
         }
     }
     unreachable!()
+}
+fn fast_section(j: &Job) -> bool {
+    !j.playlist
+        && !j.options.archive
+        && j.options.subtitle_languages.is_empty()
+        && matches!(j.preset.as_str(), "editor" | "original")
+        && j.options.clip_end.is_some_and(|end| {
+            let start = j.options.clip_start.unwrap_or(0.);
+            end.is_finite() && start.is_finite() && end > start && end - start <= 600.
+        })
 }
 fn resumable(j: &Job) -> bool {
     j.preset == "original"
@@ -1248,11 +1415,131 @@ impl Stage {
         }
     }
 }
+fn preview_stages() -> &'static Mutex<std::collections::HashMap<String, PathBuf>> {
+    static STAGES: std::sync::OnceLock<Mutex<std::collections::HashMap<String, PathBuf>>> =
+        std::sync::OnceLock::new();
+    STAGES.get_or_init(|| Mutex::new(Default::default()))
+}
+struct PreviewStage(String);
+impl PreviewStage {
+    fn new(id: String, path: PathBuf) -> Self {
+        preview_stages().lock().unwrap().insert(id.clone(), path);
+        Self(id)
+    }
+}
+impl Drop for PreviewStage {
+    fn drop(&mut self) {
+        preview_stages().lock().unwrap().remove(&self.0);
+    }
+}
+pub fn live_frame(id: &str, ffmpeg: &Path, seconds: f64) -> Option<String> {
+    // No remote streams, no additional download. One bounded, low-resolution decode.
+    static DECODE: Mutex<()> = Mutex::new(());
+    let _guard = DECODE.try_lock().ok()?;
+    if !seconds.is_finite() || seconds < 0. || seconds > 86400. * 30. {
+        return None;
+    }
+    let root = preview_stages().lock().ok()?.get(id)?.clone();
+    if !ordinary(&fs::symlink_metadata(&root).ok()?) {
+        return None;
+    }
+    let canonical = root.canonicalize().ok()?;
+    let mut candidates = vec![];
+    for e in fs::read_dir(&root).ok()?.flatten().take(64) {
+        let path = e.path();
+        let m = fs::symlink_metadata(&path).ok()?;
+        if !m.is_file()
+            || !ordinary(&m)
+            || m.len() < 32768
+            || path.canonicalize().ok()?.parent() != Some(canonical.as_path())
+        {
+            continue;
+        }
+        let name = path.file_name()?.to_string_lossy().to_ascii_lowercase();
+        let name = name.strip_suffix(".part").unwrap_or(&name);
+        let format = if name.ends_with(".mp4") || name.ends_with(".m4v") {
+            "mov"
+        } else if name.ends_with(".webm") || name.ends_with(".mkv") {
+            "matroska"
+        } else {
+            continue;
+        };
+        candidates.push((m.len(), path, format));
+    }
+    candidates.sort_by_key(|x| std::cmp::Reverse(x.0));
+    let (_, path, format) = candidates.first()?;
+    let mut output = tempfile::tempfile().ok()?;
+    let mut c = command(ffmpeg);
+    c.args([
+        "-nostdin",
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-protocol_whitelist",
+        "file,pipe",
+        "-threads",
+        "1",
+        "-ss",
+        &format!("{seconds:.3}"),
+        "-f",
+        format,
+        "-i",
+    ])
+    .arg(path)
+    .args([
+        "-an",
+        "-sn",
+        "-dn",
+        "-map",
+        "0:v:0",
+        "-frames:v",
+        "1",
+        "-vf",
+        "scale=160:-2",
+        "-threads",
+        "1",
+        "-f",
+        "image2pipe",
+        "-vcodec",
+        "mjpeg",
+        "pipe:1",
+    ])
+    .stdout(Stdio::from(output.try_clone().ok()?))
+    .stderr(Stdio::null());
+    let mut child = c.spawn().ok()?;
+    let _owner = ProcessTree::attach(&mut child).ok()?;
+    let start = Instant::now();
+    loop {
+        if start.elapsed() > Duration::from_millis(700) || output.metadata().ok()?.len() > 160000 {
+            terminate(&mut child);
+            return None;
+        }
+        match child.try_wait() {
+            Ok(Some(s)) if s.success() => break,
+            Ok(Some(_)) => return None,
+            Ok(None) => {}
+            Err(_) => {
+                terminate(&mut child);
+                return None;
+            }
+        }
+        thread::sleep(Duration::from_millis(40));
+    }
+    use std::io::{Read, Seek, SeekFrom};
+    output.seek(SeekFrom::Start(0)).ok()?;
+    let mut data = vec![];
+    output.take(160001).read_to_end(&mut data).ok()?;
+    if data.len() > 160000 || !data.starts_with(&[0xff, 0xd8]) || !data.ends_with(&[0xff, 0xd9]) {
+        return None;
+    }
+    Some(format!("data:image/jpeg;base64,{}", encode_base64(&data)))
+}
 fn download_once(
     j: &Job,
     s: &Settings,
     cancel: &AtomicBool,
     mut progress: impl FnMut(f64, String),
+    section: bool,
 ) -> Result<Vec<PathBuf>> {
     if !s.yt_dlp.is_absolute()
         || !s.yt_dlp.is_file()
@@ -1263,6 +1550,7 @@ fn download_once(
     }
     fs::create_dir_all(&j.destination).map_err(err)?;
     let staging = Stage::open(j)?;
+    let _preview = PreviewStage::new(j.id.clone(), staging.path().to_owned());
     let mut c = command(&s.yt_dlp);
     c.args([
         "--ignore-config",
@@ -1305,6 +1593,15 @@ fn download_once(
             "after_move:%(.{filepath,title,artist,album_artist,channel,uploader,series,tv_show,movie,movie_title,vcodec,track,genre,game,game_title})j",
         ])
         .arg(staging.path().join("outputs.jsonl"));
+    if section {
+        let start = j.options.clip_start.unwrap_or(0.);
+        let end = j.options.clip_end.ok_or("Missing clip end")?;
+        c.args([
+            "--download-sections",
+            &format!("*{start:.6}-{end:.6}"),
+            "--force-keyframes-at-cuts",
+        ]);
+    }
     if !j.options.subtitle_languages.is_empty() {
         c.args([
             "--write-subs",
@@ -1380,9 +1677,16 @@ fn download_once(
             terminate(&mut child);
             break Err("Cancelled".into());
         }
-        if started.elapsed() > Duration::from_secs(4 * 3600) {
+        if started.elapsed()
+            > Duration::from_secs(if section {
+                180 + (j.options.clip_end.unwrap_or(0.) - j.options.clip_start.unwrap_or(0.)).ceil()
+                    as u64
+            } else {
+                4 * 3600
+            })
+        {
             terminate(&mut child);
-            break Err("Operation exceeded four hours.".into());
+            break Err("Media operation timed out.".into());
         }
         while let Ok(line) = rx.try_recv() {
             if let Some(value) = line.strip_prefix("QC:") {
@@ -1430,6 +1734,9 @@ fn download_once(
     let _ = reader.join();
     let hint = errors.join().ok().flatten();
     if let Err(mut e) = exit {
+        if section && !cancel.load(Ordering::SeqCst) {
+            return Err(format!("Section unavailable: {e}"));
+        }
         // Retry only before ANY staged file exists. Never redownload or duplicate published outputs.
         if !cancel.load(Ordering::SeqCst)
             && hint == Some("Network error. Check connectivity and retry.")
@@ -1451,6 +1758,7 @@ fn download_once(
             retained.display()
         ));
     }
+    let mut publication_started = false;
     let result = (|| -> Result<Vec<PathBuf>> {
         let mut files = vec![];
         let mut seen = std::collections::HashSet::new();
@@ -1489,13 +1797,31 @@ fn download_once(
             } else {
                 vec![]
             };
-            let ready = if j.preset == "editor" {
+            let ready = if j.preset == "editor" || section {
                 progress(0.98, "Verifying editor compatibility".into());
                 ensure_editor(&path, &s.ffmpeg, &j.quality, cancel)?
             } else {
                 path.clone()
             };
-            let ready = if j.options.clipping() {
+            let ready = if section {
+                let duration = media_options::inspect_duration(&ready, &s.ffmpeg)?;
+                let expected =
+                    j.options.clip_end.unwrap_or(0.) - j.options.clip_start.unwrap_or(0.);
+                if (duration - expected).abs() > 0.25_f64.max(expected * 0.02) {
+                    return Err("Fast clip duration mismatch".into());
+                }
+                let stem = ready
+                    .file_stem()
+                    .and_then(|v| v.to_str())
+                    .ok_or("Invalid clip name")?;
+                let output = ready.with_file_name(format!(
+                    "{stem} [clip {}-{}].mp4",
+                    j.options.clip_start.unwrap_or(0.),
+                    j.options.clip_end.unwrap_or(0.)
+                ));
+                fs::rename(&ready, &output).map_err(err)?;
+                output
+            } else if j.options.clipping() {
                 progress(0.98, "Trimming clip".into());
                 media_options::clip(&ready, &s.ffmpeg, &j.options, cancel)?
             } else {
@@ -1517,6 +1843,7 @@ fn download_once(
             } else {
                 &j.destination
             };
+            publication_started = true;
             let published = publish(&ready, target)?;
             let stem = published
                 .file_stem()
@@ -1570,6 +1897,9 @@ fn download_once(
             Ok(files)
         }
         Err(e) => {
+            if section && !publication_started && !cancel.load(Ordering::SeqCst) {
+                return Err(format!("Section unavailable: {e}"));
+            }
             let retained = staging.keep();
             Err(format!("{e} Staging retained at {}", retained.display()))
         }
@@ -1707,6 +2037,51 @@ mod tests {
         assert_eq!(fs::read(dest.join("source.mp4")).unwrap(), b"old");
     }
     #[test]
+    #[ignore = "Requires local FFmpeg fixture"]
+    fn partial_preview_frames() {
+        let dir = tempfile::tempdir().unwrap();
+        let ffmpeg = PathBuf::from(std::env::var("QC_TEST_FFMPEG").unwrap());
+        let source = dir.path().join("fixture.mp4");
+        assert!(command(&ffmpeg)
+            .args([
+                "-v",
+                "error",
+                "-f",
+                "lavfi",
+                "-i",
+                "testsrc2=s=320x180:r=24:d=8",
+                "-c:v",
+                "libx264",
+                "-g",
+                "24",
+                "-threads",
+                "1",
+                "-movflags",
+                "+faststart"
+            ])
+            .arg(&source)
+            .status()
+            .unwrap()
+            .success());
+        let bytes = fs::read(&source).unwrap();
+        let stage = tempfile::tempdir().unwrap();
+        fs::write(
+            stage.path().join("fixture.mp4.part"),
+            &bytes[..bytes.len() * 3 / 4],
+        )
+        .unwrap();
+        let id = Uuid::new_v4().simple().to_string();
+        let _live = PreviewStage::new(id.clone(), stage.path().into());
+        let first = live_frame(&id, &ffmpeg, 0.5).expect("first real partial frame");
+        let second = live_frame(&id, &ffmpeg, 3.).expect("second real partial frame");
+        assert_ne!(first, second);
+        println!(
+            "Two distinct JPEG frames from incomplete local MP4: {} and {} base64 characters",
+            first.len(),
+            second.len()
+        );
+    }
+    #[test]
     #[ignore = "Requires installed yt-dlp and FFmpeg; no Internet media needed"]
     fn range_resume() {
         use std::{
@@ -1731,7 +2106,9 @@ mod tests {
                 "-q:v",
                 "1",
                 "-threads",
-                "2"
+                "2",
+                "-movflags",
+                "+faststart"
             ])
             .arg(&source)
             .status()
@@ -1743,7 +2120,9 @@ mod tests {
         let addr = listener.local_addr().unwrap();
         listener.set_nonblocking(true).unwrap();
         let stop = Arc::new(AtomicBool::new(false));
-        let high = Arc::new(AtomicU64::new(0));
+        let high = Arc::new(AtomicU64::new(u64::MAX));
+        let transferred = Arc::new(AtomicU64::new(0));
+        let server_bytes = transferred.clone();
         let server_stop = stop.clone();
         let server_high = high.clone();
         let payload = bytes.clone();
@@ -1755,6 +2134,7 @@ mod tests {
                         let data = payload.clone();
                         let range_seen = server_high.clone();
                         let stopping = server_stop.clone();
+                        let count = server_bytes.clone();
                         workers.push(thread::spawn(move||{
                             let _=sock.set_read_timeout(Some(Duration::from_secs(3)));let _=sock.set_write_timeout(Some(Duration::from_secs(3)));
                             let mut request=vec![];let mut byte=[0];
@@ -1762,12 +2142,12 @@ mod tests {
                             let text=String::from_utf8_lossy(&request).to_ascii_lowercase();
                             let range=text.lines().find_map(|line|line.strip_prefix("range: bytes=")).and_then(|v|v.split('-').next()).and_then(|v|v.parse::<usize>().ok()).unwrap_or(0);
                             if range>=data.len(){let _=sock.write_all(b"HTTP/1.1 416 Range Not Satisfiable\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");return}
-                            if range>0{range_seen.fetch_max(range as u64,Ordering::SeqCst);}
+                            if range>0{range_seen.fetch_min(range as u64,Ordering::SeqCst);}
                             let status=if range>0{"206 Partial Content"}else{"200 OK"};
                             let extra=if range>0{format!("Content-Range: bytes {}-{}/{}\r\n",range,data.len()-1,data.len())}else{String::new()};
                             let h=format!("HTTP/1.1 {status}\r\nContent-Type: video/mp4\r\nAccept-Ranges: bytes\r\nContent-Length: {}\r\n{extra}Connection: close\r\n\r\n",data.len()-range);
                             if sock.write_all(h.as_bytes()).is_err(){return}
-                            if !text.starts_with("head "){for block in data[range..].chunks(16*1024){if stopping.load(Ordering::SeqCst)||sock.write_all(block).is_err(){break;}thread::sleep(Duration::from_millis(15));}}
+                            if !text.starts_with("head "){for block in data[range..].chunks(16*1024){if stopping.load(Ordering::SeqCst)||sock.write_all(block).is_err(){break;}count.fetch_add(block.len() as u64,Ordering::SeqCst);thread::sleep(Duration::from_millis(15));}}
                             let _=sock.flush();let _=sock.shutdown(std::net::Shutdown::Write);
                         }));
                     }
@@ -1845,7 +2225,8 @@ mod tests {
             assert!(partial > 0 && partial < bytes.len() as u64);
             // Reopen persisted paused job, equivalent to an orderly app restart.
             drop(engine);
-            let reopened = Engine::open(state, settings).unwrap();
+            high.store(u64::MAX, Ordering::SeqCst);
+            let reopened = Engine::open(state, settings.clone()).unwrap();
             assert_eq!(reopened.snapshot().jobs[0].status, Status::Paused);
             reopened.hold(&id, false).unwrap();
             let started = Instant::now();
@@ -1874,6 +2255,26 @@ mod tests {
                 "Range resume: retained {partial}, requested {requested}, exact output {} bytes",
                 bytes.len()
             );
+            // Test the section path separately, with real HTTP Range bytes and validated duration.
+            transferred.store(0, Ordering::SeqCst);
+            let mut clip = final_job.clone();
+            clip.id = Uuid::new_v4().simple().to_string();
+            clip.preset = "editor".into();
+            clip.options = MediaOptions {
+                clip_start: Some(8.),
+                clip_end: Some(9.),
+                ..Default::default()
+            };
+            let mut fallback = false;
+            let files = download(&clip, &settings, &AtomicBool::new(false), |_, m| {
+                if m.starts_with("Source needs full") {
+                    fallback = true;
+                }
+            })
+            .unwrap();
+            let duration = media_options::inspect_duration(&files[0], &settings.ffmpeg).unwrap();
+            assert!((duration - 1.).abs() < 0.25);
+            println!("Section fixture: duration {duration}s, transmitted {} / {} bytes, fallback {fallback}",transferred.load(Ordering::SeqCst),bytes.len());
         })();
         stop.store(true, Ordering::SeqCst);
         server.join().unwrap();
@@ -2066,7 +2467,7 @@ mod tests {
             thumb_preview
         );
         let files = result.unwrap();
-        assert_eq!(files[0].parent().unwrap().file_name().unwrap(), "Video");
+        assert!(files[0].parent().unwrap().ends_with("Video/Other"));
         assert_eq!(files.len(), 1);
         assert!(files[0].is_file());
         assert!(source.is_file());

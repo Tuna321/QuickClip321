@@ -274,7 +274,7 @@ dependencies = [
 
 [[package]]
 name = "quickclip-core"
-version = "3.0.0-beta.4"
+version = "3.0.0-beta.5"
 dependencies = [
  "serde",
  "serde_json",
@@ -287,7 +287,7 @@ dependencies = [
 
 [[package]]
 name = "quickclip321-native"
-version = "3.0.0-beta.4"
+version = "3.0.0-beta.5"
 dependencies = [
  "quickclip-core",
  "windows-sys",

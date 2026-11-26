@@ -33,6 +33,13 @@ pub struct Preferences {
     pub popup_y: f64,
     pub startup_view: String,
     pub theme: String,
+    pub language: String,
+    pub open_hotkey: String,
+    pub shortcuts: BTreeMap<String, String>,
+    pub always_on_top: bool,
+    pub last_destination: Option<PathBuf>,
+    pub last_organize: bool,
+    pub last_video_quality: String,
     pub accent: String,
     pub clipboard_monitor: bool,
     pub smart_organizer: bool,
@@ -57,6 +64,13 @@ impl Default for Preferences {
             popup_y: 0.5,
             startup_view: "quick".into(),
             theme: "Dark".into(),
+            language: "en".into(),
+            open_hotkey: "Ctrl+Alt+Space".into(),
+            shortcuts: BTreeMap::new(),
+            always_on_top: true,
+            last_destination: None,
+            last_organize: true,
+            last_video_quality: "1080".into(),
             accent: "Purple".into(),
             clipboard_monitor: true,
             smart_organizer: true,
@@ -67,7 +81,7 @@ impl Default for Preferences {
             default_quality: "1080".into(),
             fragment_concurrency: 4,
             material: "Flat".into(),
-            detailed_folders: false,
+            detailed_folders: true,
             concurrent_downloads: 1,
             profiles: vec![],
             rules: vec![],
@@ -75,9 +89,95 @@ impl Default for Preferences {
         }
     }
 }
+pub const SHORTCUTS: [(&str, &str, bool); 8] = [
+    ("open", "Ctrl+Alt+Space", true),
+    ("download", "Ctrl+Shift+D", true),
+    ("mp3", "Ctrl+Shift+3", true),
+    ("mp4", "Ctrl+Shift+4", true),
+    ("folder", "Ctrl+Shift+O", true),
+    ("submit", "Ctrl+Enter", false),
+    ("link", "Ctrl+L", false),
+    ("hide", "Esc", false),
+];
+pub fn parse_shortcut(key: &str, global: bool) -> Option<(u32, u32)> {
+    let parts = key.split('+').collect::<Vec<_>>();
+    let last = *parts.last()?;
+    let mut mods = 0;
+    for part in &parts[..parts.len() - 1] {
+        let bit = match *part {
+            "Ctrl" => 2,
+            "Alt" => 1,
+            "Shift" => 4,
+            _ => return None,
+        };
+        if mods & bit != 0 {
+            return None;
+        }
+        mods |= bit;
+    }
+    // Do not reserve plain typing keys or AltGr combinations with printable characters.
+    if global && (mods & 3 == 0 || (mods & 3 == 3 && last != "Space" && last.len() == 1)) {
+        return None;
+    }
+    if !global && mods == 0 && last != "Esc" && !last.starts_with('F') {
+        return None;
+    }
+    let vk = match last {
+        "Space" => 32,
+        "Enter" => 13,
+        "Esc" => 27,
+        "Tab" => 9,
+        v if v.len() == 1 && v.as_bytes()[0].is_ascii_uppercase() => v.as_bytes()[0] as u32,
+        v if v.len() == 1 && v.as_bytes()[0].is_ascii_digit() => v.as_bytes()[0] as u32,
+        v if v.starts_with('F') => {
+            let n = v[1..].parse::<u32>().ok()?;
+            if !(1..=12).contains(&n) {
+                return None;
+            }
+            111 + n
+        }
+        _ => return None,
+    };
+    Some((mods, vk))
+}
 impl Preferences {
+    pub fn effective_shortcuts(&self) -> BTreeMap<String, String> {
+        SHORTCUTS
+            .iter()
+            .map(|(id, default, _)| {
+                (
+                    id.to_string(),
+                    self.shortcuts.get(*id).cloned().unwrap_or_else(|| {
+                        if *id == "open" {
+                            self.open_hotkey.clone()
+                        } else {
+                            default.to_string()
+                        }
+                    }),
+                )
+            })
+            .collect()
+    }
     pub fn normalize(&mut self) {
         let d = Self::default();
+        if !matches!(self.language.as_str(), "en" | "tr") {
+            self.language = d.language.clone();
+        }
+        if parse_shortcut(&self.open_hotkey, true).is_none() && self.open_hotkey != "Off" {
+            self.open_hotkey = d.open_hotkey.clone();
+        }
+        self.shortcuts.retain(|action, key| {
+            SHORTCUTS.iter().any(|(name, _, global)| {
+                *name == action && (key == "Off" || parse_shortcut(key, *global).is_some())
+            })
+        });
+        if self
+            .last_destination
+            .as_ref()
+            .is_some_and(|p| !p.is_absolute())
+        {
+            self.last_destination = None;
+        }
         if !matches!(self.popup_mode.as_str(), "Tray" | "Corner" | "Custom") {
             self.popup_mode = d.popup_mode;
         }
@@ -124,6 +224,12 @@ impl Preferences {
             "best" | "2160" | "1440" | "1080" | "720" | "480" | "360"
         ) {
             self.default_quality = d.default_quality;
+        }
+        if !matches!(
+            self.last_video_quality.as_str(),
+            "best" | "2160" | "1440" | "1080" | "720" | "480" | "360"
+        ) {
+            self.last_video_quality = "1080".into();
         }
         self.fragment_concurrency = self.fragment_concurrency.clamp(1, 8);
         if !matches!(self.material.as_str(), "Flat" | "Glass" | "Carbon" | "Sand") {
@@ -282,4 +388,19 @@ mod tests {
         p.popup_mode = "Corner".into();
         assert_eq!(popup_position(a, (600, 395), None, &p, 8), (-608, 637));
     }
+}
+
+#[cfg(test)]
+#[test]
+fn shortcut_validation() {
+    let p = Preferences::default();
+    let keys = p.effective_shortcuts();
+    assert_eq!(keys.len(), 8);
+    for (id, _, global) in SHORTCUTS {
+        assert!(parse_shortcut(&keys[id], global).is_some(), "{id}");
+    }
+    assert_eq!(parse_shortcut("Ctrl+Shift+3", true), Some((6, 51)));
+    assert!(parse_shortcut("A", true).is_none());
+    assert!(parse_shortcut("Ctrl+Alt+Q", true).is_none());
+    assert!(parse_shortcut("Esc", false).is_some());
 }
