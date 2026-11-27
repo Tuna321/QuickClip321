@@ -1,4 +1,4 @@
-use super::{command, err, terminate, ProcessTree, Result};
+use super::{bounded_output, command, err, terminate, ProcessTree, Result};
 use serde::{Deserialize, Serialize};
 use std::{
     fs,
@@ -54,23 +54,19 @@ impl MediaOptions {
         self.clip_start.is_some() || self.clip_end.is_some()
     }
 }
-fn duration(path: &Path, ffprobe: &Path) -> Result<f64> {
-    let out = command(ffprobe)
-        .args([
-            "-v",
-            "error",
-            "-show_entries",
-            "format=duration",
-            "-of",
-            "default=noprint_wrappers=1:nokey=1",
-        ])
-        .arg(path)
-        .output()
-        .map_err(err)?;
-    if !out.status.success() {
-        return Err("Cannot inspect clip duration.".into());
-    }
-    let d = String::from_utf8_lossy(&out.stdout)
+fn duration(path: &Path, ffprobe: &Path, cancel: &AtomicBool) -> Result<f64> {
+    let mut c = command(ffprobe);
+    c.args([
+        "-v",
+        "error",
+        "-show_entries",
+        "format=duration",
+        "-of",
+        "default=noprint_wrappers=1:nokey=1",
+    ])
+    .arg(path);
+    let out = bounded_output(&mut c, cancel, Duration::from_secs(30))?;
+    let d = String::from_utf8_lossy(&out)
         .trim()
         .parse::<f64>()
         .map_err(err)?;
@@ -80,6 +76,13 @@ fn duration(path: &Path, ffprobe: &Path) -> Result<f64> {
     Ok(d)
 }
 pub fn inspect_duration(path: &Path, ffmpeg: &Path) -> Result<f64> {
+    inspect_duration_cancel(path, ffmpeg, &AtomicBool::new(false))
+}
+pub(crate) fn inspect_duration_cancel(
+    path: &Path,
+    ffmpeg: &Path,
+    cancel: &AtomicBool,
+) -> Result<f64> {
     duration(
         path,
         &ffmpeg.with_file_name(if cfg!(windows) {
@@ -87,6 +90,7 @@ pub fn inspect_duration(path: &Path, ffmpeg: &Path) -> Result<f64> {
         } else {
             "ffprobe"
         }),
+        cancel,
     )
 }
 pub fn clip(
@@ -103,7 +107,7 @@ pub fn clip(
     } else {
         "ffprobe"
     });
-    let d = duration(source, &probe)?;
+    let d = duration(source, &probe, cancel)?;
     let start = options.clip_start.unwrap_or(0.);
     let end = options.clip_end.unwrap_or(d);
     if start >= d || end > d + 0.05 {
@@ -192,7 +196,7 @@ pub fn clip(
         }
         thread::sleep(Duration::from_millis(100));
     }
-    let actual = duration(&target, &probe)?;
+    let actual = duration(&target, &probe, cancel)?;
     let expected = end - start;
     if (actual - expected).abs() > 0.25_f64.max(expected * 0.02) {
         return Err("Clip duration verification failed.".into());
@@ -234,6 +238,17 @@ pub fn trim_subtitle(text: &str, options: &MediaOptions, srt: bool) -> String {
     let mut result = vec![];
     for block in normalized.split("\n\n") {
         let lines = block.lines().collect::<Vec<_>>();
+        if !srt
+            && lines.first().is_some_and(|line| {
+                *line == "STYLE"
+                    || *line == "REGION"
+                    || *line == "NOTE"
+                    || line.starts_with("NOTE ")
+            })
+        {
+            result.push(block.to_string());
+            continue;
+        }
         let Some((index, line)) = lines
             .iter()
             .enumerate()
@@ -256,6 +271,8 @@ pub fn trim_subtitle(text: &str, options: &MediaOptions, srt: bool) -> String {
         let mut cue = vec![];
         if srt {
             cue.push((result.len() + 1).to_string());
+        } else if index > 0 && !lines[index - 1].starts_with("WEBVTT") {
+            cue.push(lines[index - 1].to_string());
         }
         cue.push(format!(
             "{} --> {}{}",

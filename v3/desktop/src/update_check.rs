@@ -3,6 +3,22 @@
 use semver::Version;
 use serde::Serialize;
 const API: &str = "https://api.github.com/repos/Tuna321/QuickClip321/releases?per_page=30";
+const PAGE_SIZE: usize = 30;
+const MAX_PAGES: usize = 10;
+fn collect_releases(
+    mut fetch: impl FnMut(usize) -> Result<Vec<serde_json::Value>, String>,
+) -> Result<serde_json::Value, String> {
+    let mut all = Vec::new();
+    for page in 1..=MAX_PAGES {
+        let entries = fetch(page)?;
+        let last = entries.len() < PAGE_SIZE;
+        all.extend(entries);
+        if last {
+            return Ok(serde_json::Value::Array(all));
+        }
+    }
+    Err("Release history exceeds discovery limit; check releases manually".into())
+}
 #[derive(Clone, Debug, Serialize)]
 pub struct UpdateInfo {
     pub installed: String,
@@ -137,38 +153,41 @@ pub fn check(channel: &str) -> Result<UpdateInfo, String> {
     )
     .join("System32")
     .join("curl.exe");
-    let mut cmd = std::process::Command::new(path);
-    #[cfg(windows)]
-    {
-        use std::os::windows::process::CommandExt;
-        cmd.creation_flags(0x08000000);
-    }
-    let output = cmd
-        .args([
-            "-q",
-            "--silent",
-            "--show-error",
-            "--fail",
-            "--proto",
-            "=https",
-            "--connect-timeout",
-            "5",
-            "--max-time",
-            "15",
-            "--max-filesize",
-            "2097152",
-            "--header",
-            "Accept: application/vnd.github+json",
-            "--user-agent",
-            "QuickClip321-update-check",
-            API,
-        ])
-        .output()
-        .map_err(|_| "Update check unavailable")?;
-    if !output.status.success() || output.stdout.len() > 2_097_152 {
-        return Err("Could not check releases; retry later".into());
-    }
-    let data = serde_json::from_slice(&output.stdout).map_err(|_| "Invalid release response")?;
+    let data = collect_releases(|page| {
+        let endpoint = format!("{API}&page={page}");
+        let mut cmd = std::process::Command::new(&path);
+        #[cfg(windows)]
+        {
+            use std::os::windows::process::CommandExt;
+            cmd.creation_flags(0x08000000);
+        }
+        let output = cmd
+            .args([
+                "-q",
+                "--silent",
+                "--show-error",
+                "--fail",
+                "--proto",
+                "=https",
+                "--connect-timeout",
+                "5",
+                "--max-time",
+                "15",
+                "--max-filesize",
+                "2097152",
+                "--header",
+                "Accept: application/vnd.github+json",
+                "--user-agent",
+                "QuickClip321-update-check",
+                &endpoint,
+            ])
+            .output()
+            .map_err(|_| "Update check unavailable")?;
+        if !output.status.success() || output.stdout.len() > 2_097_152 {
+            return Err("Could not check releases; retry later".into());
+        }
+        serde_json::from_slice(&output.stdout).map_err(|_| "Invalid release response".into())
+    })?;
     select(&data, env!("CARGO_PKG_VERSION"), channel)
 }
 #[cfg(test)]
@@ -176,6 +195,24 @@ mod tests {
     use super::*;
     fn release(v: &str, pre: bool, draft: bool) -> serde_json::Value {
         serde_json::json!({"tag_name":format!("v{v}"),"draft":draft,"prerelease":pre,"assets":[{"name":format!("QuickClip321-{v}-win-x64.exe"),"state":"uploaded","size":1234}]})
+    }
+    #[test]
+    fn stable_release_after_more_than_thirty_nightlies_is_discovered() {
+        let stable = release("3.0.0", false, false);
+        let nightly = (0..30)
+            .map(|n| release(&format!("3.1.0-nightly.{n}"), true, false))
+            .collect::<Vec<_>>();
+        let data = collect_releases(|page| {
+            Ok(if page == 1 {
+                nightly.clone()
+            } else {
+                vec![stable.clone()]
+            })
+        })
+        .unwrap();
+        let info = select(&data, "2.9.0", "stable").unwrap();
+        assert_eq!(info.latest_in_channel.as_deref(), Some("3.0.0"));
+        assert!(collect_releases(|_| Ok(nightly.clone())).is_err());
     }
     #[test]
     fn channels_and_downgrade() {

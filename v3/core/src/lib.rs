@@ -60,7 +60,7 @@ pub struct Request {
     pub options: MediaOptions,
     pub destination: PathBuf,
 }
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct Settings {
     pub destination: PathBuf,
     pub yt_dlp: PathBuf,
@@ -81,7 +81,7 @@ pub fn validate_url(raw: &str) -> Result<String> {
     if raw.len() > 4096 || raw.chars().any(char::is_whitespace) {
         return Err("Enter a valid media URL.".into());
     }
-    let normalized = if raw.starts_with("www.") {
+    let normalized = if raw.get(..4).is_some_and(|v| v.eq_ignore_ascii_case("www.")) {
         format!("https://{raw}")
     } else {
         raw.to_owned()
@@ -260,10 +260,16 @@ fn js_runtime(tool: &Path) -> String {
         .unwrap_or_else(|| "node".into())
 }
 pub fn preview(raw: &str, tool: &Path) -> Result<Preview> {
+    preview_cancel(raw, tool, &AtomicBool::new(false))
+}
+pub fn preview_cancel(raw: &str, tool: &Path, cancel: &AtomicBool) -> Result<Preview> {
     use std::io::{Read, Seek, SeekFrom};
     let url = validate_url(raw.trim())?;
-    if !tool.is_absolute() || !tool.is_file() {
+    if !executable_file(tool) {
         return Err("Media engine is not configured.".into());
+    }
+    if cancel.load(Ordering::SeqCst) {
+        return Err("Preview superseded.".into());
     }
     let mut output = tempfile::tempfile().map_err(err)?;
     let thumbs = tempfile::tempdir().map_err(err)?;
@@ -310,11 +316,12 @@ pub fn preview(raw: &str, tool: &Path) -> Result<Preview> {
     let _owner = ProcessTree::attach(&mut child)?;
     let started = Instant::now();
     loop {
-        if started.elapsed() > Duration::from_secs(22)
+        if cancel.load(Ordering::SeqCst)
+            || started.elapsed() > Duration::from_secs(22)
             || output.metadata().map_err(err)?.len() > 8_000_000
         {
             terminate(&mut child);
-            return Err("Preview timed out or exceeded its size limit.".into());
+            return Err("Preview cancelled, timed out or exceeded its size limit.".into());
         }
         match child.try_wait() {
             Ok(Some(s)) if s.success() => break,
@@ -465,7 +472,28 @@ pub fn selector(preset: &str, quality: &str) -> Result<String> {
         _ => Err("Unknown preset.".into()),
     }
 }
+fn atomic_bytes(path: &Path, bytes: &[u8]) -> Result<()> {
+    let dir = path.parent().ok_or("Missing state directory")?;
+    fs::create_dir_all(dir).map_err(err)?;
+    let mut tmp = tempfile::NamedTempFile::new_in(dir).map_err(err)?;
+    tmp.write_all(bytes).map_err(err)?;
+    tmp.as_file().sync_all().map_err(err)?;
+    tmp.persist(path).map_err(err)?;
+    Ok(())
+}
+fn backup_path(path: &Path) -> PathBuf {
+    path.with_extension("json.backup")
+}
 fn persist(path: &Path, state: &Snapshot) -> Result<()> {
+    // Never replace a good backup with unreadable or corrupt state.
+    match fs::read(path) {
+        Ok(bytes) if serde_json::from_slice::<Snapshot>(&bytes).is_ok() => {
+            atomic_bytes(&backup_path(path), &bytes)?;
+        }
+        Ok(_) => {}
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+        Err(e) => return Err(err(e)),
+    }
     let dir = path.parent().ok_or("Missing state directory")?;
     fs::create_dir_all(dir).map_err(err)?;
     let mut tmp = tempfile::NamedTempFile::new_in(dir).map_err(err)?;
@@ -502,6 +530,7 @@ pub struct Engine {
     inner: Arc<Mutex<Inner>>,
     setup_progress: Arc<Mutex<SetupProgress>>,
     file: PathBuf,
+    recovery: Option<String>,
 }
 struct ToolMaintenance(Engine);
 impl Drop for ToolMaintenance {
@@ -527,13 +556,43 @@ impl Engine {
     }
 
     pub fn open(file: PathBuf, defaults: Settings) -> Result<Self> {
+        let fresh = || Snapshot {
+            settings: defaults.clone(),
+            jobs: vec![],
+        };
+        let mut recovery = None;
         let mut state = match fs::read(&file) {
-            Ok(bytes) => serde_json::from_slice::<Snapshot>(&bytes)
-                .map_err(|_| "State file is damaged; preserved for recovery.")?,
-            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Snapshot {
-                settings: defaults.clone(),
-                jobs: vec![],
+            Ok(bytes) => match serde_json::from_slice::<Snapshot>(&bytes) {
+                Ok(state) => state,
+                Err(_) => {
+                    // Preserve exact bytes before writing anything to the original location.
+                    let damaged = file.with_extension(format!("json.corrupt-{}", Uuid::new_v4()));
+                    atomic_bytes(&damaged, &bytes)?;
+                    let backup = fs::read(backup_path(&file))
+                        .ok()
+                        .and_then(|b| serde_json::from_slice::<Snapshot>(&b).ok());
+                    recovery = Some(if backup.is_some() {
+                        format!(
+                            "Damaged state recovered from backup. Original preserved at {}",
+                            damaged.display()
+                        )
+                    } else {
+                        format!("Damaged state preserved at {}. Started with default settings; history needs manual recovery.", damaged.display())
+                    });
+                    backup.unwrap_or_else(fresh)
+                }
             },
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+                if let Some(backup) = fs::read(backup_path(&file))
+                    .ok()
+                    .and_then(|b| serde_json::from_slice::<Snapshot>(&b).ok())
+                {
+                    recovery = Some("Missing state restored from backup.".into());
+                    backup
+                } else {
+                    fresh()
+                }
+            }
             Err(e) => return Err(err(e)),
         };
         if state.settings.yt_dlp.as_os_str().is_empty() {
@@ -549,7 +608,7 @@ impl Engine {
                 j.resume_on_startup = true;
                 j.message = "Saved queue; resume when ready".into();
             } else if j.status == Status::Running {
-                if safe_partial(j) {
+                if j.files.is_empty() && safe_partial(j) {
                     j.status = Status::Paused;
                     j.resume_on_startup = true;
                     j.message = "Interrupted; partial data retained".into();
@@ -558,6 +617,11 @@ impl Engine {
                     j.resume_on_startup = false;
                     j.message = "Interrupted. Retry explicitly.".into();
                 }
+            }
+        }
+        if recovery.is_some() {
+            for job in &mut state.jobs {
+                job.resume_on_startup = false;
             }
         }
         persist(&file, &state)?;
@@ -572,7 +636,11 @@ impl Engine {
             })),
             setup_progress: Arc::new(Mutex::new(SetupProgress::default())),
             file,
+            recovery,
         })
+    }
+    pub fn recovery_notice(&self) -> Option<&str> {
+        self.recovery.as_deref()
     }
     pub fn setup_progress(&self) -> SetupProgress {
         self.setup_progress.lock().unwrap().clone()
@@ -595,7 +663,12 @@ impl Engine {
             return Err("Unsafe tool directory".into());
         }
         let target = dir.join("yt-dlp.exe");
-        if !target.exists() {
+        if !verified_ytdlp(&target) {
+            if let Ok(meta) = fs::symlink_metadata(&target) {
+                if !meta.is_file() || !ordinary(&meta) {
+                    return Err("Unsafe managed yt-dlp path.".into());
+                }
+            }
             let cached = root.join("managed-2026.11.23-9.1-24.22.3/yt-dlp.exe");
             let tmp = tempfile::NamedTempFile::new_in(&dir).map_err(err)?;
             if verified_ytdlp(&cached) {
@@ -636,7 +709,18 @@ impl Engine {
             if !verified_ytdlp(tmp.path()) {
                 return Err("yt-dlp integrity verification failed; previous tool preserved".into());
             }
-            tmp.persist_noclobber(&target).map_err(err)?;
+            if target.exists() {
+                let quarantine = dir.join(format!("yt-dlp.corrupt-{}.exe", Uuid::new_v4()));
+                fs::rename(&target, &quarantine).map_err(err)?;
+                if let Err(e) = tmp.persist_noclobber(&target) {
+                    if !target.exists() {
+                        let _ = fs::rename(&quarantine, &target);
+                    }
+                    return Err(err(e));
+                }
+            } else {
+                tmp.persist_noclobber(&target).map_err(err)?;
+            }
         }
         if !verified_ytdlp(&target) {
             return Err(
@@ -882,27 +966,83 @@ impl Engine {
     pub fn snapshot(&self) -> Snapshot {
         self.inner.lock().unwrap().state.clone()
     }
-    pub fn settings(&self, mut settings: Settings) -> Result<()> {
-        settings.prefs.normalize();
-        if !settings.destination.is_absolute() {
-            return Err("Choose an absolute destination folder.".into());
-        }
-        for tool in [&settings.yt_dlp, &settings.ffmpeg] {
-            if !tool.as_os_str().is_empty() && (!tool.is_absolute() || !tool.is_file()) {
-                return Err("Tool paths must identify existing executable files.".into());
+    pub fn settings_snapshot(&self) -> Settings {
+        self.inner.lock().unwrap().state.settings.clone()
+    }
+    pub fn active_snapshot(&self) -> Snapshot {
+        let x = self.inner.lock().unwrap();
+        let state = &x.state;
+        let mut jobs = state
+            .jobs
+            .iter()
+            .filter(|j| matches!(j.status, Status::Running | Status::Queued | Status::Paused))
+            .cloned()
+            .collect::<Vec<_>>();
+        if let Some(last) = state.jobs.last() {
+            if !jobs.iter().any(|j| j.id == last.id) {
+                jobs.push(last.clone());
             }
         }
+        Snapshot {
+            settings: state.settings.clone(),
+            jobs,
+        }
+    }
+    pub fn settings(&self, settings: Settings) -> Result<()> {
+        self.modify_settings(true, |current| {
+            *current = settings;
+            Ok(())
+        })
+        .map(|_| ())
+    }
+    // All read/modify/write operations hold the same engine lock as queue updates.
+    pub fn modify_settings(
+        &self,
+        validate_all: bool,
+        edit: impl FnOnce(&mut Settings) -> Result<()>,
+    ) -> Result<Settings> {
         let mut x = self.inner.lock().unwrap();
         if x.shutting_down || x.maintenance {
             return Err("Wait for maintenance to finish.".into());
         }
         let mut next = x.state.clone();
-        next.settings = settings;
-        persist(&self.file, &next)?;
-        x.state = next;
+        edit(&mut next.settings)?;
+        let settings = &mut next.settings;
+        settings.prefs.normalize();
+        let old = &x.state.settings;
+        if validate_all || settings.destination != old.destination {
+            validate_destination(&settings.destination)?;
+        }
+        if validate_all || settings.prefs.category_paths != old.prefs.category_paths {
+            for path in settings.prefs.category_paths.values() {
+                validate_destination(path)?;
+            }
+        }
+        if validate_all || settings.prefs.last_destination != old.prefs.last_destination {
+            if let Some(path) = &settings.prefs.last_destination {
+                validate_destination(path)?;
+            }
+        }
+        for (tool, previous) in [
+            (&settings.yt_dlp, &old.yt_dlp),
+            (&settings.ffmpeg, &old.ffmpeg),
+        ] {
+            if (validate_all || tool != previous)
+                && !tool.as_os_str().is_empty()
+                && !executable_file(tool)
+            {
+                return Err("Tool paths must identify existing executable files.".into());
+            }
+        }
+        // An unrelated appearance or shortcut patch must not rewrite a corrupt tool path.
+        let result = settings.clone();
+        if &result != old {
+            persist(&self.file, &next)?;
+            x.state = next;
+        }
         drop(x);
         self.kick();
-        Ok(())
+        Ok(result)
     }
     pub fn enqueue(&self, r: Request) -> Result<String> {
         self.enqueue_checked(r, true)
@@ -911,18 +1051,16 @@ impl Engine {
         let url = validate_url(r.url.trim())?;
         selector(&r.preset, &r.quality)?;
         r.options.validate()?;
-        if !r.destination.is_absolute() {
-            return Err("Choose an absolute destination folder.".into());
-        }
+        validate_destination(&r.destination)?;
         let mut x = self.inner.lock().unwrap();
         if x.shutting_down || x.maintenance {
             return Err("Saving queue before exit".into());
         }
         if x.state.jobs.iter().any(|j| {
             matches!(j.status, Status::Queued | Status::Running | Status::Paused)
-                && j.url == url
+                && same_media_url(&j.url, &url, j.playlist || r.playlist)
                 && j.preset == r.preset
-                && j.quality == r.quality
+                && (j.quality == r.quality || matches!(r.preset.as_str(), "mp3" | "m4a" | "wav"))
                 && j.playlist == r.playlist
                 && j.organize == r.organize
                 && same_output_options(&j.options, &r.options)
@@ -1189,6 +1327,9 @@ impl Engine {
         if !matches!(j.status, Status::Failed | Status::Cancelled) {
             return Err("Only failed or cancelled jobs can be retried.".into());
         }
+        if j.files.iter().any(|path| path.is_file()) {
+            return Err("Some outputs were already saved. Open their folder before starting a new download.".into());
+        }
         self.enqueue(Request {
             url: j.url,
             preset: j.preset,
@@ -1202,6 +1343,13 @@ impl Engine {
     pub fn remove(&self, id: &str) -> Result<()> {
         let mut x = self.inner.lock().unwrap();
         let mut next = x.state.clone();
+        if let Some(job) = next
+            .jobs
+            .iter()
+            .find(|j| j.id == id && matches!(j.status, Status::Cancelled | Status::Failed))
+        {
+            cleanup_partial(job)?;
+        }
         next.jobs.retain(|j| {
             j.id != id || matches!(j.status, Status::Running | Status::Queued | Status::Paused)
         });
@@ -1234,16 +1382,30 @@ impl Engine {
         drop(x);
         let engine = self.clone();
         thread::spawn(move || {
-            let result = download(&j, &settings, &cancel, |p, m| {
-                let mut x = engine.inner.lock().unwrap();
-                if x.pause_requests.contains(&j.id) {
-                    return;
-                }
-                if let Some(job) = x.state.jobs.iter_mut().find(|job| job.id == j.id) {
-                    job.progress = p;
-                    job.message = m;
-                }
-            });
+            let mut recorded = Vec::new();
+            let result = download_recording(
+                &j,
+                &settings,
+                &cancel,
+                |p, m| {
+                    let mut x = engine.inner.lock().unwrap();
+                    if x.pause_requests.contains(&j.id) {
+                        return;
+                    }
+                    if let Some(job) = x.state.jobs.iter_mut().find(|job| job.id == j.id) {
+                        job.progress = p;
+                        job.message = m;
+                    }
+                },
+                |path| {
+                    recorded.push(path.clone());
+                    let mut x = engine.inner.lock().unwrap();
+                    if let Some(job) = x.state.jobs.iter_mut().find(|job| job.id == j.id) {
+                        job.files.push(path);
+                    }
+                    persist(&engine.file, &x.state)
+                },
+            );
             let mut x = engine.inner.lock().unwrap();
             let pause_requested = x.pause_requests.remove(&j.id);
             if let Some(job) = x.state.jobs.iter_mut().find(|job| job.id == j.id) {
@@ -1256,7 +1418,8 @@ impl Engine {
                         job.message = "Download completed".into();
                     }
                     Err(e) => {
-                        if pause_requested && safe_partial(job) {
+                        job.files = recorded;
+                        if pause_requested && job.files.is_empty() && safe_partial(job) {
                             job.status = Status::Paused;
                             job.message="Paused. Partial data retained; Resume continues when supported by the source.".into();
                         } else {
@@ -1381,6 +1544,60 @@ pub fn tool_version(path: &Path, flag: &str) -> Option<String> {
         Some(text)
     }
 }
+fn validate_destination(path: &Path) -> Result<()> {
+    if !path.is_absolute() {
+        return Err("Choose an absolute destination folder.".into());
+    }
+    for ancestor in path.ancestors() {
+        match fs::metadata(ancestor) {
+            Ok(meta) if meta.is_dir() => return Ok(()),
+            Ok(_) => {
+                return Err(format!(
+                    "Destination is not a folder: {}",
+                    ancestor.display()
+                ))
+            }
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+            Err(e) => return Err(err(e)),
+        }
+    }
+    Ok(())
+}
+/// Structural check only; does not execute an arbitrary selected file.
+pub fn executable_file(path: &Path) -> bool {
+    if !path.is_absolute() || !path.is_file() {
+        return false;
+    }
+    #[cfg(windows)]
+    {
+        use std::io::{Read, Seek, SeekFrom};
+        let Ok(mut f) = File::open(path) else {
+            return false;
+        };
+        let mut dos = [0u8; 64];
+        if f.read_exact(&mut dos).is_err() || &dos[..2] != b"MZ" {
+            return false;
+        }
+        let offset = u32::from_le_bytes(dos[60..64].try_into().unwrap()) as u64;
+        let mut pe = [0u8; 24];
+        if offset < 64 || f.seek(SeekFrom::Start(offset)).is_err() || f.read_exact(&mut pe).is_err()
+        {
+            return false;
+        }
+        let machine = u16::from_le_bytes([pe[4], pe[5]]);
+        let flags = u16::from_le_bytes([pe[22], pe[23]]);
+        &pe[..4] == b"PE\0\0"
+            && matches!(machine, 0x14c | 0x8664)
+            && flags & 2 != 0
+            && flags & 0x2000 == 0
+    }
+    #[cfg(not(windows))]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        path.metadata()
+            .is_ok_and(|m| m.permissions().mode() & 0o111 != 0)
+    }
+}
 fn command(tool: &Path) -> Command {
     let mut c = Command::new(tool);
     c.env("PYTHONUTF8", "1").env("PYTHONIOENCODING", "utf-8");
@@ -1456,32 +1673,142 @@ fn terminate(child: &mut Child) {
     let _ = child.kill();
     let _ = child.wait();
 }
+fn bounded_output(c: &mut Command, cancel: &AtomicBool, timeout: Duration) -> Result<Vec<u8>> {
+    use std::io::{Read, Seek, SeekFrom};
+    let mut output = tempfile::tempfile().map_err(err)?;
+    c.stdin(Stdio::null())
+        .stdout(Stdio::from(output.try_clone().map_err(err)?))
+        .stderr(Stdio::null());
+    if cancel.load(Ordering::SeqCst) {
+        return Err("Cancelled".into());
+    }
+    let mut child = c.spawn().map_err(err)?;
+    let owner = ProcessTree::attach(&mut child)?;
+    let start = Instant::now();
+    loop {
+        if cancel.load(Ordering::SeqCst)
+            || start.elapsed() >= timeout
+            || output.metadata().map(|m| m.len()).unwrap_or(u64::MAX) > 4_194_304
+        {
+            terminate(&mut child);
+            return Err("Media inspection cancelled, timed out or exceeded output limit.".into());
+        }
+        match child.try_wait() {
+            Ok(Some(status)) if status.success() => break,
+            Ok(Some(_)) => return Err("Media inspection failed.".into()),
+            Ok(None) => {}
+            Err(e) => {
+                terminate(&mut child);
+                return Err(err(e));
+            }
+        }
+        thread::sleep(Duration::from_millis(50));
+    }
+    drop(owner);
+    output.seek(SeekFrom::Start(0)).map_err(err)?;
+    let mut bytes = Vec::new();
+    output
+        .take(4_194_305)
+        .read_to_end(&mut bytes)
+        .map_err(err)?;
+    if bytes.len() > 4_194_304 {
+        return Err("Media inspection exceeded output limit.".into());
+    }
+    Ok(bytes)
+}
+fn prepare_publication(
+    src: &Path,
+    dest: &Path,
+    cancel: &AtomicBool,
+) -> Result<tempfile::NamedTempFile> {
+    use std::io::Read;
+    let mut tmp = tempfile::NamedTempFile::new_in(dest).map_err(err)?;
+    let mut input = File::open(src).map_err(err)?;
+    let mut buf = vec![0u8; 256 * 1024];
+    loop {
+        if cancel.load(Ordering::SeqCst) {
+            return Err("Cancelled".into());
+        }
+        let n = input.read(&mut buf).map_err(err)?;
+        if n == 0 {
+            break;
+        }
+        tmp.write_all(&buf[..n]).map_err(err)?;
+    }
+    tmp.flush().map_err(err)?;
+    tmp.as_file().sync_all().map_err(err)?;
+    Ok(tmp)
+}
+fn publish_group(
+    stem: &str,
+    sources: &[(PathBuf, String)],
+    dest: &Path,
+    cancel: &AtomicBool,
+    mut record: impl FnMut(PathBuf) -> Result<()>,
+) -> Result<()> {
+    let mut suffixes = std::collections::HashSet::new();
+    for (_, suffix) in sources {
+        if !suffix.starts_with('.')
+            || suffix.contains(['/', '\\'])
+            || !suffixes.insert(suffix.to_ascii_lowercase())
+        {
+            return Err("Invalid or duplicate media sidecar suffix.".into());
+        }
+    }
+    let prepared = sources
+        .iter()
+        .map(|(src, _)| prepare_publication(src, dest, cancel))
+        .collect::<Result<Vec<_>>>()?;
+    // Serialize only name allocation and publication, not large file copies.
+    static PUBLISH_LOCK: Mutex<()> = Mutex::new(());
+    let _lock = PUBLISH_LOCK.lock().unwrap_or_else(|p| p.into_inner());
+    let targets = (0..10000)
+        .find_map(|i| {
+            let base = if i == 0 {
+                stem.to_owned()
+            } else {
+                format!("{stem} ({i})")
+            };
+            let paths: Vec<_> = sources
+                .iter()
+                .map(|(_, suffix)| dest.join(format!("{base}{suffix}")))
+                .collect();
+            paths.iter().all(|p| !p.exists()).then_some(paths)
+        })
+        .ok_or("Too many conflicting filenames.")?;
+    if cancel.load(Ordering::SeqCst) {
+        return Err("Cancelled".into());
+    }
+    // A late external collision cannot overwrite user data. Previously committed
+    // paths are recorded immediately and remaining temporaries clean themselves up.
+    for (tmp, target) in prepared.into_iter().zip(targets) {
+        tmp.persist_noclobber(&target).map_err(err)?;
+        record(target)?;
+    }
+    Ok(())
+}
+#[cfg(test)]
 fn publish(src: &Path, dest: &Path) -> Result<PathBuf> {
-    let name = src
+    let stem = src
         .file_stem()
         .and_then(|s| s.to_str())
         .ok_or("Invalid filename")?;
-    let ext = src.extension().and_then(|s| s.to_str()).unwrap_or("media");
-    for i in 0..10000 {
-        let target = dest.join(if i == 0 {
-            format!("{name}.{ext}")
-        } else {
-            format!("{name} ({i}).{ext}")
-        });
-        if target.exists() {
-            continue;
-        }
-        let mut tmp = tempfile::NamedTempFile::new_in(dest).map_err(err)?;
-        std::io::copy(&mut File::open(src).map_err(err)?, &mut tmp).map_err(err)?;
-        tmp.flush().map_err(err)?;
-        tmp.as_file().sync_all().map_err(err)?;
-        match tmp.persist_noclobber(&target) {
-            Ok(_) => return Ok(target),
-            Err(e) if e.error.kind() == std::io::ErrorKind::AlreadyExists => continue,
-            Err(e) => return Err(err(e)),
-        }
-    }
-    Err("Too many conflicting filenames.".into())
+    let suffix = format!(
+        ".{}",
+        src.extension().and_then(|s| s.to_str()).unwrap_or("media")
+    );
+    let mut files = vec![];
+    publish_group(
+        stem,
+        &[(src.to_owned(), suffix)],
+        dest,
+        &AtomicBool::new(false),
+        |p| {
+            files.push(p);
+            Ok(())
+        },
+    )?;
+    files.pop().ok_or("No media published".into())
 }
 fn ensure_editor(
     path: &Path,
@@ -1499,15 +1826,11 @@ fn ensure_editor(
         return Err("Editor MP4 requires ffprobe beside ffmpeg.".into());
     }
     let compatible = |file: &Path| -> Result<bool> {
-        let result = command(&probe)
-            .args(["-v", "error", "-show_streams", "-of", "json"])
-            .arg(file)
-            .output()
-            .map_err(err)?;
-        if !result.status.success() {
-            return Err("FFprobe could not inspect the output.".into());
-        }
-        let info: serde_json::Value = serde_json::from_slice(&result.stdout).map_err(err)?;
+        let mut cmd = command(&probe);
+        cmd.args(["-v", "error", "-show_streams", "-of", "json"])
+            .arg(file);
+        let result = bounded_output(&mut cmd, cancel, Duration::from_secs(30))?;
+        let info: serde_json::Value = serde_json::from_slice(&result).map_err(err)?;
         let streams = info["streams"].as_array().ok_or("No media streams")?;
         Ok(file.extension().and_then(|v| v.to_str()) == Some("mp4")
             && streams.iter().any(|s| {
@@ -1619,17 +1942,27 @@ fn classify_error(lower: &str) -> &'static str {
         "Media engine reported an error. Check the link and installed tool versions."
     }
 }
+#[cfg(test)]
 fn download(
     j: &Job,
     s: &Settings,
     cancel: &AtomicBool,
+    progress: impl FnMut(f64, String),
+) -> Result<Vec<PathBuf>> {
+    download_recording(j, s, cancel, progress, |_| Ok(()))
+}
+fn download_recording(
+    j: &Job,
+    s: &Settings,
+    cancel: &AtomicBool,
     mut progress: impl FnMut(f64, String),
+    mut record: impl FnMut(PathBuf) -> Result<()>,
 ) -> Result<Vec<PathBuf>> {
     // Only explicitly requested short video clips use the experimental section path.
     // All ordinary downloads, audio, playlists and sidecars retain the original path.
     if fast_section(j) && s.prefs.limit_kib_per_second == 0 {
         progress(0., "Trying fast clip download".into());
-        match download_once(j, s, cancel, &mut progress, true) {
+        match download_once(j, s, cancel, &mut progress, true, &mut record) {
             Err(e) if e.starts_with("Section unavailable: ") && !cancel.load(Ordering::SeqCst) => {
                 progress(0., "Source needs full download; trimming afterward".into());
             }
@@ -1637,7 +1970,7 @@ fn download(
         }
     }
     for attempt in 0..=2 {
-        match download_once(j, s, cancel, &mut progress, false) {
+        match download_once(j, s, cancel, &mut progress, false, &mut record) {
             Err(e)
                 if e.starts_with("Retryable network error: ")
                     && attempt < 2
@@ -1728,11 +2061,55 @@ fn same_output_options(a: &MediaOptions, b: &MediaOptions) -> bool {
     };
     normalize(a) == normalize(b)
 }
+fn youtube_video_identity(raw: &str) -> Option<String> {
+    let u = url::Url::parse(raw).ok()?;
+    if u.port().is_some() || u.fragment().is_some() || !matches!(u.scheme(), "http" | "https") {
+        return None;
+    }
+    let pairs: Vec<_> = u.query_pairs().collect();
+    let host = u.host_str()?;
+    let id = if host == "youtu.be" {
+        if pairs
+            .iter()
+            .any(|(k, _)| !matches!(k.as_ref(), "si" | "feature"))
+        {
+            return None;
+        }
+        u.path().strip_prefix('/')?.to_owned()
+    } else if matches!(host, "youtube.com" | "www.youtube.com" | "m.youtube.com")
+        && u.path() == "/watch"
+    {
+        if pairs
+            .iter()
+            .any(|(k, _)| !matches!(k.as_ref(), "v" | "si" | "feature"))
+        {
+            return None;
+        }
+        let ids = pairs.iter().filter(|(k, _)| k == "v").collect::<Vec<_>>();
+        if ids.len() != 1 {
+            return None;
+        }
+        ids[0].1.to_string()
+    } else {
+        return None;
+    };
+    (id.len() == 11
+        && id
+            .bytes()
+            .all(|c| c.is_ascii_alphanumeric() || c == b'-' || c == b'_'))
+    .then_some(id)
+}
+fn same_media_url(a: &str, b: &str, playlist: bool) -> bool {
+    a == b
+        || (!playlist
+            && youtube_video_identity(a)
+                .is_some_and(|id| youtube_video_identity(b).as_ref() == Some(&id)))
+}
 fn completed_duplicate(j: &Job, r: &Request, url: &str) -> bool {
     j.status == Status::Completed
         && !j.playlist
         && !r.playlist
-        && j.url == url
+        && same_media_url(&j.url, url, false)
         && j.preset == r.preset
         && (j.quality == r.quality || matches!(r.preset.as_str(), "mp3" | "m4a" | "wav"))
         && j.organize == r.organize
@@ -1808,6 +2185,38 @@ fn inspect_stage(j: &Job) -> Result<bool> {
         }
     }
     Ok(partial)
+}
+fn cleanup_partial(j: &Job) -> Result<()> {
+    if !resumable(j) {
+        return Ok(());
+    }
+    let root = resume_path(j)?;
+    match fs::symlink_metadata(&root) {
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(()),
+        Err(e) => return Err(err(e)),
+        Ok(_) => {}
+    }
+    // Preserve unrecognized or completed media and never recurse.
+    inspect_stage(j).map_err(|e| format!("{e} Recovery folder: {}", root.display()))?;
+    for entry in fs::read_dir(&root).map_err(err)? {
+        let entry = entry.map_err(err)?;
+        let name = entry.file_name();
+        if name == ".owner" {
+            continue;
+        }
+        let name = name.to_string_lossy();
+        let meta = fs::symlink_metadata(entry.path()).map_err(err)?;
+        if !meta.is_file()
+            || !ordinary(&meta)
+            || !(name.ends_with(".part") || name.ends_with(".ytdl") || name.contains(".part-Frag"))
+        {
+            return Err("Unexpected recovery file; preserved.".into());
+        }
+        fs::remove_file(entry.path()).map_err(err)?;
+    }
+    fs::remove_file(root.join(".owner")).map_err(err)?;
+    fs::remove_dir(root).map_err(err)?;
+    Ok(())
 }
 fn safe_partial(j: &Job) -> bool {
     resumable(j) && inspect_stage(j).unwrap_or(false)
@@ -2022,12 +2431,9 @@ fn download_once(
     cancel: &AtomicBool,
     mut progress: impl FnMut(f64, String),
     section: bool,
+    mut record: impl FnMut(PathBuf) -> Result<()>,
 ) -> Result<Vec<PathBuf>> {
-    if !s.yt_dlp.is_absolute()
-        || !s.yt_dlp.is_file()
-        || !s.ffmpeg.is_absolute()
-        || !s.ffmpeg.is_file()
-    {
+    if !executable_file(&s.yt_dlp) || !executable_file(&s.ffmpeg) {
         return Err("Set existing yt-dlp and FFmpeg executable paths in Settings.".into());
     }
     fs::create_dir_all(&j.destination).map_err(err)?;
@@ -2193,7 +2599,7 @@ fn download_once(
                     progress(
                         (p / 100.).clamp(0., 0.98),
                         format!(
-                            "Downloading {} | {} | ETA {}",
+                            "Downloading current stream {} | {} | ETA {}",
                             format!("{p:.1}%"),
                             parts.next().unwrap_or("unknown").trim(),
                             parts.next().unwrap_or("unknown").trim()
@@ -2299,7 +2705,7 @@ fn download_once(
                 path.clone()
             };
             let ready = if section {
-                let duration = media_options::inspect_duration(&ready, &s.ffmpeg)?;
+                let duration = media_options::inspect_duration_cancel(&ready, &s.ffmpeg, cancel)?;
                 let expected =
                     j.options.clip_end.unwrap_or(0.) - j.options.clip_start.unwrap_or(0.);
                 if (duration - expected).abs() > 0.25_f64.max(expected * 0.02) {
@@ -2329,26 +2735,32 @@ fn download_once(
             };
             ready_files.push((ready, destination, path, sidecars, archive_files));
         }
+        progress(0.99, "Saving media files".into());
+        for (_, destination, _, _, _) in &ready_files {
+            fs::create_dir_all(destination).map_err(|e| {
+                format!("Cannot create output folder {}: {e}", destination.display())
+            })?;
+        }
         for (ready, destination, source, sidecars, archive_files) in ready_files {
             if cancel.load(Ordering::SeqCst) {
                 return Err("Cancelled".into());
             }
-            let target = if fs::create_dir_all(&destination).is_ok() {
-                &destination
-            } else {
-                &j.destination
-            };
+            let target = &destination;
             publication_started = true;
-            let published = publish(&ready, target)?;
-            let stem = published
+            let stem = ready
                 .file_stem()
                 .and_then(|s| s.to_str())
-                .ok_or("Invalid published media name")?;
+                .ok_or("Invalid media name")?;
             let source_stem = source
                 .file_stem()
                 .and_then(|s| s.to_str())
                 .ok_or("Invalid source name")?;
-            files.push(published.clone());
+            let extension = ready
+                .extension()
+                .and_then(|v| v.to_str())
+                .unwrap_or("media");
+            let mut sources = vec![(ready.clone(), format!(".{extension}"))];
+            let tmp = tempfile::tempdir_in(staging.path()).map_err(err)?;
             for sidecar in sidecars.into_iter().chain(archive_files) {
                 let name = sidecar
                     .file_name()
@@ -2357,10 +2769,7 @@ fn download_once(
                 let suffix = name
                     .strip_prefix(source_stem)
                     .ok_or("Unexpected sidecar name")?;
-                let new_name = format!("{stem}{suffix}");
-                // Write a new sidecar in a job-owned temporary folder; never overwrite originals.
-                let tmp = tempfile::tempdir_in(staging.path()).map_err(err)?;
-                let dest = tmp.path().join(new_name);
+                let dest = tmp.path().join(name);
                 if matches!(
                     sidecar.extension().and_then(|s| s.to_str()),
                     Some("srt" | "vtt")
@@ -2375,11 +2784,15 @@ fn download_once(
                         ),
                     )
                     .map_err(err)?;
+                    sources.push((dest, suffix.to_owned()));
                 } else {
-                    fs::copy(&sidecar, &dest).map_err(err)?;
+                    sources.push((sidecar.clone(), suffix.to_owned()));
                 }
-                files.push(publish(&dest, target)?);
             }
+            publish_group(stem, &sources, target, cancel, |path| {
+                files.push(path.clone());
+                record(path)
+            })?;
         }
         if files.is_empty() {
             return Err("No media file was produced.".into());
@@ -2478,7 +2891,14 @@ mod tests {
         let d = tempfile::tempdir().unwrap();
         let target = d.path().join("tools/managed-2026.11.23-9.1-24.22.3");
         fs::create_dir_all(&target).unwrap();
-        for file in ["yt-dlp.exe", "ffmpeg.exe", "ffprobe.exe", "node.exe"] {
+        for file in [
+            "yt-dlp.exe",
+            "ffmpeg.exe",
+            "ffprobe.exe",
+            "node.exe",
+            "FFmpeg-LICENSE.txt",
+            "Node-LICENSE.txt",
+        ] {
             fs::copy(source.join(file), target.join(file)).unwrap();
         }
         let settings = Settings {
@@ -2503,9 +2923,16 @@ mod tests {
         assert_eq!(engine.snapshot().settings.yt_dlp, installed.yt_dlp);
         assert!(js_runtime(&installed.yt_dlp).starts_with("node:"));
         fs::write(target.join("yt-dlp.exe"), b"tampered fixture").unwrap();
-        assert!(engine.setup_managed_tools().is_err());
+        engine.setup_managed_tools().unwrap();
+        assert!(verified_ytdlp(&target.join("yt-dlp.exe")));
+        let quarantines = fs::read_dir(d.path().join("tools"))
+            .unwrap()
+            .flatten()
+            .filter(|e| e.file_name().to_string_lossy().starts_with(".quarantine-"))
+            .collect::<Vec<_>>();
+        assert_eq!(quarantines.len(), 1);
         assert_eq!(
-            fs::read(target.join("yt-dlp.exe")).unwrap(),
+            fs::read(quarantines[0].path().join("yt-dlp.exe")).unwrap(),
             b"tampered fixture"
         );
         assert_eq!(engine.snapshot().settings.yt_dlp, installed.yt_dlp);
@@ -3228,4 +3655,135 @@ fn crash_recovery_and_idle_update_gate() {
     assert!(e.begin_idle_update().is_err());
     drop(guard);
     assert!(e.begin_idle_update().is_ok());
+}
+
+#[cfg(test)]
+mod stability_publication_tests {
+    use super::*;
+    #[test]
+    fn group_names_match_and_existing_sidecar_is_preserved() {
+        let d = tempfile::tempdir().unwrap();
+        let source = d.path().join("source");
+        let dest = d.path().join("dest");
+        fs::create_dir(&source).unwrap();
+        fs::create_dir(&dest).unwrap();
+        let a = source.join("video.mp4");
+        let b = source.join("video.en.vtt");
+        fs::write(&a, b"video").unwrap();
+        fs::write(&b, b"subtitle").unwrap();
+        fs::write(dest.join("video.en.vtt"), b"existing").unwrap();
+        let mut saved = vec![];
+        publish_group(
+            "video",
+            &[(a, ".mp4".into()), (b, ".en.vtt".into())],
+            &dest,
+            &AtomicBool::new(false),
+            |p| {
+                saved.push(p);
+                Ok(())
+            },
+        )
+        .unwrap();
+        assert_eq!(
+            saved,
+            vec![dest.join("video (1).mp4"), dest.join("video (1).en.vtt")]
+        );
+        assert_eq!(fs::read(dest.join("video.en.vtt")).unwrap(), b"existing");
+        assert_eq!(fs::read(&saved[1]).unwrap(), b"subtitle");
+    }
+    #[test]
+    fn bad_sidecar_or_cancellation_leaves_no_published_outputs() {
+        let d = tempfile::tempdir().unwrap();
+        let source = d.path().join("source");
+        let dest = d.path().join("dest");
+        fs::write(&source, b"video").unwrap();
+        fs::create_dir(&dest).unwrap();
+        let mut count = 0;
+        assert!(publish_group(
+            "video",
+            &[
+                (source.clone(), ".mp4".into()),
+                (d.path().join("missing"), ".vtt".into())
+            ],
+            &dest,
+            &AtomicBool::new(false),
+            |_| {
+                count += 1;
+                Ok(())
+            }
+        )
+        .is_err());
+        assert!(publish_group(
+            "video",
+            &[(source, ".mp4".into())],
+            &dest,
+            &AtomicBool::new(true),
+            |_| {
+                count += 1;
+                Ok(())
+            }
+        )
+        .is_err());
+        assert_eq!(count, 0);
+        assert_eq!(fs::read_dir(&dest).unwrap().count(), 0);
+    }
+    #[test]
+    fn late_commit_error_records_actual_outputs_and_no_clobber() {
+        let d = tempfile::tempdir().unwrap();
+        let a = d.path().join("a");
+        let b = d.path().join("b");
+        let dest = d.path().join("dest");
+        fs::write(&a, b"media").unwrap();
+        fs::write(&b, b"sidecar").unwrap();
+        fs::create_dir(&dest).unwrap();
+        let mut saved = vec![];
+        let result = publish_group(
+            "video",
+            &[(a, ".mp4".into()), (b, ".vtt".into())],
+            &dest,
+            &AtomicBool::new(false),
+            |p| {
+                saved.push(p);
+                fs::write(dest.join("video.vtt"), b"external").unwrap();
+                Ok(())
+            },
+        );
+        assert!(result.is_err());
+        assert_eq!(saved, vec![dest.join("video.mp4")]);
+        assert_eq!(fs::read(dest.join("video.vtt")).unwrap(), b"external");
+    }
+    #[cfg(windows)]
+    #[test]
+    fn bounded_process_times_out_and_cancels() {
+        let cmd = PathBuf::from(std::env::var_os("SystemRoot").unwrap()).join("System32/ping.exe");
+        let mut c = command(&cmd);
+        c.args(["-t", "127.0.0.1"]);
+        let start = Instant::now();
+        assert!(
+            bounded_output(&mut c, &AtomicBool::new(false), Duration::from_millis(200)).is_err()
+        );
+        assert!(start.elapsed() < Duration::from_secs(5));
+        let mut c = command(&cmd);
+        c.args(["-t", "127.0.0.1"]);
+        assert!(bounded_output(&mut c, &AtomicBool::new(true), Duration::from_secs(1)).is_err());
+    }
+}
+
+#[cfg(test)]
+#[test]
+fn safe_url_identity_does_not_merge_signed_or_playlist_links() {
+    let base = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
+    let share = "https://youtu.be/dQw4w9WgXcQ?si=abc";
+    assert!(same_media_url(base, share, false));
+    assert!(!same_media_url(base, share, true));
+    assert!(!same_media_url(
+        base,
+        "https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=5",
+        false
+    ));
+    assert!(!same_media_url(
+        "https://example.com/a?sig=one",
+        "https://example.com/a?sig=two",
+        false
+    ));
 }

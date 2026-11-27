@@ -193,6 +193,16 @@ impl Preferences {
                 *name == action && (key == "Off" || parse_shortcut(key, *global).is_some())
             })
         });
+        // Preserve first registered binding; disable conflicting later actions.
+        let mut seen = std::collections::HashSet::new();
+        let effective = self.effective_shortcuts();
+        for (action, _, global) in SHORTCUTS {
+            if let Some(key) = parse_shortcut(&effective[action], global) {
+                if !seen.insert(key) {
+                    self.shortcuts.insert(action.into(), "Off".into());
+                }
+            }
+        }
         if self
             .last_destination
             .as_ref()

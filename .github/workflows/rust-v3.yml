@@ -23,6 +23,7 @@ jobs:
         run: |
           node --check v3/ui/app.js
           node v3/update-ui-test.cjs
+          node v3/stability-ui-test.cjs
       - name: Core unit tests
         run: cargo test --locked --manifest-path v3/core/Cargo.toml
       - name: Desktop unit tests

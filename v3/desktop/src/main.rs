@@ -105,23 +105,26 @@ fn remember_download(
     if !destination.is_absolute() {
         return Err("Choose an absolute destination folder.".into());
     }
-    let mut s = engine.snapshot().settings;
-    if s.prefs.default_format == preset
-        && s.prefs.default_quality == quality
-        && s.prefs.last_destination.as_ref() == Some(&destination)
-        && s.prefs.last_organize == organize
-    {
-        return Ok(());
-    }
-    s.prefs.default_preset = "custom".into();
-    s.prefs.default_format = preset;
-    if matches!(s.prefs.default_format.as_str(), "editor" | "original") {
-        s.prefs.last_video_quality = quality.clone();
-    }
-    s.prefs.default_quality = quality;
-    s.prefs.last_destination = Some(destination);
-    s.prefs.last_organize = organize;
-    engine.settings(s)
+    engine
+        .modify_settings(false, |s| {
+            if s.prefs.default_format == preset
+                && s.prefs.default_quality == quality
+                && s.prefs.last_destination.as_ref() == Some(&destination)
+                && s.prefs.last_organize == organize
+            {
+                return Ok(());
+            }
+            s.prefs.default_preset = "custom".into();
+            s.prefs.default_format = preset;
+            if matches!(s.prefs.default_format.as_str(), "editor" | "original") {
+                s.prefs.last_video_quality = quality.clone();
+            }
+            s.prefs.default_quality = quality;
+            s.prefs.last_destination = Some(destination);
+            s.prefs.last_organize = organize;
+            Ok(())
+        })
+        .map(|_| ())
 }
 #[cfg(windows)]
 mod native_notice;
@@ -146,7 +149,7 @@ fn show_shortcut_toast(app: &tauri::AppHandle, message: &str) {
 }
 fn run_shortcut(app: &tauri::AppHandle, action: &str) {
     let engine = app.state::<Engine>();
-    let s = engine.snapshot().settings;
+    let s = engine.settings_snapshot();
     let tr = s.prefs.language == "tr";
     if (isolated_run() && std::env::var_os("QC_SHORTCUT_SMOKE").is_some())
         || app
@@ -531,15 +534,51 @@ use tauri::{
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
     Manager, State,
 };
+#[derive(Default)]
+struct PreviewRuntime(Mutex<(u64, Option<std::sync::Arc<std::sync::atomic::AtomicBool>>)>);
+impl PreviewRuntime {
+    fn begin(
+        &self,
+        generation: u64,
+    ) -> Result<std::sync::Arc<std::sync::atomic::AtomicBool>, String> {
+        let mut state = self.0.lock().unwrap();
+        if generation < state.0 {
+            return Err("Preview superseded.".into());
+        }
+        if let Some(old) = state.1.take() {
+            old.store(true, std::sync::atomic::Ordering::SeqCst);
+        }
+        let cancel = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+        *state = (generation, Some(cancel.clone()));
+        Ok(cancel)
+    }
+    fn advance(&self, generation: u64) {
+        let mut state = self.0.lock().unwrap();
+        if generation > state.0 {
+            if let Some(old) = state.1.take() {
+                old.store(true, std::sync::atomic::Ordering::SeqCst);
+            }
+            state.0 = generation;
+        }
+    }
+}
+#[tauri::command]
+fn cancel_media_preview(runtime: State<'_, PreviewRuntime>, generation: u64) {
+    runtime.advance(generation);
+}
 #[tauri::command]
 async fn media_preview(
     app: tauri::AppHandle,
     url: String,
+    generation: u64,
 ) -> Result<quickclip_core::Preview, String> {
-    let tool = app.state::<Engine>().snapshot().settings.yt_dlp;
-    tauri::async_runtime::spawn_blocking(move || quickclip_core::preview(&url, &tool))
-        .await
-        .map_err(|e| e.to_string())?
+    let cancel = app.state::<PreviewRuntime>().begin(generation)?;
+    let tool = app.state::<Engine>().settings_snapshot().yt_dlp;
+    tauri::async_runtime::spawn_blocking(move || {
+        quickclip_core::preview_cancel(&url, &tool, &cancel)
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 #[tauri::command]
 async fn live_preview_frame(app: tauri::AppHandle, id: String, seconds: f64) -> Option<String> {
@@ -581,8 +620,16 @@ fn queue_action(engine: State<'_, Engine>, action: String) -> Result<(), String>
     engine.bulk_action(&action)
 }
 #[tauri::command]
-fn snapshot(engine: State<'_, Engine>) -> Snapshot {
-    engine.snapshot()
+fn snapshot(engine: State<'_, Engine>, include_history: Option<bool>) -> Snapshot {
+    if include_history.unwrap_or(true) {
+        engine.snapshot()
+    } else {
+        engine.active_snapshot()
+    }
+}
+#[tauri::command]
+fn state_recovery(engine: State<'_, Engine>) -> Option<String> {
+    engine.recovery_notice().map(str::to_owned)
 }
 #[tauri::command]
 fn enqueue(
@@ -598,7 +645,7 @@ fn enqueue(
     {
         return Err("Saving queue before exit".into());
     }
-    if !configured_tools_ready(&engine.snapshot().settings) {
+    if !configured_tools_ready(&engine.settings_snapshot()) {
         return Err("QuickClip321 is not ready yet. Complete media setup first.".into());
     }
     let url = quickclip_core::validate_url(request.url.trim())?;
@@ -642,16 +689,14 @@ fn setup_progress(engine: State<'_, Engine>) -> quickclip_core::SetupProgress {
 }
 fn configured_tools_ready(settings: &Settings) -> bool {
     let managed_node = quickclip_core::managed_node_path(&settings.yt_dlp).is_some();
-    settings.yt_dlp.is_absolute()
-        && settings.yt_dlp.is_file()
-        && settings.ffmpeg.is_absolute()
-        && settings.ffmpeg.is_file()
-        && settings.ffmpeg.with_file_name("ffprobe.exe").is_file()
+    quickclip_core::executable_file(&settings.yt_dlp)
+        && quickclip_core::executable_file(&settings.ffmpeg)
+        && quickclip_core::executable_file(&settings.ffmpeg.with_file_name("ffprobe.exe"))
         && (managed_node || find_tool("node.exe").is_file())
 }
 #[tauri::command]
 fn tools_ready(engine: State<'_, Engine>) -> bool {
-    configured_tools_ready(&engine.snapshot().settings)
+    configured_tools_ready(&engine.settings_snapshot())
 }
 #[tauri::command]
 fn detect_tools() -> [String; 2] {
@@ -668,6 +713,9 @@ fn organizer_counts() -> [usize; 8] {
 fn diagnostics(engine: State<'_, Engine>) -> String {
     let s = engine.snapshot();
     let mut out = format!("QuickClip321 {}\n", env!("CARGO_PKG_VERSION"));
+    if let Some(recovery) = engine.recovery_notice() {
+        out.push_str(&format!("{recovery}\n"));
+    }
     for (label, path) in [
         ("yt-dlp", &s.settings.yt_dlp),
         ("FFmpeg", &s.settings.ffmpeg),
@@ -789,36 +837,66 @@ fn sync_startup(enabled: bool) -> Result<(), String> {
 fn sync_startup(_: bool) -> Result<(), String> {
     Ok(())
 }
+#[derive(serde::Deserialize)]
+struct SettingsPaths {
+    destination: PathBuf,
+    yt_dlp: PathBuf,
+    ffmpeg: PathBuf,
+}
 #[tauri::command]
-fn save_settings(
+fn patch_settings(
     window: tauri::WebviewWindow,
     engine: State<'_, Engine>,
-    settings: Settings,
-) -> Result<(), String> {
-    let before = engine.snapshot().settings.prefs;
-    let top = settings.prefs.always_on_top;
-    let startup_changed = before.run_on_startup != settings.prefs.run_on_startup;
-    let position_changed = before.popup_mode != settings.prefs.popup_mode
-        || before.popup_x != settings.prefs.popup_x
-        || before.popup_y != settings.prefs.popup_y;
-    if startup_changed {
-        sync_startup(settings.prefs.run_on_startup)?;
-    }
-    if let Err(e) = engine.settings(settings) {
-        if startup_changed {
-            let _ = sync_startup(before.run_on_startup);
+    patch: serde_json::Value,
+    paths: Option<SettingsPaths>,
+) -> Result<quickclip_core::preferences::Preferences, String> {
+    let patch = patch.as_object().ok_or("Invalid settings patch")?;
+    let mut startup_before = None;
+    let mut position_changed = false;
+    let result = engine.modify_settings(paths.is_some(), |settings| {
+        let before = settings.prefs.clone();
+        let mut values = serde_json::to_value(&before).map_err(|e| e.to_string())?;
+        let target = values.as_object_mut().ok_or("Invalid preferences")?;
+        for (key, value) in patch {
+            if !target.contains_key(key) || matches!(key.as_str(), "previous_ytdlp") {
+                return Err(format!("Invalid preference: {key}"));
+            }
+            target.insert(key.clone(), value.clone());
         }
-        return Err(e);
-    }
-    let _ = apply_topmost(&window, top);
+        settings.prefs = serde_json::from_value(values).map_err(|_| "Invalid settings values")?;
+        settings.prefs.normalize();
+        if let Some(p) = paths {
+            settings.destination = p.destination;
+            settings.yt_dlp = p.yt_dlp;
+            settings.ffmpeg = p.ffmpeg;
+        }
+        if before.run_on_startup != settings.prefs.run_on_startup {
+            sync_startup(settings.prefs.run_on_startup)?;
+            startup_before = Some(before.run_on_startup);
+        }
+        position_changed = before.popup_mode != settings.prefs.popup_mode
+            || before.popup_x != settings.prefs.popup_x
+            || before.popup_y != settings.prefs.popup_y;
+        Ok(())
+    });
+    let settings = match result {
+        Ok(s) => s,
+        Err(e) => {
+            if let Some(old) = startup_before {
+                let _ = sync_startup(old);
+            }
+            return Err(e);
+        }
+    };
+    let _ = apply_topmost(&window, settings.prefs.always_on_top);
     if position_changed {
         position_popup(&window, None);
     }
-    Ok(())
+    Ok(settings.prefs)
 }
 #[tauri::command]
 fn open_downloads(engine: State<'_, Engine>) -> Result<(), String> {
-    let folder = engine.snapshot().settings.destination;
+    let folder = engine.settings_snapshot().destination;
     if !folder.is_absolute() {
         return Err("Invalid download folder.".into());
     }
@@ -933,7 +1011,7 @@ fn ui_ready(
         show_popup(&w, None);
         let show_works = w.is_visible().unwrap_or(false);
         let rounded = has_round_region(&w);
-        let mut prefs = app.state::<Engine>().snapshot().settings.prefs;
+        let mut prefs = app.state::<Engine>().settings_snapshot().prefs;
         prefs.popup_mode = "Custom".into();
         prefs.popup_x = 0.;
         prefs.popup_y = 0.;
@@ -1458,7 +1536,7 @@ fn watch_notifications(app: tauri::AppHandle) {
 mod signed_update;
 #[tauri::command]
 async fn tool_versions(engine: State<'_, Engine>) -> Result<String, String> {
-    let settings = engine.snapshot().settings;
+    let settings = engine.settings_snapshot();
     tauri::async_runtime::spawn_blocking(move||{
         let y=quickclip_core::tool_version(&settings.yt_dlp,"--version").unwrap_or_else(||"Unavailable".into());
         let f=quickclip_core::tool_version(&settings.ffmpeg,"-version").unwrap_or_else(||"Unavailable".into());
@@ -1591,7 +1669,7 @@ fn install_ready(app: &tauri::AppHandle, explicit: bool) -> Result<(), String> {
         let ready = r.ready.lock().unwrap();
         let staged = ready.as_ref().ok_or("No verified update ready")?;
         let info = staged.info();
-        let prefs = engine.snapshot().settings.prefs;
+        let prefs = engine.settings_snapshot().prefs;
         if app.state::<ExitPending>().0.load(Ordering::Acquire) {
             return Err("Exit already scheduled".into());
         }
@@ -1645,36 +1723,75 @@ fn watch_updates(app: tauri::AppHandle) {
         let mut last_check = None::<std::time::Instant>;
         let mut last_channel = String::new();
         let mut interval = std::time::Duration::from_secs(86400);
+        let mut pending: Option<String> = None;
+        let mut last_stage_attempt = None::<std::time::Instant>;
         loop {
             let engine = app.state::<Engine>();
-            let prefs = engine.snapshot().settings.prefs;
+            let prefs = engine.settings_snapshot().prefs;
             let (a, q, p, _, _, _) = engine.tray_summary();
             let idle = a == 0 && q == 0 && p == 0;
+            if last_channel != prefs.update_channel {
+                pending = None;
+                last_stage_attempt = None;
+            }
             let due = last_channel != prefs.update_channel
                 || last_check.is_none_or(|v| v.elapsed() >= interval);
-            if idle && due {
+            if due {
                 last_channel = prefs.update_channel.clone();
                 last_check = Some(std::time::Instant::now());
                 interval = std::time::Duration::from_secs(300);
                 if let Ok(i) = update_check::check(&prefs.update_channel) {
                     interval = std::time::Duration::from_secs(86400);
-                    if i.signed_available && !i.switch_available && i.available.is_some() {
+                    let available = if i.signed_available && !i.switch_available {
+                        i.available
+                    } else {
+                        None
+                    };
+                    if available.is_some() && available != pending {
                         let handle = app.clone();
                         let _ = app.run_on_main_thread(move || {
                             show_shortcut_toast(&handle, "Update available")
                         });
-                        if prefs.update_mode != "manual" {
-                            if stage_for_channel(&app, &prefs.update_channel, false).is_err() {
-                                interval = std::time::Duration::from_secs(300);
-                            }
+                        last_stage_attempt = None;
+                    }
+                    pending = available;
+                }
+            }
+            // Do not consume download bandwidth or install while a job is active/paused.
+            if idle && prefs.update_mode != "manual" {
+                if let Some(version) = pending.as_ref() {
+                    let already_ready = app
+                        .state::<UpdateRuntime>()
+                        .ready
+                        .lock()
+                        .unwrap()
+                        .as_ref()
+                        .is_some_and(|r| {
+                            let i = r.info();
+                            i.channel == prefs.update_channel && &i.version == version
+                        });
+                    if !already_ready
+                        && last_stage_attempt
+                            .is_none_or(|v| v.elapsed() >= std::time::Duration::from_secs(300))
+                    {
+                        last_stage_attempt = Some(std::time::Instant::now());
+                        if let Ok(info) = stage_for_channel(&app, &prefs.update_channel, false) {
+                            pending = Some(info.version);
                         }
                     }
                 }
             }
-            if idle
-                && prefs.update_mode == "automatic"
-                && app.state::<UpdateRuntime>().ready.lock().unwrap().is_some()
-            {
+            let ready_for_auto = app
+                .state::<UpdateRuntime>()
+                .ready
+                .lock()
+                .unwrap()
+                .as_ref()
+                .is_some_and(|r| {
+                    let i = r.info();
+                    i.channel == prefs.update_channel && pending.as_ref() == Some(&i.version)
+                });
+            if idle && prefs.update_mode == "automatic" && ready_for_auto {
                 let h = app.clone();
                 let _ = app.run_on_main_thread(move || {
                     let _ = install_ready(&h, false);
@@ -1733,7 +1850,7 @@ fn copy_diagnostics(app: tauri::AppHandle, engine: State<'_, Engine>) -> Result<
 #[tauri::command]
 fn export_preferences(engine: State<'_, Engine>) -> Result<String, String> {
     let mut p =
-        serde_json::to_value(engine.snapshot().settings.prefs).map_err(|e| e.to_string())?;
+        serde_json::to_value(engine.settings_snapshot().prefs).map_err(|e| e.to_string())?;
     let obj = p.as_object_mut().ok_or("Invalid preferences")?;
     for key in [
         "last_destination",
@@ -1760,14 +1877,15 @@ fn import_preferences(
     if v["schema"].as_u64() != Some(1) {
         return Err("Unsupported settings backup".into());
     }
-    let mut p = engine.snapshot().settings;
-    let mut current = serde_json::to_value(&p.prefs).map_err(|e| e.to_string())?;
-    let target = current.as_object_mut().ok_or("Invalid preferences")?;
+    let allowed = serde_json::to_value(quickclip_core::preferences::Preferences::default())
+        .map_err(|e| e.to_string())?;
+    let allowed = allowed.as_object().ok_or("Invalid preferences")?;
     let source = v["preferences"]
         .as_object()
         .ok_or("Invalid settings backup")?;
+    let mut patch = serde_json::Map::new();
     for (k, value) in source {
-        if target.contains_key(k)
+        if allowed.contains_key(k)
             && !matches!(
                 k.as_str(),
                 "last_destination"
@@ -1779,11 +1897,10 @@ fn import_preferences(
                     | "previous_ytdlp"
             )
         {
-            target.insert(k.clone(), value.clone());
+            patch.insert(k.clone(), value.clone());
         }
     }
-    p.prefs = serde_json::from_value(current).map_err(|_| "Invalid settings values")?;
-    save_settings(window, engine, p)
+    patch_settings(window, engine, serde_json::Value::Object(patch), None).map(|_| ())
 }
 fn main() {
     let builder = tauri::Builder::default();
@@ -1833,14 +1950,16 @@ fn main() {
                 },
             )
             .map_err(std::io::Error::other)?;
-            let needs_setup = !configured_tools_ready(&engine.snapshot().settings);
-            if let Err(e) = sync_startup(engine.snapshot().settings.prefs.run_on_startup) {
+            let recovered = engine.recovery_notice().is_some();
+            let needs_setup = !configured_tools_ready(&engine.settings_snapshot());
+            if let Err(e) = sync_startup(engine.settings_snapshot().prefs.run_on_startup) {
                 eprintln!("{e}");
             }
             if !needs_setup && !isolated_run() {
                 let _ = engine.resume_saved_queue();
             }
             app.manage(engine);
+            app.manage(PreviewRuntime::default());
             app.manage(PopupGuard::default());
             app.manage(HotkeyStatus::default());
             app.manage(CaptureUntil::default());
@@ -1944,7 +2063,7 @@ fn main() {
                         .always_on_top,
                 );
             }
-            if needs_setup && !isolated_run() {
+            if (needs_setup || recovered) && !isolated_run() {
                 if let Some(w) = app.get_webview_window("main") {
                     show_popup(&w, None);
                 }
@@ -1963,7 +2082,7 @@ fn main() {
                 std::env::var("QC_NOTIFICATION_FIXTURE"),
             ) {
                 let engine = app.state::<Engine>();
-                let settings = engine.snapshot().settings;
+                let settings = engine.settings_snapshot();
                 engine
                     .enqueue(Request {
                         url,
@@ -2023,6 +2142,7 @@ fn main() {
             take_submitted_links,
             take_duplicate_requests,
             media_preview,
+            cancel_media_preview,
             live_preview_frame,
             validate_links,
             queue_action,
@@ -2040,7 +2160,8 @@ fn main() {
             copy_diagnostics,
             organizer_counts,
             remove,
-            save_settings,
+            patch_settings,
+            state_recovery,
             preview_position,
             open_folder,
             open_downloads,
@@ -2067,4 +2188,17 @@ mod popup_tests {
         assert!(!rect_overlap((0, 0, 100, 100), (100, 0, 200, 100)));
         assert!(!rect_overlap((-100, -100, 0, 0), (0, 0, 100, 100)));
     }
+}
+
+#[cfg(test)]
+#[test]
+fn preview_generations_cancel_old_requests_and_reject_stale_ones() {
+    use std::sync::atomic::Ordering;
+    let runtime = PreviewRuntime::default();
+    let old = runtime.begin(10).unwrap();
+    let new = runtime.begin(11).unwrap();
+    assert!(old.load(Ordering::SeqCst));
+    assert!(!new.load(Ordering::SeqCst));
+    assert!(runtime.begin(9).is_err());
+    assert!(!new.load(Ordering::SeqCst));
 }

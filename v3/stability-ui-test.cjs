@@ -1,0 +1,40 @@
+const assert=require('node:assert/strict');
+const fs=require('node:fs'),vm=require('node:vm');
+const source=fs.readFileSync('v3/ui/app.js','utf8');
+const slice=(a,b)=>{const start=source.indexOf(a),end=source.indexOf(b,start);assert(start>=0&&end>start);return source.slice(start,end)};
+const elements=new Map(),$=id=>{if(!elements.has(id))elements.set(id,{value:'',hidden:false,disabled:false,textContent:''});return elements.get(id)};
+const clone=structuredClone;
+let prefs={rules:[],profiles:[],shortcuts:{}}, messages=[], rendered=0;
+const context=vm.createContext({$,notice:(...a)=>messages.push(a),renderRules:()=>rendered++,renderProfiles:()=>{},renderShortcuts:()=>{},invoke:async(name,args)=>{
+ if(name==='snapshot')return {settings:{prefs:clone(prefs)}};
+ if(name==='patch_settings'){await new Promise(r=>setTimeout(r,5));prefs={...prefs,...clone(args.patch)};return clone(prefs);}
+ throw Error(name);
+},defaultShortcuts:{a:'Ctrl+A',b:'Ctrl+B'},setTimeout});
+vm.runInContext('let settingsWrites=Promise.resolve(),savedRules=[],customProfiles=[],shortcutBindings={...defaultShortcuts};'+slice('function serializeSettings','function renderProfiles')+slice('async function saveBinding','async function startRecording'),context);
+(async()=>{
+ await vm.runInContext('Promise.all([mutateRules(x=>[...x,{contains:"one",category:"video"}]),mutateRules(x=>[...x,{contains:"two",category:"games"}]),saveBinding("a","Ctrl+X"),saveBinding("b","Ctrl+Y")])',context);
+ assert.equal(prefs.rules.length,2);assert.equal(prefs.shortcuts.a,'Ctrl+X');assert.equal(prefs.shortcuts.b,'Ctrl+Y');
+ await vm.runInContext('saveBinding("b","Ctrl+X")',context);assert.equal(prefs.shortcuts.b,'Ctrl+Y');assert.match(String(messages.at(-1)[0]),/Duplicate shortcut/);
+ console.log('PASS concurrent rule edits and shortcut edits; duplicate shortcut rejected');
+ const card={dataset:{jobId:'1',status:'running',pause:'true',locale:'tr'},querySelector:s=>nodes[s]};
+ const nodes={'.job-title':{},'.job-meta':{},progress:{}};
+ const focused={disabled:false}, container={dataset:{},contains:()=>true,querySelectorAll:()=>[card],replaceChildren:()=>{throw Error('Focused card replaced')}};
+ const c=vm.createContext({uiLanguage:'tr',t:s=>'TR:'+s,document:{activeElement:focused},container});
+ vm.runInContext(slice('function render(container','async function refresh')+';render(container,[{id:"1",status:"running",message:"Downloading 50%",files:[],url:"test",preset:"mp4",quality:"best",progress:.5}],"empty")',c);
+ assert.equal(nodes.progress.value,50);assert.match(nodes['.job-meta'].textContent,/TR:Downloading/);
+ console.log('PASS focused queue continues updating progress and text');
+ const requests=[];let focusedFlag=false;
+ const pctx=vm.createContext({$,toolsAvailable:true,document:{hasFocus:()=>focusedFlag},invoke:(name,args)=>{if(name==='cancel_media_preview')return Promise.resolve();return new Promise(resolve=>requests.push({args,resolve}));},t:s=>'TR:'+s,setPlaylistVisibility:()=>{},playlistHint:()=>false,updateSize:()=>{},showThumbnail:()=>{}});
+ vm.runInContext('let previewRunning=null,previewAwaiting=true,previewGeneration=1,previewMeta=null;'+slice('async function fetchPreview','let previousClipUrl'),pctx);
+ $('url').value='https://example.com/old';await vm.runInContext('fetchPreview()',pctx);assert.equal(requests.length,0);
+ focusedFlag=true;const old=vm.runInContext('fetchPreview()',pctx);
+ $('url').value='https://example.com/new';const latest=vm.runInContext('previewGeneration++;previewAwaiting=true;fetchPreview()',pctx);
+ const response=title=>({title,channel:'',duration:0,qualities:[],playlist:false});
+ requests[1].resolve(response('new'));await latest;requests[0].resolve(response('old'));await old;assert.equal($('previewText').textContent,'new');
+ console.log('PASS localized preview resumes on focus and stale results cannot overwrite latest');
+ const bctx=vm.createContext({$,toolsAvailable:true,organizerEnabled:true,manualDestination:false,mediaOptions:()=>({}),invoke:async(name,args)=>{if(args.urls[0]==='bad')throw Error('Invalid URL');return args.urls;},enqueueWithDuplicate:async r=>{if(r.url==='https://example.com/skip')return null;return 'id';},notice:()=>{},rememberCurrentDownload:()=>{},show:()=>{}});
+ vm.runInContext(slice('$("batchAdd").onclick=','document.querySelectorAll(".queue-action")'),bctx);
+ $('batchUrls').value='https://example.com/ok\nbad\nhttps://example.com/ok\nhttps://example.com/skip';
+ await $('batchAdd').onclick();assert.equal($('batchUrls').value,'bad\nhttps://example.com/skip');assert.match($('batchErrors').textContent,/Invalid URL/);assert.equal($('batchAdd').disabled,false);
+ console.log('PASS mixed batch retains invalid/skipped entries, deduplicates valid inputs');
+})().catch(e=>{console.error(e);process.exitCode=1});

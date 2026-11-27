@@ -73,11 +73,18 @@ $expected=[ordered]@{
     'node.exe'='86fc4785327db5f5c7558dc6156c543b433c313e813a222e088086222ab4afa6'
 }
 $files=@($expected.Keys)
+$repair=$false
 if (Test-Path -LiteralPath $target){
-    if ((Get-Item -LiteralPath $target).Attributes -band [IO.FileAttributes]::ReparsePoint){throw 'Unsafe managed tool directory.'}
-    foreach($name in $files){SetupProgress "Checking: $name";AssertHash (Join-Path $target $name) $expected[$name]}
-    Write-Output 'Managed tools verified.'
-    exit 0
+    $item=Get-Item -LiteralPath $target
+    if (!$item.PSIsContainer -or ($item.Attributes -band [IO.FileAttributes]::ReparsePoint)){throw 'Unsafe managed tool directory.'}
+    foreach($name in $files){
+        SetupProgress "Checking: $name"
+        $path=Join-Path $target $name
+        if ((Test-Path -LiteralPath $path) -and ((Get-Item -LiteralPath $path).Attributes -band [IO.FileAttributes]::ReparsePoint)){throw 'Unsafe managed tool file.'}
+        try {AssertHash $path $expected[$name]}catch {$repair=$true}
+    }
+    if (!$repair){Write-Output 'Managed tools verified.';exit 0}
+    SetupProgress 'Repairing damaged managed tools'
 }
 $stage=Join-Path $root ('.install-'+[guid]::NewGuid().ToString('N'))
 $null=New-Item -ItemType Directory -Path $stage
@@ -85,20 +92,38 @@ try {
     Add-Type -AssemblyName System.IO.Compression.FileSystem
     $out=Join-Path $stage 'verified'
     $null=New-Item -ItemType Directory -Path $out
-    Fetch 'https://github.com/yt-dlp/yt-dlp/releases/download/2026.11.23/yt-dlp.exe' (Join-Path $out 'yt-dlp.exe') $expectedYt 23627865 23627865
+    $cachedYt=Join-Path $root 'yt-dlp-2026.11.23/yt-dlp.exe'
+    $reuseYt=$false
+    if($repair){try{AssertHash $cachedYt $expectedYt;Copy-Item -LiteralPath $cachedYt -Destination (Join-Path $out 'yt-dlp.exe');$reuseYt=$true}catch{}}
+    if(!$reuseYt){Fetch 'https://github.com/yt-dlp/yt-dlp/releases/download/2026.11.23/yt-dlp.exe' (Join-Path $out 'yt-dlp.exe') $expectedYt 23627865 23627865}
+    $reuseFf=$false
+    if($repair){try{foreach($name in @('ffmpeg.exe','ffprobe.exe')){AssertHash (Join-Path $target $name) $expected[$name]};foreach($name in @('ffmpeg.exe','ffprobe.exe','FFmpeg-LICENSE.txt')){Copy-Item -LiteralPath (Join-Path $target $name) -Destination (Join-Path $out $name)};$reuseFf=$true}catch{}}
+    if(!$reuseFf){
     $ff=Join-Path $stage 'ffmpeg.zip'
     Fetch 'https://github.com/GyanD/codexffmpeg/releases/download/9.1/ffmpeg-9.1-essentials_build.zip' $ff 'b9bbbb3acece000cbeec994f856649354e52c773807841e78908374b24d658fd' 119467219 119467219
     foreach($name in @('ffmpeg.exe','ffprobe.exe')){ExtractMember $ff "ffmpeg-9.1-essentials_build/bin/$name" (Join-Path $out $name)}
     ExtractMember $ff 'ffmpeg-9.1-essentials_build/LICENSE' (Join-Path $out 'FFmpeg-LICENSE.txt')
+    }
+    $reuseNode=$false
+    if($repair){try{AssertHash (Join-Path $target 'node.exe') $expected['node.exe'];foreach($name in @('node.exe','Node-LICENSE.txt')){Copy-Item -LiteralPath (Join-Path $target $name) -Destination (Join-Path $out $name)};$reuseNode=$true}catch{}}
+    if(!$reuseNode){
     $node=Join-Path $stage 'node.zip'
     Fetch 'https://nodejs.org/dist/v24.22.3/node-v24.22.3-win-x64.zip' $node 'e612af99f626ab415ea225af6bce5c971feb448cb5cae250bb1c3fa50c5f7d9f' 100000000
     ExtractMember $node 'node-v24.22.3-win-x64/node.exe' (Join-Path $out 'node.exe')
     ExtractMember $node 'node-v24.22.3-win-x64/LICENSE' (Join-Path $out 'Node-LICENSE.txt')
+    }
     $manifest=[ordered]@{}
     foreach($name in $files){SetupProgress "Verifying: $name";AssertHash (Join-Path $out $name) $expected[$name];$manifest[$name]=$expected[$name]}
     $manifest|ConvertTo-Json|Set-Content -LiteralPath (Join-Path $out 'integrity.json') -Encoding ASCII
-    # All assets were verified before publication. Never replace an existing version.
-    [IO.Directory]::Move($out,$target)
+    # Only after every replacement is verified, preserve damaged files in quarantine.
+    if ($repair){
+        $quarantine=Join-Path $root ('.quarantine-'+[guid]::NewGuid().ToString('N'))
+        [IO.Directory]::Move($target,$quarantine)
+        try {[IO.Directory]::Move($out,$target)}catch{
+            if (!(Test-Path -LiteralPath $target)){[IO.Directory]::Move($quarantine,$target)}
+            throw
+        }
+    }else{[IO.Directory]::Move($out,$target)}
     SetupProgress 'Finalizing setup'
     Write-Output 'Managed tools installed and verified.'
     Get-Content -LiteralPath (Join-Path $target 'integrity.json')
