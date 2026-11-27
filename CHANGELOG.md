@@ -1,5 +1,15 @@
 # Changelog
 
+## 3.0.0-beta.8 - 2026-11-27
+
+- Rebuilt Updates: installed version and channel, exact available version, last check and up-to-date status.
+- Check both release tracks automatically at startup and hourly; manual check is always available.
+- Dismissible in-app update notification remembers the dismissed version. A newer release shows it again.
+- Single verified install action, separate explicit channel switches, queue-idle and stale-release protection.
+- Download subtitles only in SRT or VTT, with language selection and optional automatic captions; no audio/video download.
+- Added regression checks for both channels, banner dismissal, stale update responses, offline/queue safety and subtitle output groups.
+- Stable-track Beta 8 and Beta 8 Nightly 1 share the same fixes; both remain prereleases.
+
 ## 3.0.0-beta.7 - 2026-11-27
 
 - Recover corrupt or missing state using the last valid backup, preserving damaged bytes.

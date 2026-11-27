@@ -4,18 +4,20 @@
 
 QuickClip321 is a free, open-source Windows video and audio downloader that lives in your system tray. Get editing-ready MP4 or MP3 without opening a downloader window. Powered by yt-dlp and FFmpeg.
 
-<p align="center"><a href="https://github.com/Tuna321/QuickClip321/releases/download/v3.0.0-beta.7/QuickClip321-3.0.0-beta.7-win-x64.exe"><img src="v3/assets/beta2-download-graphite.png" width="288" alt="Download for Windows x64 — portable EXE"></a></p>
-<p align="center"><strong>V3 Beta 7 · 12.77 MiB EXE</strong> &nbsp; / &nbsp; <a href="https://github.com/Tuna321/QuickClip321/releases/download/v3.0.0-beta.7/QuickClip321-3.0.0-beta.7-win-x64-portable.zip">Portable ZIP (4.00 MiB)</a> &nbsp; / &nbsp; <a href="https://github.com/Tuna321/QuickClip321/releases/tag/v3.0.0-beta.7">Release notes</a></p>
+<p align="center"><a href="https://github.com/Tuna321/QuickClip321/releases/download/v3.0.0-beta.8/QuickClip321-3.0.0-beta.8-win-x64.exe"><img src="v3/assets/beta2-download-graphite.png" width="288" alt="Download for Windows x64 — portable EXE"></a></p>
+<p align="center"><strong>V3 Beta 8 · 12.81 MiB EXE</strong> &nbsp; / &nbsp; <a href="https://github.com/Tuna321/QuickClip321/releases/download/v3.0.0-beta.8/QuickClip321-3.0.0-beta.8-win-x64-portable.zip">Portable ZIP (4.02 MiB)</a> &nbsp; / &nbsp; <a href="https://github.com/Tuna321/QuickClip321/releases/tag/v3.0.0-beta.8">Release notes</a></p>
 <p align="center"><sub>Public beta · Signed update manifests · Windows x64 + WebView2 · First-run media tools may require an additional 170–200 MB.</sub></p>
 
 <p align="center"><picture><img src="v3/assets/readme-hero.svg" width="100%" alt="QuickClip321 — Copy a link. Hit a shortcut. Keep creating. Actual Beta 5 interface shown."></picture></p>
 
-<p align="center"><picture><img src="v3/assets/readme-metrics.svg" width="100%" alt="12.77 MiB portable EXE, 25,693 local catalog records, 8 customizable shortcuts, free and MIT licensed."></picture></p>
+<p align="center"><picture><img src="v3/assets/readme-metrics.svg" width="100%" alt="12.81 MiB portable EXE, 25,693 local catalog records, 8 customizable shortcuts, free and MIT licensed."></picture></p>
 <sub>EXE size excludes separately installed media tools. Catalog count includes curated and contextual title records.</sub>
 
 **[Product website](https://tuna321.github.io/QuickClip321/) · [Keyboard shortcuts](#01--download-without-opening-a-window) · [Smart organizer](#03--25693-records-less-file-chaos) · [Why QuickClip321?](#why-quickclip321) · [Get started](#get-started) · [FAQ](#good-to-know) · [Feedback](#help-shape-v3)**
 
-**Release channels:** [Stable track / public Beta 7](https://github.com/Tuna321/QuickClip321/releases/tag/v3.0.0-beta.7) · [Beta 7 Nightly 1](https://github.com/Tuna321/QuickClip321/releases/tag/v3.0.0-beta.7.nightly.1). Both are prereleases. Switch between them from Advanced > Updates; installation verifies the signed release and waits for an idle queue. Beta 5 must be upgraded manually once.
+**Release channels:** [Stable track / public Beta 8](https://github.com/Tuna321/QuickClip321/releases/tag/v3.0.0-beta.8) · [Beta 8 Nightly 1](https://github.com/Tuna321/QuickClip321/releases/tag/v3.0.0-beta.8.nightly.1). Both are prereleases. Switch between them from Advanced > Updates; installation verifies the signed release and waits for an idle queue. Beta 5 must be upgraded manually once.
+
+**New in Beta 8:** Subtitles Only downloads SRT or VTT without the video or audio. Updates shows your actual installed version, automatically checks both tracks, and provides a dismissible notice and verified Install update action.
 
 ## 01 / Download without opening a window
 
@@ -37,7 +39,7 @@ Your destination and quality are remembered. A small, native fade notification c
 
 ## 02 / A small download. A complete workflow.
 
-**12.77 MiB portable EXE. Just 4.00 MiB as a ZIP.**
+**12.81 MiB portable EXE. Just 4.02 MiB as a ZIP.**
 
 QuickClip321 is built with Rust and uses the Windows WebView2 runtime. Download the standalone executable, save it in a permanent folder and open it. There is no large application installer or account setup.
 
@@ -110,12 +112,12 @@ Estimated source transfer size helps you choose quality. During eligible downloa
 
 QuickClip321 is built for **repeated downloads in a Windows creative workflow**, rather than simply adding another downloader window. It shares the underlying yt-dlp ecosystem with other graphical downloaders, but optimizes the path from copied link to usable media.
 
-| Workflow | QuickClip321 V3 Beta 7 | Manual yt-dlp CLI | Parabolic |
+| Workflow | QuickClip321 V3 Beta 8 | Manual yt-dlp CLI | Parabolic |
 | --- | --- | --- | --- |
 | Start a download | Global hotkey or tray popup | Terminal command; can be scripted | Graphical downloader |
 | Video/audio formats | MP4, MP3, M4A, WAV, original | Configurable via command-line options | MP4, WebM, MP3, Opus, FLAC, WAV |
 | Organization | Built-in contextual catalog and custom folder rules | Output templates and user scripting | See its documentation for available options |
-| Windows distribution | 12.77 MiB portable EXE; separate first-use media tools | CLI binaries and optional tools | Installer / portable options depending on release |
+| Windows distribution | 12.81 MiB portable EXE; separate first-use media tools | CLI binaries and optional tools | Installer / portable options depending on release |
 | Platforms | Windows x64 | Windows, macOS, Linux | Windows, macOS, Linux |
 
 [yt-dlp documentation](https://github.com/yt-dlp/yt-dlp) · [Parabolic documentation](https://github.com/NickvisionApps/Parabolic) · [Parabolic releases](https://github.com/NickvisionApps/Parabolic/releases)
@@ -124,7 +126,7 @@ This is a workflow comparison based on documented features as of 26 November 202
 
 ## Get started
 
-1. **[Download Beta 7 for Windows x64](https://github.com/Tuna321/QuickClip321/releases/download/v3.0.0-beta.7/QuickClip321-3.0.0-beta.7-win-x64.exe).** Save the EXE in a permanent folder and open it.
+1. **[Download Beta 8 for Windows x64](https://github.com/Tuna321/QuickClip321/releases/download/v3.0.0-beta.8/QuickClip321-3.0.0-beta.8-win-x64.exe).** Save the EXE in a permanent folder and open it.
 2. Let the one-time verified media-tool setup finish if required.
 3. Copy a media link. Press a shortcut or click the Q icon in the notification area and hit Download.
 
@@ -151,7 +153,7 @@ QuickClip321 V3 is in public beta. Try it in your everyday workflow and tell us 
 
 <details>
 <summary>How do I verify the download?</summary>
-<br>Download <a href="https://github.com/Tuna321/QuickClip321/releases/download/v3.0.0-beta.7/SHA256-EXE.txt">SHA256-EXE.txt</a> from the release. In PowerShell run <code>Get-FileHash .\QuickClip321-3.0.0-beta.7-win-x64.exe -Algorithm SHA256</code> and compare the hash. For the ZIP, use SHA256SUMS.txt. A matching hash confirms the download matches the published artifact, not that the standalone EXE is Authenticode-signed. In-app updates also verify the signed release manifest.
+<br>Download <a href="https://github.com/Tuna321/QuickClip321/releases/download/v3.0.0-beta.8/SHA256-EXE.txt">SHA256-EXE.txt</a> from the release. In PowerShell run <code>Get-FileHash .\QuickClip321-3.0.0-beta.8-win-x64.exe -Algorithm SHA256</code> and compare the hash. For the ZIP, use SHA256SUMS.txt. A matching hash confirms the download matches the published artifact, not that the standalone EXE is Authenticode-signed. In-app updates also verify the signed release manifest.
 </details>
 
 <details>
@@ -173,7 +175,7 @@ QuickClip321 V3 is in public beta. Try it in your everyday workflow and tell us 
 
 ## Developers
 
-The V3 application uses Rust, Tauri and WebView2, with separately installed yt-dlp, FFmpeg/FFprobe and Node.js media tools. Source, lockfiles and build commands are available in [V3 development documentation](v3/README.md). See [V3 licensing and dependencies](docs/V3-THIRD-PARTY.md), [license and notices for the EXE](https://github.com/Tuna321/QuickClip321/releases/download/v3.0.0-beta.7/LICENSE-AND-NOTICES.txt) and [release notes](https://github.com/Tuna321/QuickClip321/releases/tag/v3.0.0-beta.7).
+The V3 application uses Rust, Tauri and WebView2, with separately installed yt-dlp, FFmpeg/FFprobe and Node.js media tools. Source, lockfiles and build commands are available in [V3 development documentation](v3/README.md). See [V3 licensing and dependencies](docs/V3-THIRD-PARTY.md), [license and notices for the EXE](https://github.com/Tuna321/QuickClip321/releases/download/v3.0.0-beta.8/LICENSE-AND-NOTICES.txt) and [release notes](https://github.com/Tuna321/QuickClip321/releases/tag/v3.0.0-beta.8).
 
 ## Follow QuickClip321
 
