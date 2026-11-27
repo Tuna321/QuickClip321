@@ -143,10 +143,7 @@ pub fn select(
         signed_available,
     })
 }
-pub fn check(channel: &str) -> Result<UpdateInfo, String> {
-    if !matches!(channel, "stable" | "nightly") {
-        return Err("Invalid update channel".into());
-    }
+pub fn check_both() -> Result<Vec<UpdateInfo>, String> {
     // System curl; fixed HTTPS endpoint, no user data, credentials or redirects.
     let path = std::path::PathBuf::from(
         std::env::var_os("SystemRoot").ok_or("Windows directory unavailable")?,
@@ -188,7 +185,20 @@ pub fn check(channel: &str) -> Result<UpdateInfo, String> {
         }
         serde_json::from_slice(&output.stdout).map_err(|_| "Invalid release response".into())
     })?;
-    select(&data, env!("CARGO_PKG_VERSION"), channel)
+    ["stable", "nightly"]
+        .iter()
+        .map(|channel| select(&data, env!("CARGO_PKG_VERSION"), channel))
+        .collect()
+}
+#[cfg(test)]
+pub fn check(channel: &str) -> Result<UpdateInfo, String> {
+    if !matches!(channel, "stable" | "nightly") {
+        return Err("Invalid update channel".into());
+    }
+    check_both()?
+        .into_iter()
+        .find(|i| i.channel == channel)
+        .ok_or("Missing channel".into())
 }
 #[cfg(test)]
 mod tests {
@@ -312,6 +322,21 @@ mod tests {
         assert_eq!(a.available.as_deref(), Some("3.0.1"));
         let b = select(&data, "3.0.2", "stable").unwrap();
         assert!(!b.signed_available && b.available.is_none());
+    }
+    #[test]
+    fn equal_signed_version_never_requests_install_on_either_track() {
+        let data = serde_json::json!([
+            signed_release("3.0.0-beta.8", true),
+            signed_release("3.0.0-beta.8.nightly.1", true)
+        ]);
+        for (version, channel) in [
+            ("3.0.0-beta.8", "stable"),
+            ("3.0.0-beta.8.nightly.1", "nightly"),
+        ] {
+            let info = select(&data, version, channel).unwrap();
+            assert!(!info.signed_available && !info.switch_available && info.available.is_none());
+            assert_eq!(info.latest_in_channel.as_deref(), Some(version));
+        }
     }
     #[test]
     fn rejects_wrong_asset() {

@@ -247,7 +247,7 @@ impl Preferences {
         }
         if !matches!(
             self.default_format.as_str(),
-            "editor" | "original" | "mp3" | "m4a" | "wav"
+            "editor" | "original" | "mp3" | "m4a" | "wav" | "subtitles"
         ) {
             self.default_format = d.default_format;
         }

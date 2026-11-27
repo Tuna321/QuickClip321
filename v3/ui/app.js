@@ -7,7 +7,7 @@ let toolsAvailable=false,setupRunning=false;
 let organizerEnabled=true,manualDestination=false,savedDefaultDestination="";
 function notice(text,error=false){const toast=$("toast");toast.textContent=t(text);toast.classList.toggle("error",error);clearTimeout(timer);timer=setTimeout(()=>toast.textContent="",7000);}
 function syncQueueButton(){$("quickQueue").setAttribute("aria-expanded",String(expanded&&current==="queue"));}
-function show(page){current=page;syncQueueButton();document.querySelectorAll(".page").forEach(p=>p.hidden=p.id!==page);document.querySelectorAll(".nav").forEach(b=>{const active=b.dataset.page===page;b.classList.toggle("active",active);b.setAttribute("aria-current",active?"page":"false")});if(page==="diagnostics")loadDiagnostics();if(page==="updates"){refreshUpdateStatus();if(initialized)checkSelectedChannel();}if(page==="shortcuts")renderShortcuts();else {if(recordingShortcut)stopRecording();if(testingShortcuts)stopShortcutTest();}$("title").textContent=t({home:"New download",queue:"Queue",history:"History",settings:"Settings",updates:"Updates",shortcuts:"Shortcuts",profiles:"Profiles",organizer:"Organizer",diagnostics:"Diagnostics"}[page]);refresh();}
+function show(page){current=page;syncQueueButton();document.querySelectorAll(".page").forEach(p=>p.hidden=p.id!==page);document.querySelectorAll(".nav").forEach(b=>{const active=b.dataset.page===page;b.classList.toggle("active",active);b.setAttribute("aria-current",active?"page":"false")});if(page==="diagnostics")loadDiagnostics();if(page==="updates")refreshUpdateStatus();if(page==="shortcuts")renderShortcuts();else {if(recordingShortcut)stopRecording();if(testingShortcuts)stopShortcutTest();}$("title").textContent=t({home:"New download",queue:"Queue",history:"History",settings:"Settings",updates:"Updates",shortcuts:"Shortcuts",profiles:"Profiles",organizer:"Organizer",diagnostics:"Diagnostics"}[page]);refresh();}
 document.querySelectorAll(".nav").forEach(b=>b.addEventListener("click",()=>show(b.dataset.page)));
 function el(tag,cls,text){const node=document.createElement(tag);if(cls)node.className=cls;if(text!==undefined)node.textContent=tag==="button"||cls==="empty"||cls==="job-status"?t(text):text;return node;}
 function action(label,cmd,id){const b=el("button","small",label);b.addEventListener("click",async()=>{if(cmd==="remove"&&!confirm(t("Remove history? Any verified unfinished download files for this job will also be removed. Completed media is kept.")))return;b.disabled=true;try{await invoke(cmd,{id});notice(label==="Retry"?"Added to queue":"Done");await refresh();}catch(e){notice(e,true);}finally{b.disabled=false;}});return b;}
@@ -21,7 +21,7 @@ function render(container,jobs,empty){const signature=JSON.stringify([uiLanguage
             container.dataset.signature=signature;return;
         }
     }container.dataset.signature=signature;const frag=document.createDocumentFragment();if(!jobs.length)frag.append(el("div","empty",empty));for(const j of [...jobs].reverse()){const card=el("article","job");card.dataset.jobId=j.id;card.dataset.status=j.status;card.dataset.pause=String(j.message.startsWith("Downloading"));card.dataset.locale=uiLanguage;const top=el("div","job-top");const info=el("div");let name=j.files.length?j.files[0].split(/[\\/]/).pop():j.url;info.append(el("div","job-title",name),el("div","job-meta",j.preset+" · "+j.quality+" · "+t(j.message)));top.append(info,el("span","job-status",j.status));card.append(top);if(["running","queued","paused"].includes(j.status)){const track=el("progress");track.max=100;track.value=Math.round(j.progress*100);track.setAttribute("aria-label","Download progress");card.append(track);}const buttons=el("div","job-actions");if(["running","queued","paused"].includes(j.status)){buttons.append(action("Cancel","cancel",j.id));if(j.status==="queued")buttons.append(action("Hold","pause_waiting",j.id));if(j.status==="running"&&["original","editor","mp3","m4a","wav"].includes(j.preset)&&!j.playlist&&!j.options?.archive&&j.options?.clip_start==null&&j.options?.clip_end==null&&!j.options?.subtitle_languages?.length&&j.message.startsWith("Downloading"))buttons.append(action("Pause","pause_waiting",j.id));if(j.status==="paused")buttons.append(action("Resume","resume_waiting",j.id));}else{if(j.files.length)buttons.append(action("Open folder","open_folder",j.id));if(["failed","cancelled"].includes(j.status))buttons.append(action("Retry single item","retry",j.id));buttons.append(action("Remove history","remove",j.id));}card.append(buttons);frag.append(card);}container.replaceChildren(frag);}
-async function refresh(){if(busy)return;busy=true;try{const requestedPage=current,s=await invoke("snapshot",{includeHistory:requestedPage==="history"});if(requestedPage!==current){setTimeout(refresh,0);return;}if(!initialized){savedDefaultDestination=s.settings.destination;$("destination").value=savedDefaultDestination;$("defaultDest").value=savedDefaultDestination;$("ytdlp").value=s.settings.yt_dlp;$("ffmpeg").value=s.settings.ffmpeg;applyPreferences(s.settings.prefs);initialized=true;const recovery=await invoke("state_recovery");if(recovery){notice(recovery,true);$("recoveryWarning").textContent=recovery;$("recoveryWarning").hidden=false;}}applySubmittedLinks(await invoke("take_submitted_links"));handleShortcutDuplicates();const active=s.jobs.filter(j=>["running","queued","paused"].includes(j.status));const latest=active.find(j=>j.status==="running")||active[0]||s.jobs[s.jobs.length-1];$("quickStatus").textContent=t(active.length||activePreviewId?latest?.message||"Ready":"Ready");$("quickProgress").value=active.length?Math.round(latest.progress*100):0;$("badge").textContent=active.length;toolsAvailable=await invoke("tools_ready");if(toolsAvailable&&previewAwaiting&&!previewTimer&&document.hasFocus())fetchPreview();$("setupHint").hidden=toolsAvailable||setupRunning;if(!toolsAvailable)$("quickStatus").textContent=t(setupRunning?"Preparing media tools":"Setup required");if(current==="updates")refreshUpdateStatus();if(current==="shortcuts")updateShortcutStatus(await invoke("hotkey_status"));if(!$("url").value.trim()&&latest&&active.length){clearTimeout(previewResetTimer);previewResetTimer=null;showActivePreview(latest);liveJob=latest.status==="running"?latest:null;}else{liveJob=null;if(!active.length&&activePreviewId&&!previewResetTimer){frameJob=null;const finished=activePreviewId;previewResetTimer=setTimeout(()=>{previewResetTimer=null;if(activePreviewId===finished&&!$("url").value.trim()){resetPreview();$("quickStatus").textContent=t("Ready");}},1500);}}if(current==="queue")render($("queueList"),active,"No active downloads.");if(current==="history")render($("historyList"),s.jobs.filter(j=>!["running","queued","paused"].includes(j.status)),"No download history yet.");}catch(e){notice(e,true);}finally{busy=false;}}
+async function refresh(){if(busy)return;busy=true;try{const requestedPage=current,s=await invoke("snapshot",{includeHistory:requestedPage==="history"});if(requestedPage!==current){setTimeout(refresh,0);return;}if(!initialized){savedDefaultDestination=s.settings.destination;$("destination").value=savedDefaultDestination;$("defaultDest").value=savedDefaultDestination;$("ytdlp").value=s.settings.yt_dlp;$("ffmpeg").value=s.settings.ffmpeg;applyPreferences(s.settings.prefs);initialized=true;const recovery=await invoke("state_recovery");if(recovery){notice(recovery,true);$("recoveryWarning").textContent=recovery;$("recoveryWarning").hidden=false;}}applySubmittedLinks(await invoke("take_submitted_links"));handleShortcutDuplicates();const active=s.jobs.filter(j=>["running","queued","paused"].includes(j.status));const latest=active.find(j=>j.status==="running")||active[0]||s.jobs[s.jobs.length-1];$("quickStatus").textContent=t(active.length||activePreviewId?latest?.message||"Ready":"Ready");$("quickProgress").value=active.length?Math.round(latest.progress*100):0;$("badge").textContent=active.length;toolsAvailable=await invoke("tools_ready");if(toolsAvailable&&previewAwaiting&&!previewTimer&&document.hasFocus())fetchPreview();$("setupHint").hidden=toolsAvailable||setupRunning;if(!toolsAvailable)$("quickStatus").textContent=t(setupRunning?"Preparing media tools":"Setup required");refreshUpdateStatus();if(current==="shortcuts")updateShortcutStatus(await invoke("hotkey_status"));if(!$("url").value.trim()&&latest&&active.length){clearTimeout(previewResetTimer);previewResetTimer=null;showActivePreview(latest);liveJob=latest.status==="running"?latest:null;}else{liveJob=null;if(!active.length&&activePreviewId&&!previewResetTimer){frameJob=null;const finished=activePreviewId;previewResetTimer=setTimeout(()=>{previewResetTimer=null;if(activePreviewId===finished&&!$("url").value.trim()){resetPreview();$("quickStatus").textContent=t("Ready");}},1500);}}if(current==="queue")render($("queueList"),active,"No active downloads.");if(current==="history")render($("historyList"),s.jobs.filter(j=>!["running","queued","paused"].includes(j.status)),"No download history yet.");}catch(e){notice(e,true);}finally{busy=false;}}
 let dialogOpen=false;async function pick(target,directory){dialogOpen=true;try{const path=await invoke("plugin:dialog|open",{options:{directory,multiple:false,...(!directory?{filters:[{name:"Windows executables",extensions:["exe"]}]}:{})}});if(typeof path==="string")$(target).value=path;}catch(e){notice(e,true);}finally{dialogOpen=false;}}
 $("browse").onclick=async()=>{const before=$("destination").value;await pick("destination",true);if(before!==$("destination").value){manualDestination=true;syncDestination();rememberCurrentDownload();}};function syncDestination(){$("autoFolder").hidden=!manualDestination;$("destination").title=manualDestination?"Manual destination (organizer bypassed)":organizerEnabled?"Automatic organizer enabled":"Default destination";}
 $("destination").addEventListener("input",()=>{manualDestination=true;syncDestination();});$("autoFolder").onclick=()=>{$("destination").value=savedDefaultDestination;manualDestination=false;syncDestination();rememberCurrentDownload();};$("defaultBrowse").onclick=()=>pick("defaultDest",true);document.querySelectorAll(".pick").forEach(b=>b.onclick=()=>pick(b.dataset.target,false));
@@ -29,12 +29,18 @@ $("paste").onclick=async()=>{try{const t=await invoke("plugin:clipboard-manager|
 $("form").onsubmit=async e=>{e.preventDefault();if(!toolsAvailable){await prepareTools();return;}const b=e.submitter||$("form").querySelector("[type=submit]");if(b.disabled)return;if(!$("url").value.trim()){notice("Paste a media link first.",true);$("url").focus();return;}if(!$("destination").value.trim()){notice("Choose a destination folder.",true);return;}const submittedUrl=$("url").value.trim();const submittedPreview=previewMeta;b.disabled=true;try{const jobId=await enqueueWithDuplicate({url:submittedUrl,preset:$("format").value,quality:$("quality").value,playlist:!$("playlistChoice").hidden&&$("playlist").checked,organize:organizerEnabled&&!manualDestination,options:mediaOptions(),destination:$("destination").value});if(!jobId)return;rememberCurrentDownload();if(submittedPreview){queuedPreviews.set(jobId,submittedPreview);while(queuedPreviews.size>20)queuedPreviews.delete(queuedPreviews.keys().next().value);}clearSubmittedLink(submittedUrl,jobId);notice("Added to queue.");if(expanded)show("queue");else await refresh();}catch(err){notice(err,true);}finally{b.disabled=false;}};
 $("settingsForm").onsubmit=async e=>{e.preventDefault();if(!$("defaultDest").value.trim()){notice("Choose a default destination.",true);return;}try{await savePrefs();applyTheme();syncPosition();savedDefaultDestination=$("defaultDest").value;organizerEnabled=$("smartOrganizer").checked;if(!manualDestination)$("destination").value=savedDefaultDestination;syncDestination();rememberCurrentDownload();notice("Settings saved.");await refresh();}catch(err){notice(err,true);}};
 function mediaOptions(){
+    if($("format").value==="subtitles"){const langs=$("subtitleLanguages").value.split(",").map(s=>s.trim()).filter(Boolean);return {clip_start:null,clip_end:null,subtitle_languages:langs.length?langs:["en","tr"],subtitle_format:$("subtitleFormat").value,subtitle_auto:$("subtitleAuto").checked,archive:false};}
     return {clip_start:$("clipStart").value===""?null:Number($("clipStart").value),clip_end:$("clipEnd").value===""?null:Number($("clipEnd").value),subtitle_languages:$("subtitleLanguages").value.split(",").map(s=>s.trim()).filter(Boolean),subtitle_format:$("subtitleFormat").value,subtitle_auto:$("subtitleAuto").checked,archive:$("archiveMetadata").checked};
 }
 const audioFormats=["mp3","m4a","wav"];
-function updateFormat(){$("quality").disabled=audioFormats.includes($("format").value);}
+function updateFormat(){
+    const only=$("format").value==="subtitles";
+    $("quality").disabled=only||audioFormats.includes($("format").value);
+    $("clipStart").disabled=only;$("clipEnd").disabled=only;$("archiveMetadata").disabled=only;
+    if(only){$("quality").value="best";$("archiveMetadata").checked=false;if(!$("subtitleLanguages").value.trim()){$("subtitleLanguages").value="en, tr";$("subtitleAuto").checked=true;}}
+}
 $("preset").onchange=()=>{const p=$("preset").value;const profile=customProfiles.find(x=>profileKey(x)===p);if(profile){$("format").value=profile.format;$("quality").value=profile.quality;$("archiveMetadata").checked=profile.archive;}else if(p!=="custom"){$("format").value=p;$("quality").value=p==="editor"?"1080":"best";$("archiveMetadata").checked=false;}updateFormat();};
-$("format").onchange=()=>{$("preset").value="custom";updateFormat();};
+$("format").onchange=()=>{$("preset").value="custom";updateFormat();if($("format").value==="subtitles"){(expanded?Promise.resolve():toggleExpanded(true)).then(()=>{show("home");$("subtitleLanguages").focus();}).catch(e=>notice(e,true));}};
 $("quality").onchange=()=>{$("preset").value="custom";updateFormat();};
 $("archiveMetadata").onchange=()=>{$("preset").value="custom";};
 
@@ -230,7 +236,7 @@ function rememberCurrentDownload(){
     if(!initialized||!clipboardAutoReady)return;
     const preset=$("format").value,quality=$("quality").value,destination=$("destination").value,organize=organizerEnabled&&!manualDestination;
     if(!destination)return;
-    lastDownloadDestination=destination;lastDownloadOrganize=organize;if(!audioFormats.includes(preset))lastVideoQuality=quality;
+    lastDownloadDestination=destination;lastDownloadOrganize=organize;if(preset!=="subtitles"&&!audioFormats.includes(preset))lastVideoQuality=quality;
     serializeSettings(()=>invoke("remember_download",{preset,quality,destination,organize})).catch(e=>notice(e,true));
 }
 for(const id of ["preset","format","quality","destination"])$(id).addEventListener("change",rememberCurrentDownload);
@@ -325,55 +331,80 @@ async function changeYtdlp(rollback){
 $("updateYtdlp").onclick=()=>changeYtdlp(false);$("rollbackYtdlp").onclick=()=>changeYtdlp(true);
 $("speedLimit").onchange=async()=>{const n=Math.max(0,Math.min(1048576,Math.floor(Number($("speedLimit").value)||0)));$("speedLimit").value=n;try{await saveSection({limit_kib_per_second:n});}catch(e){notice(e,true);}};
 $("updateMode").onchange=async()=>{try{await saveSection({update_mode:$("updateMode").value});}catch(e){notice(e,true);}};
-let signedAvailable=false, checkedChannel=null, updateCheckGeneration=0, switchAvailable=false, checkedVersion=null;
-function invalidateUpdateCheck(){
-    ++updateCheckGeneration; signedAvailable=false; switchAvailable=false; checkedChannel=null; checkedVersion=null;
-    $("stageSigned").hidden=true; $("installSigned").hidden=true; $("downloadPublicBeta").hidden=true;
-    $("checkUpdates").disabled=false;
+let updateGeneration=0, updateBusy=false, updateChecking=false, updateSnapshot=null, updateActionError="", updateReadSerial=0;
+let dismissedUpdate="";
+try{dismissedUpdate=localStorage.getItem("dismissedUpdate")||"";}catch(_){}
+function channelName(channel){return t(channel==="nightly"?"Nightly":"Stable");}
+function updateKey(info){return info&&info.signed_available&&!info.switch_available&&info.available?info.channel+":"+info.available:"";}
+function renderUpdateStatus(s){
+    updateSnapshot=s;
+    const channel=$("updateChannel").value, actual=s.installed_channel;
+    const installedInfo=(s.releases||[]).find(i=>i.channel===actual);
+    const selected=(s.releases||[]).find(i=>i.channel===channel);
+    const key=updateKey(installedInfo);
+    $("installedVersion").textContent=s.installed||"...";
+    $("installedChannel").textContent=channelName(actual);
+    $("updateBadge").hidden=!key;
+    $("updateBanner").hidden=!key||key===dismissedUpdate;
+    if(key)$("updateBannerText").textContent=t("Update available")+" · "+channelName(actual)+" "+installedInfo.available;
+    const same=channel===actual, candidate=selected?.signed_available?selected:null;
+    const ready=candidate&&s.ready?.channel===channel&&s.ready?.version===candidate.latest_in_channel;
+    $("updateResult").textContent=updateChecking?t("Checking for updates..."):s.check_error?t("Could not check releases; retry later"):!installedInfo?t("Checking for updates..."):updateKey(installedInfo)?t("Update available")+" · "+channelName(actual)+" "+installedInfo.available:installedInfo.available?t("Release available; signed installation not enabled"):installedInfo.latest_in_channel?t("You are up to date"):t("No published release on selected channel");
+    $("lastUpdateCheck").textContent=s.checked_at?t("Last checked")+": "+new Date(s.checked_at*1000).toLocaleString():"";
+    $("releasePanel").hidden=!candidate;
+    $("releaseLabel").textContent=t(same?"Update available":"Switch channel");
+    $("releaseVersion").textContent=candidate?channelName(channel)+" "+candidate.latest_in_channel:"";
+    $("installSigned").hidden=!candidate;
+    $("installSigned").textContent=t(same?"Install update":"Switch to")+(!same?" "+channelName(channel):"");
+    $("installSigned").disabled=Boolean(updateBusy||updateChecking||s.busy||s.queue_busy||s.check_error);
+    $("checkUpdates").disabled=updateChecking||updateBusy;
+    $("updateChannel").disabled=updateBusy||s.busy;
+    $("signedStatus").textContent=updateActionError|| (s.busy?t("Downloading and verifying signed update"):s.queue_busy?t("Wait until the queue is empty"):s.check_error?t("Check for updates before installing"):ready?t("Verified update ready"):candidate?t("Download and verify before restart"):"");
 }
-$("updateChannel").onchange=async()=>{
-    const channel=$("updateChannel").value;invalidateUpdateCheck();
-    $("updateResult").textContent=t("Checking for updates...");
-    try{await saveSection({update_channel:channel});if(channel===$("updateChannel").value)await checkSelectedChannel();}
-    catch(e){if(channel===$("updateChannel").value){$("updateResult").textContent=t(String(e));const p=(await invoke("snapshot")).settings.prefs;$("updateChannel").value=p.update_channel;invalidateUpdateCheck();}}
-};
-$("downloadPublicBeta").onclick=async()=>{const b=$("downloadPublicBeta");b.disabled=true;const generation=updateCheckGeneration;$("updateResult").textContent=t("Downloading verified public beta...");try{const result=await invoke("download_public_beta");if(generation===updateCheckGeneration)$("updateResult").textContent=t(result);}catch(e){if(generation===updateCheckGeneration)$("updateResult").textContent=t(String(e));}finally{b.disabled=false;}};
 async function refreshUpdateStatus(){
-    const generation=updateCheckGeneration,channel=$("updateChannel").value;
-    try{
-        const s=await invoke("update_status");
-        if(generation!==updateCheckGeneration||channel!==$("updateChannel").value)return;
-        const ready=!!s.ready&&s.ready.channel===channel;
-        $("signedStatus").textContent=ready?t(s.message)+" | "+s.ready.version:s.ready&&!s.busy?"":t(s.message);
-        $("stageSigned").hidden=!signedAvailable||checkedChannel!==channel||(ready&&s.ready.version===checkedVersion);
-        $("stageSigned").disabled=s.busy;
-        $("installSigned").hidden=!ready||(signedAvailable&&checkedVersion!==null&&s.ready.version!==checkedVersion);
-        $("installSigned").disabled=s.busy;
-    }catch(_){}
+    const generation=updateGeneration, serial=++updateReadSerial;
+    try{const s=await invoke("update_status");if(generation===updateGeneration&&serial===updateReadSerial)renderUpdateStatus(s);}catch(_){}
 }
-$("stageSigned").onclick=async()=>{
-    const b=$("stageSigned"),channel=$("updateChannel").value,generation=updateCheckGeneration;
-    if(checkedChannel!==channel||!signedAvailable)return;
-    const switching=switchAvailable;
-    if(switching&&!confirm(t("Switch release channel and restart QuickClip321 after verification?")))return;
-    b.disabled=true;
-    try{
-        const staged=await invoke("stage_signed_update",{channel});
-        if(generation===updateCheckGeneration&&channel===$("updateChannel").value){checkedVersion=staged.version;if(switching)await invoke("install_signed_update");}
-    }catch(e){if(channel===$("updateChannel").value)$("updateResult").textContent=t(String(e));}
-    finally{await refreshUpdateStatus();}
+$("dismissUpdateBanner").onclick=()=>{
+    const info=updateSnapshot?.releases?.find(i=>i.channel===updateSnapshot.installed_channel);
+    dismissedUpdate=updateKey(info);try{localStorage.setItem("dismissedUpdate",dismissedUpdate);}catch(_){}
+    $("updateBanner").hidden=true;
 };
-$("installSigned").onclick=async()=>{if(!confirm(t("Install verified update and restart QuickClip321?")))return;try{await invoke("install_signed_update");}catch(e){$("signedStatus").textContent=t(String(e));}};
+$("openUpdateBanner").onclick=async()=>{
+    try{
+        if(!updateBusy&&!updateSnapshot?.busy&&updateSnapshot&&$("updateChannel").value!==updateSnapshot.installed_channel){
+            $("updateChannel").value=updateSnapshot.installed_channel;await saveSection({update_channel:$("updateChannel").value});
+        }
+        if(!expanded)await toggleExpanded(true);show("updates");
+    }catch(e){notice(e,true);}
+};
+$("updateChannel").onchange=async()=>{
+    const channel=$("updateChannel").value;const generation=++updateGeneration;updateActionError="";
+    try{await saveSection({update_channel:channel});if(generation===updateGeneration)await refreshUpdateStatus();}
+    catch(e){if(generation===updateGeneration){notice(e,true);const p=(await invoke("snapshot")).settings.prefs;$("updateChannel").value=p.update_channel;await refreshUpdateStatus();}}
+};
 async function checkSelectedChannel(){
-    invalidateUpdateCheck();
-    const generation=updateCheckGeneration,channel=$("updateChannel").value,b=$("checkUpdates");
-    b.disabled=true;$("updateResult").textContent=t("Checking for updates...");
-    const current=()=>generation===updateCheckGeneration&&channel===$("updateChannel").value;
-    try{const info=await invoke("check_app_updates",{channel});if(!current())return;signedAvailable=info.signed_available;switchAvailable=info.switch_available;checkedChannel=channel;checkedVersion=info.latest_in_channel;$("downloadPublicBeta").hidden=channel!=="stable"||info.public_beta!=="3.0.0-beta.5"||info.signed_available;$("stageSigned").textContent=t(channel==="stable"?"Download Stable":"Download Nightly");$("updateResult").textContent=info.installed+" | "+t(info.state)+(info.latest_in_channel?" ("+info.latest_in_channel+")":"")+(info.public_beta?" | "+t("Current public beta")+": "+info.public_beta:"");await refreshUpdateStatus();}
-    catch(e){if(current()){$("updateResult").textContent=t(String(e));await refreshUpdateStatus();}}
-    finally{if(current())b.disabled=false;}
+    if(updateChecking||updateBusy)return;
+    updateChecking=true;updateActionError="";const generation=++updateGeneration,channel=$("updateChannel").value;
+    if(updateSnapshot)renderUpdateStatus(updateSnapshot);else $("checkUpdates").disabled=true;
+    try{await invoke("check_app_updates",{channel});}
+    catch(e){if(generation===updateGeneration)updateActionError=t(String(e));}
+    finally{updateChecking=false;await refreshUpdateStatus();}
 }
 $("checkUpdates").onclick=checkSelectedChannel;
+$("installSigned").onclick=async()=>{
+    if(updateBusy||!updateSnapshot)return;
+    const s=updateSnapshot,channel=$("updateChannel").value;
+    const info=s.releases?.find(i=>i.channel===channel);
+    if(!info?.signed_available||s.busy||s.queue_busy||s.check_error)return;
+    if(!confirm(t(channel===s.installed_channel?"Install verified update and restart QuickClip321?":"Switch release channel and restart QuickClip321 after verification?")))return;
+    updateBusy=true;updateActionError="";++updateGeneration;renderUpdateStatus(s);
+    try{
+        if(s.ready?.channel!==channel||s.ready?.version!==info.latest_in_channel)await invoke("stage_signed_update",{channel});
+        await invoke("install_signed_update",{expectedVersion:info.latest_in_channel});
+    }catch(e){updateActionError=t(String(e));}
+    finally{updateBusy=false;await refreshUpdateStatus();}
+};
 $("exportPrefs").onclick=async()=>{try{$("prefsBackup").value=await invoke("export_preferences");$("prefsBackup").select();}catch(e){notice(e,true);}};
 $("importPrefs").onclick=async()=>{
     if(!confirm(t("Replace compatible preferences with this backup?")))return;
@@ -393,7 +424,7 @@ function updateSize(job=null){
     node.hidden=!previewMeta;
     if(!previewMeta)return;
     if((job?job.playlist:$("playlist").checked)||previewMeta.playlist){node.textContent=t("Playlist size unknown");return;}
-    const preset=job?job.preset:$("format").value,quality=audioFormats.includes(preset)?"best":job?job.quality:$("quality").value;
+    const preset=job?job.preset:$("format").value;if(preset==="subtitles"){node.textContent=t("Subtitles Only");return;}const quality=audioFormats.includes(preset)?"best":job?job.quality:$("quality").value;
     const match=previewMeta.sizes?.find(x=>x.preset===preset&&x.quality===quality);
     if(!match){node.textContent=t("Size unknown");return;}
     const n=match.bytes;node.textContent=t("Source download estimate")+": ~"+(n>=1073741824?(n/1073741824).toFixed(2)+" GiB":(n/1048576).toFixed(1)+" MiB");
@@ -591,7 +622,22 @@ async function smokeChecks(){
         applySubmittedLinks([["fixture","https://example.com/shortcut-test"]]);const cleared=!$("url").value&&$("thumbnail").hidden;
         $("url").value="https://example.com/new-draft";$("url").dispatchEvent(new Event("input"));
         applySubmittedLinks([["fixture","https://example.com/shortcut-test"]]);const draftKept=$("url").value==="https://example.com/new-draft";$("clearLink").click();
-        uxOk=localized&&backToEnglish&&persisted&&big&&small&&trim&&shortcutRows&&topOff&&cleared&&draftKept&&Boolean($("openDownloads"));
+        const u=await invoke("update_status");
+        renderUpdateStatus(u);
+        const currentVersionOk=$("installedVersion").textContent===u.installed&&$("installedChannel").textContent===channelName(u.installed_channel)&&$("installSigned").hidden;
+        const preferred=$("updateChannel").value;
+        $("updateChannel").value=u.installed_channel;
+        const fixture={...u,releases:[{channel:u.installed_channel,signed_available:true,switch_available:false,available:"99.0.0",latest_in_channel:"99.0.0"}],check_error:null};
+        const previousDismissed=dismissedUpdate;
+        dismissedUpdate="";renderUpdateStatus(fixture);
+        const updateVisible=!$("updateBanner").hidden&&!$("installSigned").hidden&&$("installSigned").textContent===t("Install update");
+        $("dismissUpdateBanner").onclick();renderUpdateStatus(fixture);
+        const updateDismissed=$("updateBanner").hidden&&!$("updateBadge").hidden;
+        dismissedUpdate=previousDismissed;try{localStorage.setItem("dismissedUpdate",previousDismissed);}catch(_){}
+        $("updateChannel").value=preferred;renderUpdateStatus(u);
+        $("format").value="subtitles";updateFormat();const subsOk=$("quality").disabled&&mediaOptions().subtitle_languages.length>0&&mediaOptions().clip_end===null&&mediaOptions().archive===false;
+        $("format").value="editor";$("quality").value="1080";updateFormat();
+        uxOk=localized&&backToEnglish&&persisted&&big&&small&&trim&&shortcutRows&&topOff&&cleared&&draftKept&&Boolean($("openDownloads"))&&currentVersionOk&&updateVisible&&updateDismissed&&subsOk;
     }catch(e){notice(e,true);}
     await invoke("ui_ready",{passed:uxOk&&persistOk&&clipOk&&workflowOk&&playlistOk&&materialOk&&configOk&&hidden&&visible&&document.querySelectorAll(".info").length>=15&&initialized&&Boolean($("form")&&$("queueList")&&$("historyList")&&$("settingsForm")),themePassed:themeSmoke(),clipboardPassed:clipboardOk});
     const visual=await invoke("visual_page");const [page,palette,finish]=visual.split(":");if(visual){$("destination").value="C:\\Downloads\\QuickClip321";}if(["settings","updates","shortcuts","profiles","organizer","diagnostics","queue"].includes(page)){await toggleExpanded(true);show(page);}else if(page==="quick"){$("previewText").textContent="Ready to download";}if(palette)$("theme").value=palette;if(finish)$("material").value=finish;applyTheme();if(page==="custom"){$("preset").value="custom";updateFormat();}if(page==="playlist"){$("url").value="https://www.youtube.com/playlist?list=PLfixture";setPlaylistVisibility(true,12);$("previewText").textContent="Playlist detected";}

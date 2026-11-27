@@ -218,7 +218,7 @@ fn run_shortcut(app: &tauri::AppHandle, action: &str) {
                     "mp4" => "editor".into(),
                     _ => s.prefs.default_format.clone(),
                 };
-                let quality = if matches!(preset.as_str(), "mp3" | "m4a" | "wav") {
+                let quality = if matches!(preset.as_str(), "mp3" | "m4a" | "wav" | "subtitles") {
                     "best".into()
                 } else {
                     if action == "mp4" {
@@ -713,8 +713,8 @@ fn organizer_counts() -> [usize; 8] {
 fn diagnostics(engine: State<'_, Engine>) -> String {
     let s = engine.snapshot();
     let mut out = format!("QuickClip321 {}\n", env!("CARGO_PKG_VERSION"));
-    if let Some(recovery) = engine.recovery_notice() {
-        out.push_str(&format!("{recovery}\n"));
+    if engine.recovery_notice().is_some() {
+        out.push_str("State recovery occurred (local path omitted).\n");
     }
     for (label, path) in [
         ("yt-dlp", &s.settings.yt_dlp),
@@ -1564,16 +1564,82 @@ struct UpdateRuntime {
     ready: Mutex<Option<signed_update::Staged>>,
     busy: std::sync::atomic::AtomicBool,
     notice: Mutex<String>,
+    discovery: Mutex<Discovery>,
+    check_lock: Mutex<()>,
+}
+#[derive(Default)]
+struct Discovery {
+    releases: Vec<update_check::UpdateInfo>,
+    error: Option<String>,
+    checked_at: Option<u64>,
+}
+fn installed_channel() -> &'static str {
+    if env!("CARGO_PKG_VERSION")
+        .split_once('-')
+        .is_some_and(|(_, p)| p.split('.').any(|x| x == "nightly"))
+    {
+        "nightly"
+    } else {
+        "stable"
+    }
+}
+fn refresh_discovery(
+    app: &tauri::AppHandle,
+    force: bool,
+) -> Result<Vec<update_check::UpdateInfo>, String> {
+    let r = app.state::<UpdateRuntime>();
+    let _lock = r.check_lock.lock().unwrap();
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs();
+    {
+        let d = r.discovery.lock().unwrap();
+        if !force && d.error.is_none() && d.checked_at.is_some_and(|t| now.saturating_sub(t) < 3600)
+        {
+            return Ok(d.releases.clone());
+        }
+    }
+    let result = update_check::check_both();
+    let mut d = r.discovery.lock().unwrap();
+    match &result {
+        Ok(v) => {
+            d.releases = v.clone();
+            d.error = None;
+            d.checked_at = Some(now);
+        }
+        Err(e) => {
+            d.error = Some(e.clone());
+        }
+    }
+    result
 }
 #[derive(serde::Serialize)]
 struct UpdateStatus {
     ready: Option<signed_update::ReadyInfo>,
     busy: bool,
     message: String,
+    installed: String,
+    installed_channel: String,
+    releases: Vec<update_check::UpdateInfo>,
+    check_error: Option<String>,
+    checked_at: Option<u64>,
+    queue_busy: bool,
 }
 #[tauri::command]
-fn update_status(state: State<'_, UpdateRuntime>) -> UpdateStatus {
+fn update_status(state: State<'_, UpdateRuntime>, engine: State<'_, Engine>) -> UpdateStatus {
+    let (releases, check_error, checked_at) = {
+        let d = state.discovery.lock().unwrap();
+        (d.releases.clone(), d.error.clone(), d.checked_at)
+    };
+    let (a, q, p, _, _, _) = engine.tray_summary();
     UpdateStatus {
+        installed: env!("CARGO_PKG_VERSION").into(),
+        installed_channel: installed_channel().into(),
+        releases,
+        check_error,
+        checked_at,
+        queue_busy: a != 0 || q != 0 || p != 0,
         ready: state.ready.lock().unwrap().as_ref().map(|x| x.info()),
         busy: state.busy.load(std::sync::atomic::Ordering::Acquire),
         message: state.notice.lock().unwrap().clone(),
@@ -1600,9 +1666,16 @@ fn stage_for_channel(
         {
             return Err("Selected channel changed; check again".into());
         }
-        let i = update_check::check(channel)?;
+        let i = refresh_discovery(app, true)?
+            .into_iter()
+            .find(|i| i.channel == channel)
+            .ok_or("Missing channel")?;
         if !i.signed_available || (!explicit_switch && i.switch_available) {
             return Err("No eligible signed update".into());
+        }
+        let (a, q, p, _, _, _) = app.state::<Engine>().tray_summary();
+        if a != 0 || q != 0 || p != 0 {
+            return Err("Wait until the queue is empty".into());
         }
         let target = i
             .latest_in_channel
@@ -1621,18 +1694,6 @@ fn stage_for_channel(
         }
         let info = staged.info();
         *r.ready.lock().unwrap() = Some(staged);
-        let handle = app.clone();
-        let tr = app.state::<Engine>().tray_summary().5 == "tr";
-        let _ = app.run_on_main_thread(move || {
-            show_shortcut_toast(
-                &handle,
-                if tr {
-                    "G\u{00fc}ncelleme haz\u{0131}r"
-                } else {
-                    "Update ready to install"
-                },
-            )
-        });
         Ok(info)
     })();
     *r.notice.lock().unwrap() = if result.is_ok() {
@@ -1655,7 +1716,11 @@ async fn stage_signed_update(
         .await
         .map_err(|_| "Update staging failed".to_string())?
 }
-fn install_ready(app: &tauri::AppHandle, explicit: bool) -> Result<(), String> {
+fn install_ready(
+    app: &tauri::AppHandle,
+    explicit: bool,
+    expected_version: Option<&str>,
+) -> Result<(), String> {
     use std::sync::atomic::Ordering;
     if isolated_run() {
         return Err("Installation disabled in fixture mode".into());
@@ -1669,6 +1734,21 @@ fn install_ready(app: &tauri::AppHandle, explicit: bool) -> Result<(), String> {
         let ready = r.ready.lock().unwrap();
         let staged = ready.as_ref().ok_or("No verified update ready")?;
         let info = staged.info();
+        if expected_version.is_some_and(|v| v != info.version) {
+            return Err("Release changed; review the new version before installing".into());
+        }
+        {
+            let d = r.discovery.lock().unwrap();
+            if d.error.is_some()
+                || !d.releases.iter().any(|i| {
+                    i.channel == info.channel
+                        && i.signed_available
+                        && i.latest_in_channel.as_deref() == Some(info.version.as_str())
+                })
+            {
+                return Err("Release changed or check failed; check for updates again".into());
+            }
+        }
         let prefs = engine.settings_snapshot().prefs;
         if app.state::<ExitPending>().0.load(Ordering::Acquire) {
             return Err("Exit already scheduled".into());
@@ -1710,8 +1790,8 @@ fn install_ready(app: &tauri::AppHandle, explicit: bool) -> Result<(), String> {
     result
 }
 #[tauri::command]
-fn install_signed_update(app: tauri::AppHandle) -> Result<(), String> {
-    install_ready(&app, true)
+fn install_signed_update(app: tauri::AppHandle, expected_version: String) -> Result<(), String> {
+    install_ready(&app, true, Some(&expected_version))
 }
 #[tauri::command]
 fn startup_health() -> Result<(), String> {
@@ -1719,10 +1799,10 @@ fn startup_health() -> Result<(), String> {
 }
 fn watch_updates(app: tauri::AppHandle) {
     std::thread::spawn(move || {
-        std::thread::sleep(std::time::Duration::from_secs(15));
+        std::thread::sleep(std::time::Duration::from_secs(5));
         let mut last_check = None::<std::time::Instant>;
         let mut last_channel = String::new();
-        let mut interval = std::time::Duration::from_secs(86400);
+        let mut interval = std::time::Duration::from_secs(3600);
         let mut pending: Option<String> = None;
         let mut last_stage_attempt = None::<std::time::Instant>;
         loop {
@@ -1739,23 +1819,31 @@ fn watch_updates(app: tauri::AppHandle) {
             if due {
                 last_channel = prefs.update_channel.clone();
                 last_check = Some(std::time::Instant::now());
-                interval = std::time::Duration::from_secs(300);
-                if let Ok(i) = update_check::check(&prefs.update_channel) {
-                    interval = std::time::Duration::from_secs(86400);
-                    let available = if i.signed_available && !i.switch_available {
-                        i.available
-                    } else {
-                        None
-                    };
-                    if available.is_some() && available != pending {
-                        let handle = app.clone();
-                        let _ = app.run_on_main_thread(move || {
-                            show_shortcut_toast(&handle, "Update available")
-                        });
-                        last_stage_attempt = None;
-                    }
-                    pending = available;
+                interval = if refresh_discovery(&app, false).is_ok() {
+                    std::time::Duration::from_secs(3600)
+                } else {
+                    std::time::Duration::from_secs(300)
+                };
+            }
+            let available = {
+                let r = app.state::<UpdateRuntime>();
+                let d = r.discovery.lock().unwrap();
+                if d.error.is_some() {
+                    None
+                } else {
+                    d.releases
+                        .iter()
+                        .find(|i| {
+                            i.channel == prefs.update_channel
+                                && i.signed_available
+                                && !i.switch_available
+                        })
+                        .and_then(|i| i.available.clone())
                 }
+            };
+            if available != pending {
+                last_stage_attempt = None;
+                pending = available;
             }
             // Do not consume download bandwidth or install while a job is active/paused.
             if idle && prefs.update_mode != "manual" {
@@ -1794,7 +1882,7 @@ fn watch_updates(app: tauri::AppHandle) {
             if idle && prefs.update_mode == "automatic" && ready_for_auto {
                 let h = app.clone();
                 let _ = app.run_on_main_thread(move || {
-                    let _ = install_ready(&h, false);
+                    let _ = install_ready(&h, false, None);
                 });
             }
             std::thread::sleep(std::time::Duration::from_secs(30));
@@ -1835,10 +1923,24 @@ async fn download_public_beta(app: tauri::AppHandle) -> Result<String, String> {
     }).await.map_err(|_|"Release download failed".to_string())?
 }
 #[tauri::command]
-async fn check_app_updates(channel: String) -> Result<update_check::UpdateInfo, String> {
-    tauri::async_runtime::spawn_blocking(move || update_check::check(&channel))
-        .await
-        .map_err(|_| "Update check failed".to_string())?
+async fn check_app_updates(
+    app: tauri::AppHandle,
+    channel: String,
+) -> Result<update_check::UpdateInfo, String> {
+    if !matches!(channel.as_str(), "stable" | "nightly") {
+        return Err("Invalid update channel".into());
+    }
+    if isolated_run() {
+        return Err("Network updates disabled in fixture mode".into());
+    }
+    tauri::async_runtime::spawn_blocking(move || {
+        refresh_discovery(&app, true)?
+            .into_iter()
+            .find(|i| i.channel == channel)
+            .ok_or("Missing channel".into())
+    })
+    .await
+    .map_err(|_| "Update check failed".to_string())?
 }
 #[tauri::command]
 fn copy_diagnostics(app: tauri::AppHandle, engine: State<'_, Engine>) -> Result<(), String> {

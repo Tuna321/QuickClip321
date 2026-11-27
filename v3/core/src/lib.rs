@@ -468,6 +468,7 @@ pub fn selector(preset: &str, quality: &str) -> Result<String> {
             ))
         }
         "original" => Ok(video),
+        "subtitles" => Ok("best".into()),
         "mp3" | "wav" | "m4a" => Ok("bestaudio/best".into()),
         _ => Err("Unknown preset.".into()),
     }
@@ -1047,7 +1048,22 @@ impl Engine {
     pub fn enqueue(&self, r: Request) -> Result<String> {
         self.enqueue_checked(r, true)
     }
-    pub fn enqueue_checked(&self, r: Request, allow_duplicate: bool) -> Result<String> {
+    pub fn enqueue_checked(&self, mut r: Request, allow_duplicate: bool) -> Result<String> {
+        if r.preset == "subtitles" {
+            r.quality = "best".into();
+            if r.options.subtitle_languages.is_empty() {
+                r.options.subtitle_languages = vec!["en".into(), "tr".into()];
+                r.options.subtitle_auto = true;
+            }
+            if r.options.subtitle_format.is_empty() {
+                r.options.subtitle_format = "srt".into();
+            }
+            if r.options.clipping() || r.options.archive {
+                return Err(
+                    "Subtitle-only downloads do not support clipping or media archives.".into(),
+                );
+            }
+        }
         let url = validate_url(r.url.trim())?;
         selector(&r.preset, &r.quality)?;
         r.options.validate()?;
@@ -2425,6 +2441,50 @@ pub fn live_frame(id: &str, ffmpeg: &Path, seconds: f64) -> Option<String> {
     }
     Some(format!("data:image/jpeg;base64,{}", encode_base64(&data)))
 }
+// yt-dlp --skip-download produces subtitle sidecars without a media file.
+fn subtitle_only_groups(
+    root: &Path,
+    format: &str,
+) -> Result<std::collections::BTreeMap<String, Vec<(PathBuf, String)>>> {
+    if !matches!(format, "srt" | "vtt") {
+        return Err("Choose SRT or VTT.".into());
+    }
+    let root = root.canonicalize().map_err(err)?;
+    let mut groups = std::collections::BTreeMap::<String, Vec<(PathBuf, String)>>::new();
+    for entry in fs::read_dir(&root).map_err(err)? {
+        let entry = entry.map_err(err)?;
+        let path = entry.path();
+        if path.extension().and_then(|v| v.to_str()) != Some(format) {
+            continue;
+        }
+        let meta = fs::symlink_metadata(&path).map_err(err)?;
+        if !ordinary(&meta)
+            || !meta.is_file()
+            || path.canonicalize().map_err(err)?.parent() != Some(root.as_path())
+        {
+            return Err("Unsafe subtitle output.".into());
+        }
+        if meta.len() == 0 {
+            continue;
+        }
+        let name = path
+            .file_name()
+            .and_then(|v| v.to_str())
+            .ok_or("Invalid subtitle filename")?;
+        let base = name
+            .strip_suffix(&format!(".{format}"))
+            .ok_or("Invalid subtitle extension")?;
+        let (stem, lang) = base.rsplit_once('.').ok_or("Missing subtitle language")?;
+        if stem.is_empty() || lang.is_empty() {
+            return Err("Invalid subtitle filename".into());
+        }
+        groups
+            .entry(stem.to_owned())
+            .or_default()
+            .push((path.clone(), format!(".{lang}.{format}")));
+    }
+    Ok(groups)
+}
 fn download_once(
     j: &Job,
     s: &Settings,
@@ -2491,6 +2551,9 @@ fn download_once(
             "after_move:%(.{filepath,title,artist,album_artist,channel,uploader,series,tv_show,movie,movie_title,vcodec,track,genre,game,game_title})j",
         ])
         .arg(staging.path().join("outputs.jsonl"));
+    if j.preset == "subtitles" {
+        c.args(["--skip-download", "--ignore-no-formats-error"]);
+    }
     if section {
         let start = j.options.clip_start.unwrap_or(0.);
         let end = j.options.clip_end.ok_or("Missing clip end")?;
@@ -2662,6 +2725,27 @@ fn download_once(
     let mut publication_started = false;
     let result = (|| -> Result<Vec<PathBuf>> {
         let mut files = vec![];
+        if j.preset == "subtitles" {
+            let target = if j.organize {
+                j.destination.join("Subtitles")
+            } else {
+                j.destination.clone()
+            };
+            let groups = subtitle_only_groups(staging.path(), &j.options.subtitle_format)?;
+            if groups.is_empty() {
+                return Err("No matching subtitles found. Try another language or enable automatic subtitles.".into());
+            }
+            fs::create_dir_all(&target).map_err(err)?;
+            progress(0.99, "Saving subtitles".into());
+            for (stem, sources) in groups {
+                publication_started = true;
+                publish_group(&stem, &sources, &target, cancel, |path| {
+                    files.push(path.clone());
+                    record(path)
+                })?;
+            }
+            return Ok(files);
+        }
         let mut seen = std::collections::HashSet::new();
         let root = staging.path().canonicalize().map_err(err)?;
         let manifest = fs::read_to_string(staging.path().join("outputs.jsonl")).map_err(err)?;
@@ -2816,6 +2900,31 @@ fn download_once(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn subtitle_only_groups_keep_languages_and_reject_empty() {
+        let dir = tempfile::tempdir().unwrap();
+        for (name, data) in [
+            ("Title.with.dot [id].en.srt", "cue"),
+            ("Title.with.dot [id].tr.srt", "cue"),
+            ("Other [id].en.srt", "cue"),
+            ("Empty [id].en.srt", ""),
+            ("Other [id].mp4", "video"),
+            ("Other [id].en.vtt", "vtt"),
+        ] {
+            fs::write(dir.path().join(name), data).unwrap();
+        }
+        let groups = subtitle_only_groups(dir.path(), "srt").unwrap();
+        assert_eq!(groups.len(), 2);
+        let langs = &groups["Title.with.dot [id]"];
+        assert_eq!(langs.len(), 2);
+        assert!(
+            langs.iter().any(|(_, suffix)| suffix == ".en.srt")
+                && langs.iter().any(|(_, suffix)| suffix == ".tr.srt")
+        );
+        assert!(subtitle_only_groups(dir.path(), "mp4").is_err());
+        assert_eq!(subtitle_only_groups(dir.path(), "vtt").unwrap().len(), 1);
+    }
+
     #[test]
     fn resume_stage_rejects_unsafe_reuse() {
         let d = tempfile::tempdir().unwrap();
