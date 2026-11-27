@@ -2992,7 +2992,7 @@ dependencies = [
 
 [[package]]
 name = "quickclip-core"
-version = "3.0.0-beta.8"
+version = "3.0.0-beta.8.nightly.1"
 dependencies = [
  "serde",
  "serde_json",
@@ -3006,7 +3006,7 @@ dependencies = [
 
 [[package]]
 name = "quickclip321-v3"
-version = "3.0.0-beta.8"
+version = "3.0.0-beta.8.nightly.1"
 dependencies = [
  "quickclip-core",
  "semver",
