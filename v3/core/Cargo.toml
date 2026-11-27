@@ -1,6 +1,6 @@
 [package]
 name = "quickclip-core"
-version = "3.0.0-beta.7"
+version = "3.0.0-beta.7.nightly.1"
 edition = "2021"
 
 [dependencies]
