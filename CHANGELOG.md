@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.0.0-beta.7 - 2026-11-27
+
+- Recover corrupt or missing state using the last valid backup, preserving damaged bytes.
+- Validate executable and output paths; repair verified managed tools; never silently redirect invalid organizer targets.
+- Protect existing media and sidecars; persist committed output paths; bound and cancel media inspection.
+- Fix concurrent settings edits, duplicate detection, queue progress, batch errors and superseded previews.
+- Improve release pagination, staged-version selection and recovery-backup handling.
+- Add Windows and frontend regression tests. Both Stable-track Beta 7 and Beta 7 Nightly 1 are prereleases with the same fixes.
+
 ## 3.0.0-beta.6 - 2026-11-27
 
 - Signed public beta and Nightly channels, explicit verified switching, restart health check and rollback backup.
